@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { activityLog, events, users } from '../data/mock';
+import { Icon } from '@iconify/react';
 
 export default function ActivityLog() {
   const [eventFilter, setEventFilter] = useState('All');
@@ -24,9 +25,7 @@ export default function ActivityLog() {
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 sm:min-w-48">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
+          <Icon icon="solar:magnifer-linear" width={15} height={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
           <input
             type="text"
             placeholder="Search actions..."

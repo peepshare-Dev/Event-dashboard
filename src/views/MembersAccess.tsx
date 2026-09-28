@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { eventMembers, type RoleType } from '../data/mock';
+import { Icon } from '@iconify/react';
 
 const ROLE_COLORS: Record<RoleType, string> = {
   'Super Admin': 'bg-purple-50 text-purple-700',
@@ -36,9 +37,7 @@ export default function MembersAccess() {
           onClick={() => setShowAddModal(true)}
           className="flex items-center justify-center gap-2 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium px-4 py-2.5 sm:py-2 rounded-lg transition-colors"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Icon icon="solar:add-linear" width={14} height={14} />
           Add Member
         </button>
       </div>
@@ -194,9 +193,7 @@ function AddMemberModal({ onClose, onAdd }: {
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
           <h3 className="text-base font-semibold text-[#1A1A1A]">Add Event Member</h3>
           <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
 
@@ -297,9 +294,7 @@ function EditMemberModal({ member, onClose, onSave }: {
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] flex-shrink-0">
           <h3 className="text-base font-semibold text-[#1A1A1A] truncate">Edit Access — {member.name}</h3>
           <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280] flex-shrink-0 ml-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
         <div className="p-6 space-y-4 overflow-y-auto">

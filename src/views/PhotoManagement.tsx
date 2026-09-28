@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { events } from '../data/mock';
+import { Icon } from '@iconify/react';
 
 type PhotoStatus = 'Uploading' | 'Processing' | 'Completed' | 'Failed';
 
@@ -89,9 +90,7 @@ export default function PhotoManagement() {
         <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">Upload New Photos</h3>
         <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-8 text-center hover:border-[#FF6115]/50 transition-colors cursor-pointer">
           <div className="w-12 h-12 bg-[#FFF0E8] rounded-xl flex items-center justify-center mx-auto mb-3">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#FF6115" strokeWidth={1.5}>
-              <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
-            </svg>
+            <Icon icon="solar:gallery-linear" width={24} height={24} color="#FF6115" />
           </div>
           <p className="text-sm font-medium text-[#1A1A1A]">Drop photos here or click to select folder</p>
           <p className="text-xs text-[#9CA3AF] mt-1">Supports JPEG, PNG, RAW · Max 50GB per batch</p>
@@ -114,7 +113,7 @@ export default function PhotoManagement() {
             <div key={i} className="flex items-center gap-2 flex-shrink-0">
               <div className={`flex items-center gap-1.5 ${step.done ? 'text-[#FF6115]' : 'text-[#D1D5DB]'}`}>
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step.done ? 'bg-[#FF6115] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'}`}>
-                  {step.done ? '✓' : i + 1}
+                  {step.done ? <Icon icon="solar:check-linear" width={11} height={11} /> : i + 1}
                 </div>
                 <span className="text-xs font-medium whitespace-nowrap">{step.label}</span>
               </div>

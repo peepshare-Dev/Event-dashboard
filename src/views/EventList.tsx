@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { events, type EventStatus } from '../data/mock';
 import type { Event } from '../data/mock';
+import { Icon } from '@iconify/react';
 
 const STATUS_COLORS: Record<EventStatus, string> = {
   Draft: 'bg-gray-100 text-gray-600',
@@ -20,7 +21,6 @@ export default function EventList({ onSelectEvent }: EventListProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'All'>('All');
   const [page, setPage] = useState(1);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [sortCol, setSortCol] = useState<'name' | 'dates' | 'registrants' | 'photos'>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
@@ -48,28 +48,15 @@ export default function EventList({ onSelectEvent }: EventListProps) {
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       {/* Page header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-[#1A1A1A]">Event List</h2>
-          <p className="text-sm text-[#6B7280] mt-0.5">{events.length} events total</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium px-4 py-2.5 sm:py-2 rounded-lg transition-colors"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Create Event
-        </button>
+      <div>
+        <h2 className="text-xl font-semibold text-[#1A1A1A]">Event List</h2>
+        <p className="text-sm text-[#6B7280] mt-0.5">{events.length} events total</p>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 sm:min-w-52">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
+          <Icon icon="solar:magnifer-linear" width={15} height={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
           <input
             type="text"
             placeholder="Search events..."
@@ -138,9 +125,7 @@ export default function EventList({ onSelectEvent }: EventListProps) {
                   <td className="px-4 py-3.5 text-sm text-[#4B5563]">{ev.photos.toLocaleString()}</td>
                   <td className="px-4 py-3.5">
                     <span className="inline-flex items-center gap-1 text-sm text-[#4B5563]">
-                      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                      </svg>
+                      <Icon icon="solar:users-group-rounded-linear" width={13} height={13} />
                       {ev.members}
                     </span>
                   </td>
@@ -150,9 +135,7 @@ export default function EventList({ onSelectEvent }: EventListProps) {
                       <ActionBtn>Edit</ActionBtn>
                       <ActionBtn>Access</ActionBtn>
                       <button className="p-1.5 text-[#9CA3AF] hover:text-[#6B7280] rounded transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
-                        </svg>
+                        <Icon icon="solar:menu-dots-linear" width={14} height={14} />
                       </button>
                     </div>
                   </td>
@@ -171,8 +154,8 @@ export default function EventList({ onSelectEvent }: EventListProps) {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >← Prev</button>
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            ><Icon icon="solar:arrow-left-linear" width={12} height={12} /> Prev</button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
               <button
                 key={p}
@@ -183,8 +166,8 @@ export default function EventList({ onSelectEvent }: EventListProps) {
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >Next →</button>
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >Next <Icon icon="solar:arrow-right-linear" width={12} height={12} /></button>
           </div>
         </div>
       </div>
@@ -212,9 +195,7 @@ export default function EventList({ onSelectEvent }: EventListProps) {
               <span>{ev.registrants.toLocaleString()} Registrants</span>
               <span>{ev.photos.toLocaleString()} Photos</span>
               <span className="inline-flex items-center gap-1">
-                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                </svg>
+                <Icon icon="solar:users-group-rounded-linear" width={13} height={13} />
                 {ev.members}
               </span>
             </div>
@@ -227,9 +208,7 @@ export default function EventList({ onSelectEvent }: EventListProps) {
                 View Event
               </button>
               <button className="w-11 h-11 flex items-center justify-center text-[#9CA3AF] hover:text-[#6B7280] rounded-lg transition-colors" aria-label="More actions">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
-                </svg>
+                <Icon icon="solar:menu-dots-linear" width={16} height={16} />
               </button>
             </div>
           </div>
@@ -240,19 +219,17 @@ export default function EventList({ onSelectEvent }: EventListProps) {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="min-h-[44px] px-4 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >← Prev</button>
+              className="inline-flex items-center gap-1 min-h-[44px] px-4 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            ><Icon icon="solar:arrow-left-linear" width={14} height={14} /> Prev</button>
             <span className="text-xs text-[#6B7280]">{page} / {totalPages}</span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="min-h-[44px] px-4 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >Next →</button>
+              className="inline-flex items-center gap-1 min-h-[44px] px-4 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >Next <Icon icon="solar:arrow-right-linear" width={14} height={14} /></button>
           </div>
         )}
       </div>
-
-      {showCreateModal && <CreateEventModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }
@@ -267,7 +244,7 @@ function SortTh({ label, col, current, dir, onToggle }: {
       <button onClick={() => onToggle(col)} className="flex items-center gap-1 hover:text-[#1A1A1A] transition-colors">
         {label}
         <span className={active ? 'text-[#FF6115]' : 'text-[#D1D5DB]'}>
-          {active && dir === 'asc' ? '↑' : '↓'}
+          <Icon icon={active && dir === 'asc' ? 'solar:arrow-up-linear' : 'solar:arrow-down-linear'} width={11} height={11} />
         </span>
       </button>
     </th>
@@ -285,53 +262,3 @@ function ActionBtn({ children, onClick }: { children: React.ReactNode; onClick?:
   );
 }
 
-function CreateEventModal({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [location, setLocation] = useState('');
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] flex-shrink-0">
-          <h3 className="text-base font-semibold text-[#1A1A1A]">Create New Event</h3>
-          <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="p-6 space-y-4 overflow-y-auto">
-          <Field label="Event Name">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Enter event name" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]" />
-          </Field>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Start Date">
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]" />
-            </Field>
-            <Field label="End Date">
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]" />
-            </Field>
-          </div>
-          <Field label="Location">
-            <input value={location} onChange={e => setLocation(e.target.value)} placeholder="City or venue" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]" />
-          </Field>
-        </div>
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E5E7EB] flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">Cancel</button>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors">Create Event</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-medium text-[#374151]">{label}</label>
-      {children}
-    </div>
-  );
-}

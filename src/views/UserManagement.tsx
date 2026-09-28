@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { users, type User, type RoleType } from '../data/mock';
+import { Icon } from '@iconify/react';
 
 const ROLE_COLORS: Record<RoleType, string> = {
   'Super Admin': 'bg-purple-50 text-purple-700',
@@ -42,9 +43,7 @@ export default function UserManagement() {
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 sm:min-w-52">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
+          <Icon icon="solar:magnifer-linear" width={15} height={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
           <input
             type="text"
             placeholder="Search by name, ID, or email..."
@@ -97,9 +96,7 @@ export default function UserManagement() {
                   <td className="px-4 py-3.5 text-sm font-mono text-[#6B7280] whitespace-nowrap">{u.peepId}</td>
                   <td className="px-4 py-3.5 text-sm text-[#4B5563] whitespace-nowrap">
                     <span className="inline-flex items-center gap-1">
-                      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-                      </svg>
+                      <Icon icon="solar:calendar-linear" width={12} height={12} />
                       {u.assignedEvents} events
                     </span>
                   </td>

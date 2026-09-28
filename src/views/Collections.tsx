@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { events, users } from '../data/mock';
+import { Icon } from '@iconify/react';
 
-type SharingType = 'Public Link' | 'Private' | 'Restricted' | 'Expired';
+export type SharingType = 'Public Link' | 'Private' | 'Restricted' | 'Expired';
 
-interface Collection {
+export interface Collection {
   id: number;
   name: string;
   owner: string;
@@ -17,7 +18,7 @@ interface Collection {
   description: string;
 }
 
-const SHARING_COLORS: Record<SharingType, string> = {
+export const SHARING_COLORS: Record<SharingType, string> = {
   'Public Link': 'bg-green-50 text-green-700',
   'Private': 'bg-gray-100 text-gray-600',
   'Restricted': 'bg-[#FFF0E8] text-[#FF6115]',
@@ -27,7 +28,7 @@ const SHARING_COLORS: Record<SharingType, string> = {
 const FILE_TABS = ['All Files', 'Photos', 'Videos', 'Documents', 'Audio', 'Other'] as const;
 type FileTab = typeof FILE_TABS[number];
 
-const mockCollections: Collection[] = [
+export const mockCollections: Collection[] = [
   { id: 1, name: 'MONOMAX Event Photos', owner: 'Aom Siriporn', ownerAvatar: 'AS', linkedEvent: 'MONOMAX Event', files: 8520, storageGb: 18.2, lastUpdated: 'Today', sharing: 'Public Link', status: 'Active', description: 'All photos from MONOMAX Event 5-6 Sep 2026' },
   { id: 2, name: 'Pattaya Countdown Photos', owner: 'Beam Natthawut', ownerAvatar: 'BN', linkedEvent: 'Pattaya Countdown 2027', files: 12820, storageGb: 24.5, lastUpdated: 'Yesterday', sharing: 'Private', status: 'Active', description: 'Photos for Pattaya Countdown event' },
   { id: 3, name: 'PEEP Sport Day Album', owner: 'Mint Wanida', ownerAvatar: 'MW', linkedEvent: 'PEEP Sport Day', files: 3240, storageGb: 8.4, lastUpdated: '2 days ago', sharing: 'Restricted', status: 'Active', description: 'Sport Day photos and videos' },
@@ -82,9 +83,7 @@ export default function Collections() {
           onClick={() => setShowCreate(true)}
           className="flex items-center justify-center gap-2 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium px-4 py-2.5 sm:py-2 rounded-lg transition-colors"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <Icon icon="solar:add-linear" width={14} height={14} />
           Create Collection
         </button>
       </div>
@@ -92,9 +91,7 @@ export default function Collections() {
       {/* Filters */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 sm:min-w-52">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
+          <Icon icon="solar:magnifer-linear" width={15} height={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
           <input
             type="text"
             placeholder="Search collections..."
@@ -132,9 +129,7 @@ export default function Collections() {
                 <tr>
                   <td colSpan={9} className="text-center py-16 text-[#9CA3AF] text-sm">
                     <div className="flex flex-col items-center gap-2">
-                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#D1D5DB" strokeWidth={1.5}>
-                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                      </svg>
+                      <Icon icon="solar:folder-linear" width={32} height={32} color="#D1D5DB" />
                       <span>No collections found</span>
                     </div>
                   </td>
@@ -144,9 +139,7 @@ export default function Collections() {
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-lg bg-[#FFF0E8] flex items-center justify-center flex-shrink-0">
-                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#FF6115" strokeWidth={2}>
-                          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                        </svg>
+                        <Icon icon="solar:folder-linear" width={15} height={15} color="#FF6115" />
                       </div>
                       <button
                         onClick={() => setSelectedCollection(c)}
@@ -195,9 +188,7 @@ export default function Collections() {
         {filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-[#E5E7EB] text-center py-12 text-[#9CA3AF] text-sm">
             <div className="flex flex-col items-center gap-2">
-              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#D1D5DB" strokeWidth={1.5}>
-                <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-              </svg>
+              <Icon icon="solar:folder-linear" width={28} height={28} color="#D1D5DB" />
               <span>No collections found</span>
             </div>
           </div>
@@ -205,9 +196,7 @@ export default function Collections() {
           <div key={c.id} className="bg-white rounded-xl border border-[#E5E7EB] p-4">
             <div className="flex items-start gap-2.5">
               <div className="w-9 h-9 rounded-lg bg-[#FFF0E8] flex items-center justify-center flex-shrink-0">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#FF6115" strokeWidth={2}>
-                  <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                </svg>
+                <Icon icon="solar:folder-linear" width={16} height={16} color="#FF6115" />
               </div>
               <div className="flex-1 min-w-0">
                 <button
@@ -283,9 +272,7 @@ function CollectionDetail({ collection, onBack, onShare }: {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-[#FFF0E8] flex items-center justify-center flex-shrink-0">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#FF6115" strokeWidth={1.75}>
-              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-            </svg>
+            <Icon icon="solar:folder-linear" width={24} height={24} color="#FF6115" />
           </div>
           <div className="min-w-0">
             <h2 className="text-xl font-semibold text-[#1A1A1A]">{collection.name}</h2>
@@ -294,24 +281,18 @@ function CollectionDetail({ collection, onBack, onShare }: {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button className="flex-1 sm:flex-none min-w-[110px] flex items-center justify-center gap-1.5 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] transition-colors">
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
+            <Icon icon="solar:download-linear" width={13} height={13} />
             Download
           </button>
           <button
             onClick={onShare}
             className="flex-1 sm:flex-none min-w-[90px] flex items-center justify-center gap-1.5 px-3 py-2 text-sm border border-[#FF6115] text-[#FF6115] rounded-lg hover:bg-[#FFF0E8] transition-colors"
           >
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
+            <Icon icon="solar:share-linear" width={13} height={13} />
             Share
           </button>
           <button className="flex-1 sm:flex-none min-w-[100px] flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors font-medium">
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <Icon icon="solar:add-linear" width={13} height={13} />
             Upload
           </button>
         </div>
@@ -374,14 +355,12 @@ function CollectionDetail({ collection, onBack, onShare }: {
                   className={`group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${selected ? 'border-[#FF6115]' : 'border-transparent hover:border-[#E5E7EB]'}`}
                   onClick={() => toggleFile(photo.id)}
                 >
-                  <div className="aspect-square flex items-center justify-center text-2xl" style={{ background: photo.color }}>
-                    📷
+                  <div className="aspect-square flex items-center justify-center" style={{ background: photo.color }}>
+                    <Icon icon="solar:gallery-linear" width={28} height={28} color="#9CA3AF" />
                   </div>
                   {selected && (
                     <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#FF6115] rounded-full flex items-center justify-center">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3}>
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
+                      <Icon icon="solar:check-linear" width={10} height={10} color="white" />
                     </div>
                   )}
                   <div className="p-2 bg-white">
@@ -398,9 +377,7 @@ function CollectionDetail({ collection, onBack, onShare }: {
         {activeTab !== 'Photos' && activeTab !== 'All Files' && (
           <div className="py-16 text-center text-[#9CA3AF] text-sm">
             <div className="flex flex-col items-center gap-2">
-              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#D1D5DB" strokeWidth={1.5}>
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" />
-              </svg>
+              <Icon icon="solar:document-linear" width={32} height={32} color="#D1D5DB" />
               <span>No {activeTab.toLowerCase()} in this collection</span>
             </div>
           </div>
@@ -443,9 +420,7 @@ function CreateCollectionModal({ onClose, onCreate }: {
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] flex-shrink-0">
           <h3 className="text-base font-semibold text-[#1A1A1A]">Create Collection</h3>
           <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
         <div className="p-6 space-y-4 overflow-y-auto">
@@ -469,9 +444,7 @@ function CreateCollectionModal({ onClose, onCreate }: {
           </Field>
           <Field label="Storage Location">
             <div className="flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" />
-              </svg>
+              <Icon icon="solar:cloud-linear" width={14} height={14} color="#9CA3AF" />
               <span className="text-sm text-[#6B7280]">PEEP SHARE Cloud</span>
             </div>
           </Field>
@@ -514,9 +487,7 @@ function ShareModal({ collection, onClose }: { collection: Collection; onClose: 
             <p className="text-xs text-[#9CA3AF]">{collection.name}</p>
           </div>
           <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
 
@@ -530,9 +501,10 @@ function ShareModal({ collection, onClose }: { collection: Collection; onClose: 
               </div>
               <button
                 onClick={handleCopy}
-                className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${copied ? 'bg-green-50 border-green-200 text-green-700' : 'border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]'}`}
+                className={`inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${copied ? 'bg-green-50 border-green-200 text-green-700' : 'border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]'}`}
               >
-                {copied ? '✓ Copied' : 'Copy Link'}
+                {copied && <Icon icon="solar:check-circle-bold" width={13} height={13} />}
+                {copied ? 'Copied' : 'Copy Link'}
               </button>
             </div>
           </div>

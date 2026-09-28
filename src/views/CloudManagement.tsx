@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { events } from '../data/mock';
+import { Icon } from '@iconify/react';
 
 const USED_GB = 28.5;
 const TOTAL_GB = 100;
@@ -45,19 +46,15 @@ export default function CloudManagement() {
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-xl font-semibold text-[#1A1A1A]">Cloud Management</h2>
-          <p className="text-sm text-[#6B7280] mt-0.5">Manage your PEEP SHARE cloud storage and storage plans</p>
-        </div>
+      <div>
+        <h2 className="text-xl font-semibold text-[#1A1A1A]">Cloud Management</h2>
+        <p className="text-sm text-[#6B7280] mt-0.5">Manage your PEEP SHARE cloud storage and storage plans</p>
       </div>
 
       {/* Warning banner if near full */}
       {usageState === 'warning' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex flex-wrap items-center gap-3">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#D97706" strokeWidth={2} className="flex-shrink-0">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
+          <Icon icon="solar:danger-triangle-linear" width={16} height={16} color="#D97706" className="flex-shrink-0" />
           <span className="text-sm text-amber-800 font-medium">Storage almost full — {USED_GB} GB / {TOTAL_GB} GB used. {AVAILABLE_GB} GB remaining.</span>
           <button className="sm:ml-auto text-xs font-semibold text-[#FF6115] hover:underline">Upgrade Storage</button>
         </div>
@@ -69,9 +66,7 @@ export default function CloudManagement() {
         <div className="lg:col-span-1 bg-white rounded-xl border border-[#E5E7EB] p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 rounded-lg bg-[#FFF0E8] flex items-center justify-center">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#FF6115" strokeWidth={2}>
-                <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" />
-              </svg>
+              <Icon icon="solar:cloud-linear" width={16} height={16} color="#FF6115" />
             </div>
             <h3 className="text-sm font-semibold text-[#1A1A1A]">Cloud Storage</h3>
           </div>
@@ -201,9 +196,7 @@ export default function CloudManagement() {
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 className="text-sm font-semibold text-[#1A1A1A]">Storage Usage by Event</h3>
           <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-            </svg>
+            <Icon icon="solar:magnifer-linear" width={13} height={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
             <input
               type="text"
               placeholder="Search events..."
@@ -228,9 +221,7 @@ export default function CloudManagement() {
                   <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] whitespace-nowrap">{row.event}</td>
                   <td className="px-4 py-3.5 text-sm text-[#6B7280] whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
-                      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                      </svg>
+                      <Icon icon="solar:folder-linear" width={13} height={13} color="#9CA3AF" />
                       {row.collection}
                     </div>
                   </td>

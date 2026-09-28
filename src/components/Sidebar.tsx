@@ -1,93 +1,7 @@
 import { useState } from 'react';
+import { Icon } from '@iconify/react';
 
-// --- Icon components defined before navSections to avoid transform hoisting issues ---
-
-function CalendarIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-    </svg>
-  );
-}
-function ClipboardIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h4" />
-    </svg>
-  );
-}
-function ChartBarIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M9 19V6l12-3v13M9 19H3M21 19h-5.5" /><circle cx="3" cy="19" r="2" /><circle cx="21" cy="19" r="2" /><circle cx="9" cy="19" r="2" />
-    </svg>
-  );
-}
-function DocumentIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-    </svg>
-  );
-}
-function CloudIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" />
-    </svg>
-  );
-}
-function FolderIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-    </svg>
-  );
-}
-function PhotoIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
-    </svg>
-  );
-}
-function SyncIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M4 4v5h5M20 20v-5h-5" /><path d="M20.49 9A9 9 0 005.64 5.64L4 4M3.51 15a9 9 0 0014.85 3.36L20 20" />
-    </svg>
-  );
-}
-function UsersIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-    </svg>
-  );
-}
-function ShieldIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-function ListIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-    </svg>
-  );
-}
-function SettingsIcon() {
-  return (
-    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-      <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-    </svg>
-  );
-}
-
-// --- Nav structure (defined after icons to guarantee availability) ---
+// --- Nav structure ---
 
 type NavItem = {
   id: string;
@@ -105,43 +19,42 @@ const navSections: NavSection[] = [
   {
     title: 'EVENT MANAGEMENT',
     items: [
-      { id: 'event-list', label: 'Event List', icon: <CalendarIcon />, badge: 7 },
+      { id: 'event-list', label: 'Event List', icon: <Icon icon="solar:calendar-linear" width={16} height={16} />, badge: 7 },
     ],
   },
   {
     title: 'DATA',
     items: [
-      { id: 'registration', label: 'Registration Data', icon: <ClipboardIcon /> },
-      { id: 'survey', label: 'Survey & Feedback', icon: <ChartBarIcon /> },
-      { id: 'reports', label: 'Event Reports', icon: <DocumentIcon /> },
+      { id: 'registration', label: 'Registration Data', icon: <Icon icon="solar:clipboard-list-linear" width={16} height={16} /> },
+      { id: 'survey', label: 'Survey & Feedback', icon: <Icon icon="solar:chart-2-linear" width={16} height={16} /> },
     ],
   },
   {
     title: 'CLOUD',
     items: [
-      { id: 'cloud', label: 'Cloud Management', icon: <CloudIcon /> },
-      { id: 'collections', label: 'Collections', icon: <FolderIcon /> },
+      { id: 'cloud', label: 'Cloud Management', icon: <Icon icon="solar:cloud-linear" width={16} height={16} /> },
+      { id: 'collections', label: 'Collections', icon: <Icon icon="solar:folder-linear" width={16} height={16} /> },
     ],
   },
   {
     title: 'PHOTOS',
     items: [
-      { id: 'photos', label: 'Photo Management', icon: <PhotoIcon /> },
-      { id: 'sync', label: 'Sync Activity', icon: <SyncIcon /> },
+      { id: 'photos', label: 'Photo Management', icon: <Icon icon="solar:gallery-linear" width={16} height={16} /> },
+      { id: 'sync', label: 'Sync Activity', icon: <Icon icon="solar:refresh-circle-linear" width={16} height={16} /> },
     ],
   },
   {
     title: 'USERS & ACCESS',
     items: [
-      { id: 'users', label: 'User Management', icon: <UsersIcon /> },
-      { id: 'roles', label: 'Role Management', icon: <ShieldIcon /> },
+      { id: 'users', label: 'User Management', icon: <Icon icon="solar:users-group-rounded-linear" width={16} height={16} /> },
+      { id: 'roles', label: 'Role Management', icon: <Icon icon="solar:shield-linear" width={16} height={16} /> },
     ],
   },
   {
     title: 'SYSTEM',
     items: [
-      { id: 'activity', label: 'Activity Log', icon: <ListIcon /> },
-      { id: 'settings', label: 'System Settings', icon: <SettingsIcon /> },
+      { id: 'activity', label: 'Activity Log', icon: <Icon icon="solar:history-linear" width={16} height={16} /> },
+      { id: 'settings', label: 'System Settings', icon: <Icon icon="solar:settings-linear" width={16} height={16} /> },
     ],
   },
 ];
@@ -173,13 +86,9 @@ function SidebarLogo({ collapsed, onToggleCollapse, onClose }: { collapsed: bool
           className="ml-auto text-[#6B7280] hover:text-[#1A1A1A] flex-shrink-0 transition-colors"
         >
           {collapsed ? (
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path d="M9 18l6-6-6-6" />
-            </svg>
+            <Icon icon="solar:alt-arrow-right-linear" width={16} height={16} />
           ) : (
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            <Icon icon="solar:alt-arrow-left-linear" width={16} height={16} />
           )}
         </button>
       )}
@@ -189,9 +98,7 @@ function SidebarLogo({ collapsed, onToggleCollapse, onClose }: { collapsed: bool
           className="ml-auto text-[#6B7280] hover:text-[#1A1A1A] flex-shrink-0 transition-colors"
           aria-label="Close menu"
         >
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <Icon icon="solar:close-linear" width={18} height={18} />
         </button>
       )}
     </div>

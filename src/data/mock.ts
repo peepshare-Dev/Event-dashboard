@@ -1,3 +1,51 @@
+export type ServiceEnvironment = 'Production' | 'Staging';
+
+export interface ServiceConfig {
+  id: string;
+  name: string;
+  description: string;
+  environment: ServiceEnvironment;
+  icon: string;
+}
+
+export const services: ServiceConfig[] = [
+  {
+    id: 'event-dashboard',
+    name: 'Event Dashboard',
+    description: 'Manage and monitor event activities, participants, and event performance.',
+    environment: 'Production',
+    icon: 'solar:calendar-linear',
+  },
+  {
+    id: 'peep-oa',
+    name: 'PEEP OA',
+    description: 'Manage Official Account conversations, broadcasts, rich menus, and customer engagement.',
+    environment: 'Production',
+    icon: 'solar:chat-round-line-linear',
+  },
+  {
+    id: 'peeps-oa-staging',
+    name: 'PEEPS OA Official Staging',
+    description: 'Access the PEEPS OA staging environment for testing and development.',
+    environment: 'Staging',
+    icon: 'solar:chat-round-line-linear',
+  },
+  {
+    id: 'coupon',
+    name: 'Coupon',
+    description: 'Create, manage, and monitor coupons and promotional campaigns.',
+    environment: 'Production',
+    icon: 'solar:ticket-sale-linear',
+  },
+  {
+    id: 'set-event',
+    name: 'Set Event',
+    description: 'Configure and manage event settings, information, and event structure.',
+    environment: 'Production',
+    icon: 'solar:settings-linear',
+  },
+];
+
 export type EventStatus = 'Draft' | 'Upcoming' | 'Ongoing' | 'Completed' | 'Archived';
 export type UserStatus = 'Active' | 'Suspended' | 'Inactive';
 export type RoleType = 'Super Admin' | 'Event Admin' | 'Event Staff' | 'Photographer' | 'Viewer';
@@ -49,6 +97,7 @@ export interface Role {
 
 export interface RegistrationRow {
   id: number;
+  eventId: number;
   name: string;
   phone: string;
   email: string;
@@ -75,6 +124,34 @@ export interface ActivityEntry {
   action: string;
   event: string;
   details: string;
+}
+
+export type SurveyQuestionType = 'radio' | 'text' | 'rating';
+
+export interface SurveyQuestion {
+  id: string;
+  label: string;
+  type: SurveyQuestionType;
+  options?: string[];
+}
+
+export interface SurveySubmission {
+  id: number;
+  ip: string;
+  peepshareId: string;
+  answers: Record<string, string | number>;
+  submittedAt: string;
+}
+
+export interface SurveyForm {
+  id: number;
+  eventId: number;
+  title: string;
+  description: string;
+  status: 'Active' | 'Closed';
+  createdDate: string;
+  questions: SurveyQuestion[];
+  submissions: SurveySubmission[];
 }
 
 export const events: Event[] = [
@@ -179,14 +256,19 @@ export const allPermissions: Record<string, string[]> = {
 };
 
 export const registrationData: RegistrationRow[] = [
-  { id: 1, name: 'Suchada Thammasiri', phone: '081-234-5678', email: 'suchada@email.com', eventDate: '5 Sep 2026', username: '@suchada.t', ticketType: 'VIP', checkedIn: true },
-  { id: 2, name: 'Kittipong Maneechai', phone: '089-876-5432', email: 'kittipong@email.com', eventDate: '5 Sep 2026', username: '@kittipong.m', ticketType: 'General', checkedIn: true },
-  { id: 3, name: 'Warunya Sompong', phone: '062-345-6789', email: 'warunya@email.com', eventDate: '6 Sep 2026', username: '@warunya.s', ticketType: 'General', checkedIn: false },
-  { id: 4, name: 'Pichaporn Rattanasak', phone: '090-123-4567', email: 'pichaporn@email.com', eventDate: '5 Sep 2026', username: '@picha.r', ticketType: 'VIP', checkedIn: true },
-  { id: 5, name: 'Thanakorn Jiraphan', phone: '085-678-9012', email: 'thanakorn@email.com', eventDate: '6 Sep 2026', username: '@thanakorn.j', ticketType: 'General', checkedIn: true },
-  { id: 6, name: 'Nattapong Srisuk', phone: '087-234-5670', email: 'nattapong@email.com', eventDate: '5 Sep 2026', username: '@nattapong.s', ticketType: 'General', checkedIn: false },
-  { id: 7, name: 'Lalita Wongsakorn', phone: '091-345-6780', email: 'lalita@email.com', eventDate: '6 Sep 2026', username: '@lalita.w', ticketType: 'VIP', checkedIn: true },
-  { id: 8, name: 'Chaiwat Bunyaporn', phone: '083-456-7890', email: 'chaiwat@email.com', eventDate: '5 Sep 2026', username: '@chaiwat.b', ticketType: 'General', checkedIn: true },
+  { id: 1, eventId: 1, name: 'Suchada Thammasiri', phone: '081-234-5678', email: 'suchada@email.com', eventDate: '5 Sep 2026', username: '@suchada.t', ticketType: 'VIP', checkedIn: true },
+  { id: 2, eventId: 1, name: 'Kittipong Maneechai', phone: '089-876-5432', email: 'kittipong@email.com', eventDate: '5 Sep 2026', username: '@kittipong.m', ticketType: 'General', checkedIn: true },
+  { id: 3, eventId: 1, name: 'Warunya Sompong', phone: '062-345-6789', email: 'warunya@email.com', eventDate: '6 Sep 2026', username: '@warunya.s', ticketType: 'General', checkedIn: false },
+  { id: 4, eventId: 1, name: 'Pichaporn Rattanasak', phone: '090-123-4567', email: 'pichaporn@email.com', eventDate: '5 Sep 2026', username: '@picha.r', ticketType: 'VIP', checkedIn: true },
+  { id: 5, eventId: 1, name: 'Thanakorn Jiraphan', phone: '085-678-9012', email: 'thanakorn@email.com', eventDate: '6 Sep 2026', username: '@thanakorn.j', ticketType: 'General', checkedIn: true },
+  { id: 6, eventId: 1, name: 'Nattapong Srisuk', phone: '087-234-5670', email: 'nattapong@email.com', eventDate: '5 Sep 2026', username: '@nattapong.s', ticketType: 'General', checkedIn: false },
+  { id: 7, eventId: 1, name: 'Lalita Wongsakorn', phone: '091-345-6780', email: 'lalita@email.com', eventDate: '6 Sep 2026', username: '@lalita.w', ticketType: 'VIP', checkedIn: true },
+  { id: 8, eventId: 1, name: 'Chaiwat Bunyaporn', phone: '083-456-7890', email: 'chaiwat@email.com', eventDate: '5 Sep 2026', username: '@chaiwat.b', ticketType: 'General', checkedIn: true },
+  { id: 9, eventId: 3, name: 'Somsak Chareon', phone: '086-111-2233', email: 'somsak@email.com', eventDate: '20 Sep 2026', username: '@somsak.c', ticketType: 'General', checkedIn: true },
+  { id: 10, eventId: 3, name: 'Napat Wongsuwan', phone: '089-222-3344', email: 'napat@email.com', eventDate: '20 Sep 2026', username: '@napat.w', ticketType: 'VIP', checkedIn: true },
+  { id: 11, eventId: 3, name: 'Ploy Achara', phone: '081-333-4455', email: 'ploy@email.com', eventDate: '20 Sep 2026', username: '@ploy.a', ticketType: 'General', checkedIn: false },
+  { id: 12, eventId: 6, name: 'Kanya Srisuwan', phone: '062-444-5566', email: 'kanya@email.com', eventDate: '13 Apr 2026', username: '@kanya.s', ticketType: 'General', checkedIn: true },
+  { id: 13, eventId: 6, name: 'Decha Thongchai', phone: '090-555-6677', email: 'decha@email.com', eventDate: '13 Apr 2026', username: '@decha.t', ticketType: 'General', checkedIn: true },
 ];
 
 export const syncActivity: SyncEntry[] = [
@@ -208,4 +290,132 @@ export const activityLog: ActivityEntry[] = [
   { id: 6, timestamp: '2026-09-21 12:00', user: 'Admin (Suchada)', action: 'Changed role', event: 'PEEP Sport Day', details: 'Changed Palm Surachet role to Event Staff' },
   { id: 7, timestamp: '2026-09-21 13:20', user: 'Mint Wanida', action: 'Uploaded photos', event: 'PEEP Sport Day', details: 'Uploaded 450 photos' },
   { id: 8, timestamp: '2026-09-21 14:05', user: 'Nong Pattaraporn', action: 'Viewed report', event: 'MONOMAX Event', details: 'Viewed Event Report' },
+];
+
+const MONOMAX_QUESTIONS: SurveyQuestion[] = [
+  {
+    id: 'tier',
+    label: 'ระดับสมาชิก / แพ็กเกจของ MONOMAX',
+    type: 'radio',
+    options: [
+      'ไม่ได้เป็นสมาชิก Monomax',
+      'Entertainment: 129 บาท/เดือน หรือ 999 บาท/ปี',
+      'Sports Basic: 199 บาท/เดือน หรือ 1,599 บาท/ปี',
+      'Sports Standard: 399 บาท/เดือน หรือ 3,999 บาท/ปี',
+      'Sports Premium: 599 บาท/เดือน หรือ 5,999 บาท/ปี',
+    ],
+  },
+  {
+    id: 'visits',
+    label: 'เคยเดินทางมางาน MONOMAX : PREMIER LEAGUE WATCH PARTY จำนวนกี่ครั้ง',
+    type: 'radio',
+    options: ['1 ครั้ง (เข้าร่วมเป็นครั้งแรก)', '2 ครั้ง', '3 ครั้ง', 'มากกว่า 3 ครั้ง'],
+  },
+  {
+    id: 'feeling',
+    label: 'ความรู้สึกและความประทับใจที่มีต่องาน MONOMAX : PREMIER LEAGUE WATCH PARTY',
+    type: 'text',
+  },
+  {
+    id: 'suggestion',
+    label: 'ข้อเสนอแนะเพิ่มเติมสำหรับการจัดงาน MONOMAX : PREMIER LEAGUE WATCH PARTY',
+    type: 'text',
+  },
+  {
+    id: 'rating',
+    label: 'ท่านให้คะแนนการจัดงาน MONOMAX : PREMIER LEAGUE WATCH PARTY',
+    type: 'rating',
+  },
+];
+
+export const surveyForms: SurveyForm[] = [
+  {
+    id: 28,
+    eventId: 1,
+    title: 'แบบสอบถามความพึงพอใจของงาน MONOMAX : PREMIER LEAGUE WATCH PARTY วันที่ 19 กันยายน 2569',
+    description: 'แบบสอบถามฉบับนี้จัดทำขึ้นเพื่อสำรวจความพึงพอใจและรับฟังความคิดเห็นของลูกค้างาน MONOMAX : PREMIER LEAGUE WATCH PARTY วันที่ 19 กันยายน 2569',
+    status: 'Active',
+    createdDate: '2026-09-15',
+    questions: MONOMAX_QUESTIONS,
+    submissions: [
+      {
+        id: 1,
+        ip: '162.158.204.174',
+        peepshareId: '3363.XFkC',
+        answers: {
+          tier: 'ไม่ได้เป็นสมาชิก Monomax',
+          visits: '1 ครั้ง (เข้าร่วมเป็นครั้งแรก)',
+          feeling: 'จัดสถานที่ได้ดี',
+          suggestion: 'ยังไม่มีความเห็น เพราะเท่าที่สัมผัส ก็โอเคดีอยู่แล้วครับ',
+          rating: 5,
+        },
+        submittedAt: '19-09-2026 22:02',
+      },
+      {
+        id: 2,
+        ip: '162.158.204.174',
+        peepshareId: 'NatdanaiC',
+        answers: {
+          tier: 'Sports Premium: 599 บาท/เดือน หรือ 5,999 บาท/ปี',
+          visits: '1 ครั้ง (เข้าร่วมเป็นครั้งแรก)',
+          feeling: 'จอใหญ่ ที่นั่งเยอะ',
+          suggestion: 'อยากได้ที่นั่งแบบที่มีพนักพิง',
+          rating: 4,
+        },
+        submittedAt: '19-09-2026 22:24',
+      },
+      {
+        id: 3,
+        ip: '172.71.210.28',
+        peepshareId: '8484.JxPM',
+        answers: {
+          tier: 'Sports Premium: 599 บาท/เดือน หรือ 5,999 บาท/ปี',
+          visits: '1 ครั้ง (เข้าร่วมเป็นครั้งแรก)',
+          feeling: 'ดีมาก สถานที่กว้าง สะอาด ผู้คนสุภาพไม่รู้สึกแออัด บรรยากาศดีมากครับ',
+          suggestion: 'เชิญสาวสวยมาเยอะๆ เพื่อให้บรรยากาศคึกคักมากขึ้น และอยากให้มีของที่ระลึกแจกด้วยครับ',
+          rating: 5,
+        },
+        submittedAt: '20-09-2026 18:14',
+      },
+    ],
+  },
+  {
+    id: 29,
+    eventId: 1,
+    title: 'แบบสอบถามความพึงพอใจของงาน MONOMAX : PREMIER LEAGUE WATCH PARTY วันที่ 20 กันยายน 2569',
+    description: 'แบบสอบถามฉบับนี้จัดทำขึ้นเพื่อสำรวจความพึงพอใจและรับฟังความคิดเห็นของลูกค้างาน MONOMAX : PREMIER LEAGUE WATCH PARTY วันที่ 20 กันยายน 2569',
+    status: 'Active',
+    createdDate: '2026-09-20',
+    questions: MONOMAX_QUESTIONS,
+    submissions: [],
+  },
+  {
+    id: 12,
+    eventId: 3,
+    title: 'แบบสอบถามความพึงพอใจของงาน PEEP Sport Day',
+    description: 'แบบสอบถามฉบับนี้จัดทำขึ้นเพื่อสำรวจความพึงพอใจและรับฟังความคิดเห็นของผู้เข้าร่วมงาน PEEP Sport Day',
+    status: 'Closed',
+    createdDate: '2026-09-18',
+    questions: [
+      { id: 'checkin', label: 'ความสะดวกในการลงทะเบียนเข้างาน', type: 'rating' },
+      { id: 'activity', label: 'กิจกรรมที่ประทับใจที่สุด', type: 'text' },
+      { id: 'suggestion', label: 'ข้อเสนอแนะสำหรับการจัดงานครั้งถัดไป', type: 'text' },
+    ],
+    submissions: [
+      {
+        id: 1,
+        ip: '203.150.12.44',
+        peepshareId: '1102.QwPz',
+        answers: { checkin: 4, activity: 'การแข่งขันวิ่งผลัดทีม สนุกและได้ลุ้นตลอดเวลา', suggestion: 'อยากให้มีจุดพักที่ร่มเยอะขึ้น' },
+        submittedAt: '18-09-2026 16:40',
+      },
+      {
+        id: 2,
+        ip: '203.150.12.60',
+        peepshareId: 'Warunya_S',
+        answers: { checkin: 5, activity: 'บูธถ่ายรูปทีม', suggestion: 'จัดต่อทุกปีเลยค่ะ' },
+        submittedAt: '18-09-2026 17:05',
+      },
+    ],
+  },
 ];
