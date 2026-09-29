@@ -1,16 +1,38 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
 
+export interface RoleSwitcherOption {
+  value: string;
+  label: string;
+}
+
 interface HeaderProps {
   onMenuClick?: () => void;
   showLogo?: boolean;
   onProfileClick?: () => void;
   onSwitchService?: () => void;
   onLogout?: () => void;
+  userName?: string;
+  userRoleLabel?: string;
+  roleSwitcher?: {
+    role: string;
+    options: RoleSwitcherOption[];
+    onChange: (role: string) => void;
+  };
 }
 
-export default function Header({ onMenuClick, showLogo, onProfileClick, onSwitchService, onLogout }: HeaderProps) {
+export default function Header({
+  onMenuClick,
+  showLogo,
+  onProfileClick,
+  onSwitchService,
+  onLogout,
+  userName = '@suchada.t',
+  userRoleLabel = 'Super Admin',
+  roleSwitcher,
+}: HeaderProps) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
   const menuItems = [
     { label: 'User Profile', icon: 'solar:user-linear', onClick: onProfileClick },
@@ -41,6 +63,49 @@ export default function Header({ onMenuClick, showLogo, onProfileClick, onSwitch
       )}
 
       <div className="flex items-center gap-2 lg:gap-3 ml-auto">
+        {/* Role switcher (preview) */}
+        {roleSwitcher && (
+          <div className="relative">
+            <button
+              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+              className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-[#1A1A1A] transition-colors border border-[#E5E7EB] rounded-md px-2.5 py-1.5"
+            >
+              <Icon icon="solar:users-group-rounded-linear" width={14} height={14} />
+              <span className="hidden sm:inline">
+                {roleSwitcher.options.find((o) => o.value === roleSwitcher.role)?.label ?? roleSwitcher.role}
+              </span>
+              <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} />
+            </button>
+
+            {showRoleDropdown && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowRoleDropdown(false)} />
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1.5 overflow-hidden">
+                  <div className="px-4 py-1.5 text-[10px] font-semibold tracking-widest text-[#9CA3AF] uppercase">
+                    Preview as
+                  </div>
+                  {roleSwitcher.options.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setShowRoleDropdown(false);
+                        roleSwitcher.onChange(option.value);
+                      }}
+                      className={`w-full flex items-center px-4 py-2 text-sm text-left transition-colors ${
+                        option.value === roleSwitcher.role
+                          ? 'text-[#FF6115] bg-[#FFF0E8] font-medium'
+                          : 'text-[#4B5563] hover:bg-[#F9FAFB]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Language */}
         <button className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-[#1A1A1A] transition-colors border border-[#E5E7EB] rounded-md px-2.5 py-1.5">
           <Icon icon="solar:globe-linear" width={14} height={14} />
@@ -64,8 +129,8 @@ export default function Header({ onMenuClick, showLogo, onProfileClick, onSwitch
               <span className="text-[10px] font-bold text-white">ST</span>
             </div>
             <div className="text-left hidden sm:block">
-              <div className="text-xs font-semibold text-[#1A1A1A] leading-tight">@suchada.t</div>
-              <div className="text-[10px] text-[#6B7280]">Super Admin</div>
+              <div className="text-xs font-semibold text-[#1A1A1A] leading-tight">{userName}</div>
+              <div className="text-[10px] text-[#6B7280]">{userRoleLabel}</div>
             </div>
             <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} className="text-[#9CA3AF]" />
           </button>

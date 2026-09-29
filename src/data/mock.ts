@@ -17,6 +17,13 @@ export const services: ServiceConfig[] = [
     icon: 'solar:calendar-linear',
   },
   {
+    id: 'peep-sync',
+    name: 'PEEP SYNC',
+    description: 'Photographer workspace to view assigned events and upload, sync, and manage event photos in the cloud.',
+    environment: 'Production',
+    icon: 'solar:camera-linear',
+  },
+  {
     id: 'peep-oa',
     name: 'PEEP OA',
     description: 'Manage Official Account conversations, broadcasts, rich menus, and customer engagement.',
@@ -48,7 +55,7 @@ export const services: ServiceConfig[] = [
 
 export type EventStatus = 'Draft' | 'Upcoming' | 'Ongoing' | 'Completed' | 'Archived';
 export type UserStatus = 'Active' | 'Suspended' | 'Inactive';
-export type RoleType = 'Super Admin' | 'Event Admin' | 'Event Staff' | 'Photographer' | 'Viewer';
+export type RoleType = 'Super Admin' | 'Event Admin' | 'Event Staff' | 'Photographer' | 'Data Viewer' | 'Viewer';
 export type SyncStatus = 'Uploading' | 'Processing' | 'Completed' | 'Failed';
 
 export interface Event {
@@ -216,6 +223,18 @@ export const roles: Role[] = [
       REPORT: ['View Event Report'],
       PHOTOS: ['View Photos'],
       MEMBERS: ['View Members'],
+      SYSTEM: [],
+    },
+  },
+  {
+    id: 'data-viewer', name: 'Data Viewer', description: 'View event list and all registration/survey data for assigned events. No access to photos, cloud, or system settings.', userCount: 8, status: 'Active',
+    permissions: {
+      EVENT: ['View Event'],
+      REGISTRATION: ['View Registration Data', 'Export Registration Data'],
+      SURVEY: ['View Survey', 'Export Survey Data'],
+      REPORT: [],
+      PHOTOS: [],
+      MEMBERS: [],
       SYSTEM: [],
     },
   },

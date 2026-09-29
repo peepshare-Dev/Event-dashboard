@@ -4,6 +4,7 @@ import ServiceSelection from './views/ServiceSelection';
 import ServiceLoading from './views/ServiceLoading';
 import ServicePlaceholder from './views/ServicePlaceholder';
 import EventDashboardApp from './views/EventDashboardApp';
+import PeepSyncApp from './views/PeepSyncApp';
 import { services } from './data/mock';
 
 type Screen =
@@ -51,6 +52,9 @@ export default function App() {
     if (service) {
       if (service.id === 'event-dashboard') {
         return <EventDashboardApp onSwitchService={handleSwitchService} onLogout={handleLogout} />;
+      }
+      if (service.id === 'peep-sync') {
+        return <PeepSyncApp onSwitchService={handleSwitchService} onLogout={handleLogout} />;
       }
       return (
         <ServicePlaceholder service={service} onSwitchService={handleSwitchService} onLogout={handleLogout} />

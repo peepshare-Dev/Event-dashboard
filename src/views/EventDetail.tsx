@@ -6,8 +6,8 @@ import RegistrationData from './RegistrationData';
 import SurveyFeedback from './SurveyFeedback';
 import { mockCollections, SHARING_COLORS } from './Collections';
 
-const TABS = ['Overview', 'Registration', 'Survey', 'Collections', 'Members & Access'] as const;
-type Tab = typeof TABS[number];
+const ALL_TABS = ['Overview', 'Registration', 'Survey', 'Collections', 'Members & Access'] as const;
+type Tab = typeof ALL_TABS[number];
 
 const STATUS_COLORS: Record<string, string> = {
   Draft: 'bg-gray-100 text-gray-600',
@@ -20,10 +20,11 @@ const STATUS_COLORS: Record<string, string> = {
 interface EventDetailProps {
   event: Event;
   onBack: () => void;
+  visibleTabs?: readonly Tab[];
 }
 
-export default function EventDetail({ event, onBack }: EventDetailProps) {
-  const [tab, setTab] = useState<Tab>('Overview');
+export default function EventDetail({ event, onBack, visibleTabs = ALL_TABS }: EventDetailProps) {
+  const [tab, setTab] = useState<Tab>(visibleTabs[0]);
 
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
@@ -67,7 +68,7 @@ export default function EventDetail({ event, onBack }: EventDetailProps) {
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="border-b border-[#E5E7EB] px-4 flex gap-1 overflow-x-auto">
-          {TABS.map(t => (
+          {visibleTabs.map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}

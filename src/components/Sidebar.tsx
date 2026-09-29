@@ -1,83 +1,47 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
-
-// --- Nav structure ---
-
-type NavItem = {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  badge?: number;
-};
-
-type NavSection = {
-  title: string;
-  items: NavItem[];
-};
-
-const navSections: NavSection[] = [
-  {
-    title: 'EVENT MANAGEMENT',
-    items: [
-      { id: 'event-list', label: 'Event List', icon: <Icon icon="solar:calendar-linear" width={16} height={16} />, badge: 7 },
-    ],
-  },
-  {
-    title: 'DATA',
-    items: [
-      { id: 'registration', label: 'Registration Data', icon: <Icon icon="solar:clipboard-list-linear" width={16} height={16} /> },
-      { id: 'survey', label: 'Survey & Feedback', icon: <Icon icon="solar:chart-2-linear" width={16} height={16} /> },
-    ],
-  },
-  {
-    title: 'CLOUD',
-    items: [
-      { id: 'cloud', label: 'Cloud Management', icon: <Icon icon="solar:cloud-linear" width={16} height={16} /> },
-      { id: 'collections', label: 'Collections', icon: <Icon icon="solar:folder-linear" width={16} height={16} /> },
-    ],
-  },
-  {
-    title: 'PHOTOS',
-    items: [
-      { id: 'photos', label: 'Photo Management', icon: <Icon icon="solar:gallery-linear" width={16} height={16} /> },
-      { id: 'sync', label: 'Sync Activity', icon: <Icon icon="solar:refresh-circle-linear" width={16} height={16} /> },
-    ],
-  },
-  {
-    title: 'USERS & ACCESS',
-    items: [
-      { id: 'users', label: 'User Management', icon: <Icon icon="solar:users-group-rounded-linear" width={16} height={16} /> },
-      { id: 'roles', label: 'Role Management', icon: <Icon icon="solar:shield-linear" width={16} height={16} /> },
-    ],
-  },
-  {
-    title: 'SYSTEM',
-    items: [
-      { id: 'activity', label: 'Activity Log', icon: <Icon icon="solar:history-linear" width={16} height={16} /> },
-      { id: 'settings', label: 'System Settings', icon: <Icon icon="solar:settings-linear" width={16} height={16} /> },
-    ],
-  },
-];
+import type { NavSection } from '../data/navigation';
 
 // --- Component ---
 
 interface SidebarProps {
   active: string;
   onNavigate: (id: string) => void;
+  sections: NavSection[];
+  logoInitials?: string;
+  logoTitle?: string;
+  logoSubtitle?: string;
+  userInitials?: string;
+  userName?: string;
+  userRoleLabel?: string;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
 
-function SidebarLogo({ collapsed, onToggleCollapse, onClose }: { collapsed: boolean; onToggleCollapse?: () => void; onClose?: () => void }) {
+function SidebarLogo({
+  collapsed,
+  logoInitials,
+  logoTitle,
+  logoSubtitle,
+  onToggleCollapse,
+  onClose,
+}: {
+  collapsed: boolean;
+  logoInitials: string;
+  logoTitle: string;
+  logoSubtitle: string;
+  onToggleCollapse?: () => void;
+  onClose?: () => void;
+}) {
   return (
     <div className="flex items-center gap-3 px-5 py-5 border-b border-[#E5E7EB]">
       <div className="w-8 h-8 rounded-lg bg-[#FF6115] flex items-center justify-center flex-shrink-0">
-        <span className="text-white text-xs font-bold">PS</span>
+        <span className="text-white text-xs font-bold">{logoInitials}</span>
       </div>
       {!collapsed && (
         <div className="min-w-0">
-          <div className="font-bold text-sm text-[#1A1A1A] leading-tight">PEEP SHARE</div>
-          <div className="text-xs text-[#6B7280]">Event Dashboard</div>
+          <div className="font-bold text-sm text-[#1A1A1A] leading-tight">{logoTitle}</div>
+          <div className="text-xs text-[#6B7280]">{logoSubtitle}</div>
         </div>
       )}
       {onToggleCollapse && (
@@ -105,10 +69,20 @@ function SidebarLogo({ collapsed, onToggleCollapse, onClose }: { collapsed: bool
   );
 }
 
-function SidebarNav({ active, collapsed, onItemClick }: { active: string; collapsed: boolean; onItemClick: (id: string) => void }) {
+function SidebarNav({
+  active,
+  collapsed,
+  sections,
+  onItemClick,
+}: {
+  active: string;
+  collapsed: boolean;
+  sections: NavSection[];
+  onItemClick: (id: string) => void;
+}) {
   return (
     <nav className="flex-1 overflow-y-auto py-3">
-      {navSections.map((section) => (
+      {sections.map((section) => (
         <div key={section.title} className="mb-1">
           {!collapsed && (
             <div className="px-5 pt-4 pb-1 text-[10px] font-semibold tracking-widest text-[#9CA3AF] uppercase">
@@ -151,24 +125,36 @@ function SidebarNav({ active, collapsed, onItemClick }: { active: string; collap
   );
 }
 
-function SidebarUser({ collapsed }: { collapsed: boolean }) {
+function SidebarUser({ collapsed, userInitials, userName, userRoleLabel }: { collapsed: boolean; userInitials: string; userName: string; userRoleLabel: string }) {
   if (collapsed) return null;
   return (
     <div className="border-t border-[#E5E7EB] px-4 py-3">
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-full bg-[#FF6115] flex items-center justify-center flex-shrink-0">
-          <span className="text-[10px] font-bold text-white">ST</span>
+          <span className="text-[10px] font-bold text-white">{userInitials}</span>
         </div>
         <div className="min-w-0">
-          <div className="text-xs font-medium text-[#1A1A1A] truncate">@suchada.t</div>
-          <div className="text-[10px] text-[#6B7280]">Super Admin</div>
+          <div className="text-xs font-medium text-[#1A1A1A] truncate">{userName}</div>
+          <div className="text-[10px] text-[#6B7280]">{userRoleLabel}</div>
         </div>
       </div>
     </div>
   );
 }
 
-export default function Sidebar({ active, onNavigate, mobileOpen = false, onMobileClose }: SidebarProps) {
+export default function Sidebar({
+  active,
+  onNavigate,
+  sections,
+  logoInitials = 'PS',
+  logoTitle = 'PEEP SHARE',
+  logoSubtitle = 'Event Dashboard',
+  userInitials = 'ST',
+  userName = '@suchada.t',
+  userRoleLabel = 'Super Admin',
+  mobileOpen = false,
+  onMobileClose,
+}: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -178,9 +164,15 @@ export default function Sidebar({ active, onNavigate, mobileOpen = false, onMobi
         className="hidden lg:flex flex-col h-screen bg-white border-r border-[#E5E7EB] transition-all duration-200 flex-shrink-0"
         style={{ width: collapsed ? 64 : 272 }}
       >
-        <SidebarLogo collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
-        <SidebarNav active={active} collapsed={collapsed} onItemClick={onNavigate} />
-        <SidebarUser collapsed={collapsed} />
+        <SidebarLogo
+          collapsed={collapsed}
+          logoInitials={logoInitials}
+          logoTitle={logoTitle}
+          logoSubtitle={logoSubtitle}
+          onToggleCollapse={() => setCollapsed(!collapsed)}
+        />
+        <SidebarNav active={active} collapsed={collapsed} sections={sections} onItemClick={onNavigate} />
+        <SidebarUser collapsed={collapsed} userInitials={userInitials} userName={userName} userRoleLabel={userRoleLabel} />
       </aside>
 
       {/* Mobile / tablet drawer (<1024px) */}
@@ -194,16 +186,23 @@ export default function Sidebar({ active, onNavigate, mobileOpen = false, onMobi
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <SidebarLogo collapsed={false} onClose={onMobileClose} />
+          <SidebarLogo
+            collapsed={false}
+            logoInitials={logoInitials}
+            logoTitle={logoTitle}
+            logoSubtitle={logoSubtitle}
+            onClose={onMobileClose}
+          />
           <SidebarNav
             active={active}
             collapsed={false}
+            sections={sections}
             onItemClick={(id) => {
               onNavigate(id);
               onMobileClose?.();
             }}
           />
-          <SidebarUser collapsed={false} />
+          <SidebarUser collapsed={false} userInitials={userInitials} userName={userName} userRoleLabel={userRoleLabel} />
         </aside>
       </div>
     </>

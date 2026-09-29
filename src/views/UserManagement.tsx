@@ -7,6 +7,7 @@ const ROLE_COLORS: Record<RoleType, string> = {
   'Event Admin': 'bg-blue-50 text-blue-700',
   'Event Staff': 'bg-[#FFF0E8] text-[#FF6115]',
   'Photographer': 'bg-green-50 text-green-700',
+  'Data Viewer': 'bg-sky-100 text-sky-700',
   'Viewer': 'bg-gray-100 text-gray-600',
 };
 
