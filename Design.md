@@ -6,7 +6,7 @@ PEEP SHARE Event Dashboard is an internal web application for managing
 Events, Event data, Cloud Storage, Collections, Photos, Users, Roles,
 and permissions.
 
-The product has two major concepts:
+The product has two major concept:
 
 1.  **Event Management**
     -   Events
