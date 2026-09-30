@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { events, users } from '../data/mock';
 import { Icon } from '@iconify/react';
 
@@ -46,7 +46,7 @@ const mockPhotos = Array.from({ length: 12 }, (_, i) => ({
   color: ['#FFE4D6', '#D6E8FF', '#D6FFE8', '#EDD6FF', '#FFF9D6', '#FFD6D6', '#D6FFF9', '#FFD6F9'][i % 8],
 }));
 
-export default function Collections() {
+export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void }) {
   const [collections, setCollections] = useState(mockCollections);
   const [search, setSearch] = useState('');
   const [sharingFilter, setSharingFilter] = useState<SharingType | 'All'>('All');
@@ -68,6 +68,7 @@ export default function Collections() {
         collection={selectedCollection}
         onBack={() => setSelectedCollection(null)}
         onShare={() => setShareCollection(selectedCollection)}
+        onPhotoSync={onPhotoSync}
       />
     );
   }
@@ -248,13 +249,35 @@ export default function Collections() {
   );
 }
 
-function CollectionDetail({ collection, onBack, onShare }: {
+function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
   collection: Collection;
   onBack: () => void;
   onShare: () => void;
+  onPhotoSync?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<FileTab>('Photos');
   const [selectedFiles, setSelectedFiles] = useState<number[]>([]);
+  const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const uploadMenuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showUploadMenu) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!uploadMenuRef.current?.contains(event.target as Node)) setShowUploadMenu(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowUploadMenu(false);
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [showUploadMenu]);
 
   const toggleFile = (id: number) => {
     setSelectedFiles(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
@@ -280,21 +303,79 @@ function CollectionDetail({ collection, onBack, onShare }: {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button className="flex-1 sm:flex-none min-w-[110px] flex items-center justify-center gap-1.5 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] transition-colors">
-            <Icon icon="solar:download-linear" width={13} height={13} />
+          <button className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#667085] transition-colors hover:bg-[#F9FAFB] sm:flex-none">
+            <Icon icon="solar:download-linear" width={16} height={16} />
             Download
           </button>
           <button
             onClick={onShare}
-            className="flex-1 sm:flex-none min-w-[90px] flex items-center justify-center gap-1.5 px-3 py-2 text-sm border border-[#FF6115] text-[#FF6115] rounded-lg hover:bg-[#FFF0E8] transition-colors"
+            className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#FF6115] px-3 text-sm text-[#FF6115] transition-colors hover:bg-[#FFF0E8] sm:flex-none"
           >
-            <Icon icon="solar:share-linear" width={13} height={13} />
+            <Icon icon="solar:share-linear" width={16} height={16} />
             Share
           </button>
-          <button className="flex-1 sm:flex-none min-w-[100px] flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors font-medium">
-            <Icon icon="solar:add-linear" width={13} height={13} />
-            Upload
-          </button>
+          <div ref={uploadMenuRef} className="relative flex-1 sm:flex-none">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={showUploadMenu}
+              onClick={() => setShowUploadMenu(open => !open)}
+              className="flex h-9 w-full min-w-[91px] items-center justify-center gap-2 rounded-lg bg-[#FF6115] px-3 text-sm font-medium text-white transition-colors hover:bg-[#E5540F]"
+            >
+              Upload
+              <Icon icon="solar:alt-arrow-down-linear" width={16} height={16} />
+            </button>
+
+            {showUploadMenu && (
+              <div
+                role="menu"
+                className="absolute right-0 top-[calc(100%+12px)] z-30 w-[calc(100vw-32px)] max-w-[320px] overflow-hidden rounded-2xl border border-[#EEF0F3] bg-white shadow-[0_10px_24px_rgba(17,24,39,0.14)]"
+              >
+                <div className="flex h-14 items-center justify-between border-b border-[#E5E7EB] px-5">
+                  <span className="text-base font-semibold text-[#1A1A1A]">เลือก Upload</span>
+                  <button
+                    type="button"
+                    aria-label="ปิดเมนู Upload"
+                    onClick={() => setShowUploadMenu(false)}
+                    className="flex h-8 w-8 items-center justify-center text-[#98A2B3] transition-colors hover:text-[#4B5563]"
+                  >
+                    <span aria-hidden="true" className="text-2xl font-light leading-none">×</span>
+                  </button>
+                </div>
+                <div className="px-3 py-2">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowUploadMenu(false);
+                      fileInputRef.current?.click();
+                    }}
+                    className="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left text-base text-[#667085] transition-colors hover:bg-[#FFF7F2] hover:text-[#1A1A1A]"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6115] text-white">
+                      <Icon icon="solar:calendar-linear" width={14} height={14} />
+                    </span>
+                    Upload รูปภาพด้วยตนเอง
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowUploadMenu(false);
+                      onPhotoSync?.();
+                    }}
+                    className="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left text-base text-[#667085] transition-colors hover:bg-[#FFF7F2] hover:text-[#1A1A1A]"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6115] text-white">
+                      <Icon icon="solar:calendar-linear" width={14} height={14} />
+                    </span>
+                    Photo Sync
+                  </button>
+                </div>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" />
+          </div>
         </div>
       </div>
 

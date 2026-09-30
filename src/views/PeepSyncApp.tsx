@@ -57,7 +57,7 @@ export default function PeepSyncApp({ onSwitchService, onLogout }: PeepSyncAppPr
                 <EventList onSelectEvent={(ev) => setSelectedEvent(ev)} />
               )}
               {activeNav === 'cloud' && <CloudManagement />}
-              {activeNav === 'collections' && <Collections />}
+              {activeNav === 'collections' && <Collections onPhotoSync={() => handleNavigate('photo-sync')} />}
               {activeNav === 'photo-sync' && <PhotoManagement />}
             </>
           )}
