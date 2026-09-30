@@ -7,14 +7,10 @@ import RegistrationData from './RegistrationData';
 import SurveyFeedback from './SurveyFeedback';
 import PhotoManagement from './PhotoManagement';
 import SyncActivity from './SyncActivity';
-import UserManagement from './UserManagement';
-import RoleManagement, { RoleDetail } from './RoleManagement';
-import ActivityLog from './ActivityLog';
-import SystemSettings from './SystemSettings';
 import CloudManagement from './CloudManagement';
 import Collections from './Collections';
 import { adminNavSections, dataViewerNavSections, type DashboardRole } from '../data/navigation';
-import type { Event, Role } from '../data/mock';
+import type { Event } from '../data/mock';
 
 const DATA_VIEWER_TABS = ['Registration', 'Survey'] as const;
 
@@ -25,11 +21,7 @@ type NavId =
   | 'cloud'
   | 'collections'
   | 'photos'
-  | 'sync'
-  | 'users'
-  | 'roles'
-  | 'activity'
-  | 'settings';
+  | 'sync';
 
 const ROLE_OPTIONS = [
   { value: 'admin', label: 'Super Admin' },
@@ -50,7 +42,6 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
   const [role, setRole] = useState<DashboardRole>('admin');
   const [activeNav, setActiveNav] = useState<NavId>('event-list');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navSections = role === 'admin' ? adminNavSections : dataViewerNavSections;
@@ -58,14 +49,12 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
   const handleNavigate = (id: string) => {
     setActiveNav(id as NavId);
     setSelectedEvent(null);
-    setSelectedRole(null);
   };
 
   const handleRoleChange = (nextRole: string) => {
     const parsedRole = nextRole as DashboardRole;
     setRole(parsedRole);
     setSelectedEvent(null);
-    setSelectedRole(null);
     setActiveNav('event-list');
   };
 
@@ -97,8 +86,6 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
               onBack={() => setSelectedEvent(null)}
               visibleTabs={role === 'data-viewer' ? DATA_VIEWER_TABS : undefined}
             />
-          ) : selectedRole ? (
-            <RoleDetail role={selectedRole} onBack={() => setSelectedRole(null)} />
           ) : (
             <>
               {activeNav === 'event-list' && <EventList onSelectEvent={(ev) => setSelectedEvent(ev)} />}
@@ -108,12 +95,6 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
               {activeNav === 'collections' && <Collections />}
               {activeNav === 'photos' && <PhotoManagement />}
               {activeNav === 'sync' && <SyncActivity />}
-              {activeNav === 'users' && <UserManagement />}
-              {activeNav === 'roles' && (
-                <RoleManagement onSelectRole={(role) => setSelectedRole(role)} />
-              )}
-              {activeNav === 'activity' && <ActivityLog />}
-              {activeNav === 'settings' && <SystemSettings />}
             </>
           )}
         </main>

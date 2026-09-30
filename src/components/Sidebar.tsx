@@ -16,6 +16,8 @@ interface SidebarProps {
   userRoleLabel?: string;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  /** 'lg' uses larger nav text and spacing (Set Event). */
+  size?: 'md' | 'lg';
 }
 
 function SidebarLogo({
@@ -74,18 +76,21 @@ function SidebarNav({
   collapsed,
   sections,
   onItemClick,
+  size = 'md',
 }: {
   active: string;
   collapsed: boolean;
   sections: NavSection[];
   onItemClick: (id: string) => void;
+  size?: 'md' | 'lg';
 }) {
+  const lg = size === 'lg';
   return (
     <nav className="flex-1 overflow-y-auto py-3">
       {sections.map((section) => (
         <div key={section.title} className="mb-1">
           {!collapsed && (
-            <div className="px-5 pt-4 pb-1 text-[10px] font-semibold tracking-widest text-[#9CA3AF] uppercase">
+            <div className={`px-5 pt-4 text-[10px] font-semibold tracking-widest text-[#9CA3AF] uppercase ${lg ? 'pb-2' : 'pb-1'}`}>
               {section.title}
             </div>
           )}
@@ -96,14 +101,14 @@ function SidebarNav({
                 key={item.id}
                 onClick={() => onItemClick(item.id)}
                 title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-4 mx-2 py-2.5 rounded-lg text-sm transition-colors mb-0.5 ${collapsed ? 'justify-center' : ''} ${
+                className={`w-full flex items-center gap-3 px-4 mx-2 transition-colors ${lg ? 'py-3 rounded-xl text-base mb-1.5' : 'py-2.5 rounded-lg text-sm mb-0.5'} ${collapsed ? 'justify-center' : ''} ${
                   isActive
                     ? 'bg-[#FFF0E8] text-[#FF6115] font-medium'
-                    : 'text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#1A1A1A]'
+                    : `${lg ? 'text-[#374151]' : 'text-[#4B5563]'} hover:bg-[#F9FAFB] hover:text-[#1A1A1A]`
                 }`}
                 style={{ width: collapsed ? 48 : 'calc(100% - 16px)' }}
               >
-                <span className={`flex-shrink-0 ${isActive ? 'text-[#FF6115]' : 'text-[#9CA3AF]'}`}>
+                <span className={`flex-shrink-0 ${isActive ? 'text-[#FF6115]' : lg ? 'text-[#4B5563]' : 'text-[#9CA3AF]'}`}>
                   {item.icon}
                 </span>
                 {!collapsed && (
@@ -154,6 +159,7 @@ export default function Sidebar({
   userRoleLabel = 'Super Admin',
   mobileOpen = false,
   onMobileClose,
+  size = 'md',
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -171,7 +177,7 @@ export default function Sidebar({
           logoSubtitle={logoSubtitle}
           onToggleCollapse={() => setCollapsed(!collapsed)}
         />
-        <SidebarNav active={active} collapsed={collapsed} sections={sections} onItemClick={onNavigate} />
+        <SidebarNav active={active} collapsed={collapsed} sections={sections} onItemClick={onNavigate} size={size} />
         <SidebarUser collapsed={collapsed} userInitials={userInitials} userName={userName} userRoleLabel={userRoleLabel} />
       </aside>
 
@@ -197,6 +203,7 @@ export default function Sidebar({
             active={active}
             collapsed={false}
             sections={sections}
+            size={size}
             onItemClick={(id) => {
               onNavigate(id);
               onMobileClose?.();
