@@ -1,10 +1,11 @@
 import { Icon } from '@iconify/react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'destructive';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
   primary: 'bg-[#FF6115] hover:bg-[#E5540F] text-white',
   secondary: 'bg-white border border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB]',
+  ghost: 'bg-transparent text-[#374151] hover:bg-[#F3F4F6]',
   destructive: 'bg-[#DC2626] hover:bg-[#B91C1C] text-white',
 };
 

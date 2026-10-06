@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import BackToTop from '../components/ui/BackToTop';
 import EventList from './EventList';
 import EventDetail from './EventDetail';
 import CloudManagement from './CloudManagement';
@@ -48,7 +49,7 @@ export default function PeepSyncApp({ onSwitchService, onLogout }: PeepSyncAppPr
           userRoleLabel="Photographer"
         />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="relative flex-1 overflow-y-auto overflow-x-hidden">
           {selectedEvent ? (
             <EventDetail event={selectedEvent} onBack={() => setSelectedEvent(null)} />
           ) : (
@@ -61,6 +62,7 @@ export default function PeepSyncApp({ onSwitchService, onLogout }: PeepSyncAppPr
               {activeNav === 'photo-sync' && <PhotoManagement />}
             </>
           )}
+          <BackToTop />
         </main>
       </div>
     </div>

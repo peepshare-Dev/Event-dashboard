@@ -2,11 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
+import BackToTop from '../../components/ui/BackToTop';
 import DeleteConfirmationModal from '../../components/ui/DeleteConfirmationModal';
 import EventWorkspaceSidebar from '../../components/set-event/EventWorkspaceSidebar';
 import SetEventList from './SetEventList';
 import EventFormPage, { type SaveAction } from './EventFormPage';
-import BannerImage from './BannerImage';
+import PromoManager from './promo/PromoManager';
+import { BANNER_PLACEMENT, COVER_PLACEMENT } from './promo/placements';
+import FormLibrary from './FormLibrary';
 import EventOverview from './workspace/EventOverview';
 import EventCollection from './workspace/EventCollection';
 import EventQrLinks from './workspace/EventQrLinks';
@@ -20,8 +23,9 @@ import SystemSettings from '../SystemSettings';
 import type { Role } from '../../data/mock';
 import { setEventNavSections, type EventSectionId } from '../../data/navigation';
 import { formatEventDateTime, setEventsSeed, withDetails, type SetEvent } from '../../data/setEvents';
+import { formTemplatesSeed, type FormTemplate } from '../../data/formTemplates';
 
-type NavId = 'event-list' | 'banner-image' | 'cloud' | 'collections' | 'users' | 'roles' | 'activity' | 'settings';
+type NavId = 'event-list' | 'regis-forms' | 'survey-forms' | 'app-banners' | 'app-cover-pages' | 'cloud' | 'collections' | 'users' | 'roles' | 'activity' | 'settings';
 
 // Inside Event List: the table, the Create Event page, or one saved event's workspace.
 type View =
@@ -36,6 +40,8 @@ interface SetEventAppProps {
 
 export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppProps) {
   const [events, setEvents] = useState<SetEvent[]>(setEventsSeed);
+  // Master Regis / Survey templates (Regis Form and Survey Form menus).
+  const [formTemplates, setFormTemplates] = useState<FormTemplate[]>(formTemplatesSeed);
   const [activeNav, setActiveNav] = useState<NavId>('event-list');
   const [view, setView] = useState<View>({ kind: 'list' });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -148,6 +154,7 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
             nextId={nextId}
             highlightPublish={highlightPublish}
             onDirtyChange={handleDirtyChange}
+            formTemplates={formTemplates}
             onBack={() => setView({ kind: 'list' })}
             onSave={handleSave}
             onMoveToTrash={(ev) => {
@@ -189,7 +196,7 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header onMenuClick={() => setMobileNavOpen(true)} onSwitchService={onSwitchService} onLogout={onLogout} />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main ref={mainRef} className="relative flex-1 overflow-y-auto overflow-x-hidden">
           {activeNav === 'event-list' && (
             <>
               {/* Kept mounted so tabs, filters and page survive a trip into an event. */}
@@ -206,6 +213,7 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
                   key="new"
                   nextId={nextId}
                   onDirtyChange={handleDirtyChange}
+                  formTemplates={formTemplates}
                   onBack={() => setView({ kind: 'list' })}
                   onSave={handleSave}
                 />
@@ -213,13 +221,31 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
               {view.kind === 'event' && openEvent && renderWorkspace(openEvent, view.section, view.highlightPublish)}
             </>
           )}
-          {activeNav === 'banner-image' && (
-            <BannerImage
+          {(activeNav === 'regis-forms' || activeNav === 'survey-forms') && (
+            <FormLibrary
+              key={activeNav}
+              kind={activeNav === 'regis-forms' ? 'registration' : 'survey'}
               events={events}
+              templates={formTemplates}
+              onTemplatesChange={(next, message) => {
+                setFormTemplates(next);
+                setToast(message);
+              }}
+              onUpdate={updateEvent}
               onOpenEvent={(ev) => {
                 setActiveNav('event-list');
                 setView({ kind: 'event', id: ev.id, section: 'detail' });
               }}
+            />
+          )}
+          {(activeNav === 'app-banners' || activeNav === 'app-cover-pages') && (
+            <PromoManager
+              // Key per menu, so switching between Banner and Cover Page starts fresh.
+              key={activeNav}
+              placement={activeNav === 'app-banners' ? BANNER_PLACEMENT : COVER_PLACEMENT}
+              events={events}
+              onToast={setToast}
+              onDirtyChange={handleDirtyChange}
             />
           )}
           {activeNav === 'cloud' && <CloudManagement />}
@@ -233,6 +259,7 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
             ))}
           {activeNav === 'activity' && <ActivityLog />}
           {activeNav === 'settings' && <SystemSettings />}
+          <BackToTop />
         </main>
       </div>
 

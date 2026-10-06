@@ -8,6 +8,7 @@ import sunsetBanner from '../assets/banners/sunset-groove-gala.svg';
 import pulseBanner from '../assets/banners/electric-pulse-festival.svg';
 import midnightBanner from '../assets/banners/midnight-harmony-bash.svg';
 import lunarBanner from '../assets/banners/lunar-beats-carnival.svg';
+import type { CommunicationSettings } from './automations';
 
 export type SetEventStatus = 'Published' | 'Pending' | 'Scheduled' | 'Draft' | 'Private' | 'Trash';
 export type TicketType = 'Free' | 'Paid';
@@ -34,11 +35,18 @@ export interface SetEventDetails {
   /** Rich-text HTML from the description editor */
   description: string;
   banner: { url: string; name: string } | null;
+  /** Wide banner used on event cards (2:1). */
+  cardBanner?: { url: string; name: string } | null;
   latitude: string;
   longitude: string;
+  /** Google Maps link for the venue. */
+  mapLink?: string;
   /** Local date-times, `YYYY-MM-DDTHH:mm` (empty when not set) */
   registrationStart: string;
   registrationEnd: string;
+  /** Multi-day registration window, `YYYY-MM-DDTHH:mm` (empty when not set) */
+  registrationOpensAt?: string;
+  registrationClosesAt?: string;
   surveySendTime: string;
   qrExpiresAt: string;
   allowJoin: boolean;
@@ -50,6 +58,76 @@ export interface SetEventDetails {
   password: string;
   /** Shareable links with QR codes (QR Code / Scanner). */
   qrLinks?: QrLink[];
+  /** What kind of event this is. */
+  eventType?: EventType | '';
+  /** Where it happens — decides which location fields apply. */
+  eventFormat?: EventFormat | '';
+  venueName?: string;
+  address?: string;
+  onlinePlatform?: string;
+  onlineUrl?: string;
+  accessInstructions?: string;
+  /** How attendees join — decides which registration settings apply. */
+  registrationType?: RegistrationType | '';
+  /** null = unlimited */
+  maxParticipants?: number | null;
+  /** THB; Paid registration only */
+  ticketPrice?: number | null;
+  paymentMethods?: PaymentMethod[];
+  /** Custom questions attendees answer when registering. */
+  eventForm?: EventFormConfig;
+  /** Feedback questions sent to attendees at `surveySendTime`. */
+  surveyForm?: EventFormConfig;
+  /** Automated PEEP OA messages (Communication). */
+  communication?: CommunicationSettings;
+}
+
+export type EventType =
+  | 'Concert'
+  | 'Festival'
+  | 'Conference'
+  | 'Seminar'
+  | 'Workshop'
+  | 'Sports'
+  | 'Competition'
+  | 'Exhibition'
+  | 'Casting / Audition'
+  | 'Community / Meetup'
+  | 'Campaign'
+  | 'Corporate Event'
+  | 'Other';
+export type EventFormat = 'Offline' | 'Online' | 'Hybrid';
+export type RegistrationType = 'Free' | 'Paid';
+export type PaymentMethod = 'PromptPay' | 'Credit / Debit Card' | 'Bank Transfer';
+export type FormFieldType =
+  | 'short-text'
+  | 'long-text'
+  | 'number'
+  | 'email'
+  | 'phone'
+  | 'date'
+  | 'single-choice'
+  | 'multiple-choice'
+  | 'dropdown'
+  | 'file';
+
+export interface EventFormField {
+  id: string;
+  label: string;
+  description: string;
+  type: FormFieldType;
+  required: boolean;
+  /** Choice / dropdown fields only */
+  options: string[];
+}
+
+export interface EventFormConfig {
+  enabled: boolean;
+  /** Master template this form was copied from (Regis Form / Survey Form menu). */
+  templateId?: string;
+  name: string;
+  description: string;
+  fields: EventFormField[];
 }
 
 export interface QrLink {
@@ -66,8 +144,11 @@ export function emptyDetails(): SetEventDetails {
     banner: null,
     latitude: '',
     longitude: '',
+    mapLink: '',
     registrationStart: '',
     registrationEnd: '',
+    registrationOpensAt: '',
+    registrationClosesAt: '',
     surveySendTime: '',
     qrExpiresAt: '',
     allowJoin: true,
@@ -90,13 +171,30 @@ export const EVENT_CATEGORIES: EventCategory[] = ['MONO', 'JAS', 'HR', 'LXL', 'o
 export const TICKET_TYPES: TicketType[] = ['Free', 'Paid'];
 export const EDITABLE_STATUSES: SetEventStatus[] = ['Draft', 'Pending', 'Private', 'Scheduled', 'Published'];
 
-// Registration form templates that can be attached to an event.
-export const REGISTRATION_FORM_TEMPLATES = [
-  'Standard Registration',
-  'Concert Ticket Registration',
-  'Workshop Sign-up',
-  'Staff Check-in Form',
+export const EVENT_TYPES: EventType[] = [
+  'Concert',
+  'Festival',
+  'Conference',
+  'Seminar',
+  'Workshop',
+  'Sports',
+  'Competition',
+  'Exhibition',
+  'Casting / Audition',
+  'Community / Meetup',
+  'Campaign',
+  'Corporate Event',
+  'Other',
 ];
+
+export const REGISTRATION_TYPE_LABELS: Record<RegistrationType, string> = {
+  Free: 'Free Registration',
+  Paid: 'Paid Registration',
+};
+
+export const PAYMENT_METHODS: PaymentMethod[] = ['PromptPay', 'Credit / Debit Card', 'Bank Transfer'];
+
+export const ONLINE_PLATFORMS = ['Zoom', 'Google Meet', 'Microsoft Teams', 'YouTube Live', 'Facebook Live', 'Other'];
 
 // --- Seed data ---
 
@@ -115,7 +213,7 @@ const featuredEvents: SetEvent[] = [
       surveySendTime: '2026-09-30T10:00',
       qrExpiresAt: '2026-09-30T23:59',
       allowJoin: true,
-      registrationForms: ['Concert Ticket Registration'],
+      registrationForms: [],
       collectionId: 1,
       scheduledAt: '',
       password: '',
@@ -173,9 +271,230 @@ const SAMPLE_BANNERS: Record<number, { url: string; name: string }> = {
   3906: { url: lunarBanner, name: 'lunar-beats-carnival.svg' },
 };
 
+// Sample Regis / Survey forms so the form list pages have content.
+const field = (id: string, label: string, type: FormFieldType, required = true, options: string[] = []): EventFormField => ({
+  id,
+  label,
+  description: '',
+  type,
+  required,
+  options,
+});
+const RATING = ['1', '2', '3', '4', '5'];
+
+const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
+  5931: {
+    eventForm: {
+      enabled: true,
+      templateId: 'tpl-concert',
+      name: 'Festival Registration',
+      description: 'Tell us a little about yourself before the festival.',
+      fields: [
+        field('f-5931-1', 'Full Name', 'short-text'),
+        field('f-5931-2', 'Email', 'email'),
+        field('f-5931-3', 'Phone Number', 'phone'),
+        field('f-5931-4', 'Ticket Zone', 'dropdown', true, ['GA', 'VIP', 'Backstage']),
+      ],
+    },
+    surveyForm: {
+      enabled: true,
+      templateId: 'tpl-satisfaction',
+      name: 'Post-festival Feedback',
+      description: 'Thank you for joining! Help us make next year even better.',
+      fields: [
+        field('s-5931-1', 'How satisfied were you with the festival overall?', 'single-choice', true, RATING),
+        field('s-5931-2', 'Which stage did you enjoy most?', 'dropdown', false, ['Main Stage', 'Forest Stage', 'Club Tent']),
+        field('s-5931-3', 'What could we improve?', 'long-text', false),
+      ],
+    },
+    surveySendTime: '2026-09-29T10:00',
+  },
+  4827: {
+    eventForm: {
+      enabled: true,
+      name: 'Jazz Night Sign-up',
+      description: '',
+      fields: [field('f-4827-1', 'Full Name', 'short-text'), field('f-4827-2', 'Seats', 'number'), field('f-4827-3', 'Dietary Needs', 'long-text', false)],
+    },
+    surveyForm: {
+      enabled: true,
+      templateId: 'tpl-quick',
+      name: 'Jazz Night Feedback',
+      description: '',
+      fields: [field('s-4827-1', 'Rate the performance', 'single-choice', true, RATING), field('s-4827-2', 'Comments', 'long-text', false)],
+    },
+  },
+  7394: {
+    eventForm: {
+      enabled: true,
+      name: 'Gala Invitation RSVP',
+      description: 'Please confirm your attendance by 25 September.',
+      fields: [
+        field('f-7394-1', 'Full Name', 'short-text'),
+        field('f-7394-2', 'Email', 'email'),
+        field('f-7394-3', 'Bringing a guest?', 'single-choice', true, ['Yes', 'No']),
+        field('f-7394-4', 'Guest Name', 'short-text', false),
+        field('f-7394-5', 'Dietary Requirements', 'multiple-choice', false, ['Vegetarian', 'Vegan', 'Halal', 'No seafood']),
+      ],
+    },
+    surveyForm: {
+      enabled: true,
+      name: 'Gala Evening Survey',
+      description: 'Thank you for celebrating with us.',
+      fields: [
+        field('s-7394-1', 'How was the evening overall?', 'single-choice', true, RATING),
+        field('s-7394-2', 'How was the food & drinks?', 'single-choice', true, RATING),
+        field('s-7394-3', 'Any message for the organizers?', 'long-text', false),
+      ],
+    },
+    surveySendTime: '2026-10-01T09:00',
+  },
+  8249: {
+    eventForm: {
+      enabled: false,
+      name: 'Harmony Bash Early Access',
+      description: 'Early-access sign-up (closed).',
+      fields: [field('f-8249-1', 'Full Name', 'short-text'), field('f-8249-2', 'Email', 'email'), field('f-8249-3', 'Date of Birth', 'date')],
+    },
+    surveyForm: {
+      enabled: true,
+      name: 'Midnight Harmony Feedback',
+      description: '',
+      fields: [
+        field('s-8249-1', 'Rate the line-up', 'single-choice', true, RATING),
+        field('s-8249-2', 'Which artist would you like to see next year?', 'short-text', false),
+        field('s-8249-3', 'Would you come again?', 'single-choice', true, ['Yes', 'Maybe', 'No']),
+      ],
+    },
+    surveySendTime: '2026-10-03T12:00',
+  },
+  6512: {
+    surveyForm: {
+      enabled: true,
+      name: 'Electric Pulse Crew Survey',
+      description: 'For volunteers and crew after the festival.',
+      fields: [
+        field('s-6512-1', 'How well were you briefed before your shift?', 'single-choice', true, RATING),
+        field('s-6512-2', 'Would you volunteer again?', 'single-choice', true, ['Yes', 'No']),
+        field('s-6512-3', 'Suggestions for next time', 'long-text', false),
+      ],
+    },
+    surveySendTime: '2026-10-02T10:00',
+    eventForm: {
+      enabled: true,
+      templateId: 'tpl-volunteer',
+      name: 'Volunteer Application',
+      description: 'Apply to join the Electric Pulse crew.',
+      fields: [
+        field('f-6512-1', 'Full Name', 'short-text'),
+        field('f-6512-2', 'Age', 'number'),
+        field('f-6512-3', 'Available Days', 'multiple-choice', true, ['Day 1', 'Day 2']),
+        field('f-6512-4', 'Portfolio / CV', 'file', false),
+      ],
+    },
+  },
+  3906: {
+    eventForm: {
+      enabled: true,
+      name: 'Carnival Entry Pass',
+      description: 'Register each member of your group for an entry wristband.',
+      fields: [
+        field('f-3906-1', 'Full Name', 'short-text'),
+        field('f-3906-2', 'Group Size', 'number'),
+        field('f-3906-3', 'Arrival Day', 'single-choice', true, ['Friday', 'Saturday', 'Sunday']),
+      ],
+    },
+    surveyForm: {
+      enabled: false,
+      name: 'Carnival Quick Rating',
+      description: '',
+      fields: [field('s-3906-1', 'Rate this event', 'single-choice', true, RATING)],
+    },
+  },
+};
+
+// Forms for the generated events, picked by what kind of event it is.
+type FieldSpec = [label: string, type: FormFieldType, required?: boolean, options?: string[]];
+const REGIS_BY_KIND: { match: string[]; suffix: string; description: string; fields: FieldSpec[]; templateId?: string }[] = [
+  {
+    match: ['Fun Run'],
+    suffix: 'Runner Registration',
+    description: 'Race kit pick-up details will be sent after you register.',
+    fields: [['Full Name', 'short-text'], ['Age', 'number'], ['Shirt Size', 'dropdown', true, ['S', 'M', 'L', 'XL']], ['Emergency Contact', 'phone']],
+  },
+  {
+    match: ['Tech Meetup', 'Live Session'],
+    suffix: 'Sign-up',
+    description: '',
+    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['Company', 'short-text', false], ['Job Title', 'short-text', false]],
+  },
+  {
+    match: ['Workshop', 'Wellness Expo'],
+    suffix: 'Booking',
+    templateId: 'tpl-workshop',
+    description: 'Seats are limited — book your spot.',
+    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['Experience Level', 'single-choice', true, ['Beginner', 'Intermediate', 'Advanced']], ['Anything we should know?', 'long-text', false]],
+  },
+  {
+    match: ['Food Fair', 'Art Market', 'Night Market', 'Book Fest'],
+    suffix: 'Vendor Application',
+    description: 'Apply for a booth. We’ll confirm within 3 working days.',
+    fields: [['Shop Name', 'short-text'], ['Contact Person', 'short-text'], ['Phone Number', 'phone'], ['Product Category', 'dropdown', true, ['Food', 'Drinks', 'Crafts', 'Fashion', 'Other']], ['Product Photos', 'file', false]],
+  },
+  {
+    match: ['Career Day'],
+    suffix: 'Candidate Registration',
+    description: '',
+    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['University', 'short-text'], ['Fields of Interest', 'multiple-choice', true, ['Engineering', 'Marketing', 'Finance', 'Design']], ['Resume', 'file', false]],
+  },
+  {
+    match: [],
+    suffix: 'Registration',
+    templateId: 'tpl-standard',
+    description: '',
+    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['Phone Number', 'phone']],
+  },
+];
+
+const SURVEY_KINDS: { suffix: string; templateId: string; fields: FieldSpec[] }[] = [
+  { suffix: 'Feedback', templateId: 'tpl-satisfaction', fields: [['How satisfied were you overall?', 'single-choice', true, RATING], ['What did you enjoy most?', 'long-text', false], ['Would you recommend it to a friend?', 'single-choice', true, ['Yes', 'Maybe', 'No']]] },
+  { suffix: 'Session Rating', templateId: 'tpl-session', fields: [['Rate the speaker', 'single-choice', true, RATING], ['How useful was the content?', 'single-choice', true, RATING], ['Topics for next time', 'long-text', false]] },
+  { suffix: 'Satisfaction Survey', templateId: 'tpl-venue', fields: [['Overall rating', 'single-choice', true, RATING], ['Venue & facilities', 'single-choice', true, RATING], ['Comments', 'long-text', false]] },
+  { suffix: 'Quick Poll', templateId: 'tpl-quick', fields: [['Rate this event', 'single-choice', true, RATING], ['Would you join again?', 'single-choice', true, ['Yes', 'No']]] },
+];
+
+const toFields = (prefix: string, specs: FieldSpec[]) => specs.map(([label, type, required = true, options = []], n) => field(`${prefix}-${n + 1}`, label, type, required, options));
+
+/** Adds a Regis form to every 3rd generated event and a survey to every 4th; a few are switched off. */
+function withGeneratedForms(event: SetEvent, i: number): SetEvent {
+  const patch: Partial<SetEventDetails> = {};
+  if (i % 3 === 0) {
+    const kind = REGIS_BY_KIND.find((k) => k.match.some((m) => event.name.endsWith(m))) ?? REGIS_BY_KIND[REGIS_BY_KIND.length - 1];
+    patch.eventForm = {
+      enabled: i % 9 !== 6,
+      templateId: kind.templateId,
+      name: `${event.name} ${kind.suffix}`,
+      description: kind.description,
+      fields: toFields(`f-${event.id}`, kind.fields),
+    };
+  }
+  if (i % 4 === 1) {
+    const kind = SURVEY_KINDS[Math.floor(i / 4) % SURVEY_KINDS.length];
+    patch.surveyForm = { enabled: i % 12 !== 5, templateId: kind.templateId, name: `${event.name} ${kind.suffix}`, description: '', fields: toFields(`s-${event.id}`, kind.fields) };
+    // Next morning at 10:00.
+    const next = new Date(`${event.endTime.slice(0, 10)}T00:00`);
+    next.setDate(next.getDate() + 1);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    patch.surveySendTime = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}T10:00`;
+  }
+  return Object.keys(patch).length ? withDetails(event, patch) : event;
+}
+
 export const setEventsSeed: SetEvent[] = [
-  ...featuredEvents.map((e) => (SAMPLE_BANNERS[e.id] ? withDetails(e, { banner: SAMPLE_BANNERS[e.id] }) : e)),
-  ...generateEvents(94),
+  ...featuredEvents.map((e) =>
+    SAMPLE_BANNERS[e.id] || SAMPLE_FORMS[e.id] ? withDetails(e, { ...(SAMPLE_BANNERS[e.id] && { banner: SAMPLE_BANNERS[e.id] }), ...SAMPLE_FORMS[e.id] }) : e,
+  ),
+  ...generateEvents(94).map(withGeneratedForms),
 ];
 
 // --- Query helpers ---

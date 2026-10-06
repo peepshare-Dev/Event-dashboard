@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import BackToTop from '../components/ui/BackToTop';
 import EventList from './EventList';
 import EventDetail from './EventDetail';
 import RegistrationData from './RegistrationData';
@@ -78,7 +79,7 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
           roleSwitcher={{ role, options: ROLE_OPTIONS, onChange: handleRoleChange }}
         />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="relative flex-1 overflow-y-auto overflow-x-hidden">
           {/* Event Detail overrides nav */}
           {selectedEvent ? (
             <EventDetail
@@ -97,6 +98,7 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
               {activeNav === 'sync' && <SyncActivity />}
             </>
           )}
+          <BackToTop />
         </main>
       </div>
     </div>

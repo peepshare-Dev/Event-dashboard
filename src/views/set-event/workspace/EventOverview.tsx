@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react';
 import Button from '../../../components/ui/Button';
 import SectionShell from './SectionShell';
 import { mockCollections } from '../../Collections';
-import { formatEventDateTime, type SetEvent } from '../../../data/setEvents';
+import { REGISTRATION_TYPE_LABELS, formatEventDateTime, type SetEvent } from '../../../data/setEvents';
 
 interface EventOverviewProps {
   event: SetEvent;
@@ -11,7 +11,9 @@ interface EventOverviewProps {
   onOpenQr: () => void;
 }
 
-const range = (start = '', end = '') => (start ? `${formatEventDateTime(start)} → ${end ? end.slice(11, 16) : '—'}` : '—');
+// Same-day ranges show only the end time; multi-day ranges show the full end date.
+const range = (start = '', end = '') =>
+  start ? `${formatEventDateTime(start)} → ${!end ? '—' : end.slice(0, 10) === start.slice(0, 10) ? end.slice(11, 16) : formatEventDateTime(end)}` : '—';
 
 export default function EventOverview({ event, onBack, onEdit, onOpenQr }: EventOverviewProps) {
   const d = event.details;
@@ -19,22 +21,31 @@ export default function EventOverview({ event, onBack, onEdit, onOpenQr }: Event
 
   const stats = [
     { label: 'Registrants', value: event.registrants.toLocaleString(), icon: 'solar:users-group-rounded-linear' },
-    { label: 'Registration forms', value: String(d?.registrationForms.length ?? 0), icon: 'solar:document-text-linear' },
+    { label: 'Registration forms', value: String((d?.registrationForms.length ?? 0) + (d?.eventForm?.enabled ? 1 : 0)), icon: 'solar:document-text-linear' },
     { label: 'QR links', value: String(d?.qrLinks?.length ?? 0), icon: 'solar:qr-code-linear', onClick: onOpenQr },
     { label: 'Collection files', value: collection ? collection.files.toLocaleString() : '—', icon: 'solar:folder-linear' },
   ];
 
+  const venue = [d?.venueName, d?.latitude && d?.longitude ? `${d.latitude}, ${d.longitude}` : ''].filter(Boolean).join(' · ');
   const details: [string, string][] = [
     ['Event date', range(event.startTime, event.endTime)],
-    ['Registration deadline', range(d?.registrationStart, d?.registrationEnd)],
-    ['Category', event.category || '—'],
-    ['Ticket type', event.ticketType],
+    ['Registration period', range(d?.registrationOpensAt || d?.registrationStart, d?.registrationClosesAt || d?.registrationEnd)],
+    ['Event type', d?.eventType || '—'],
+    ['Organizer', event.category || '—'],
+    ['Registration', d?.registrationType ? REGISTRATION_TYPE_LABELS[d.registrationType] : event.ticketType],
+    ['Capacity', d?.maxParticipants != null ? `${d.maxParticipants.toLocaleString()} people` : d?.registrationType ? 'Unlimited' : '—'],
     ['Author', event.author],
     ['Allow join', d ? (d.allowJoin ? 'Active' : 'Closed') : '—'],
     ['Send survey', formatEventDateTime(d?.surveySendTime ?? '')],
     ['QR code expires', formatEventDateTime(d?.qrExpiresAt ?? '')],
-    ['Location', d?.latitude && d?.longitude ? `${d.latitude}, ${d.longitude}` : '—'],
+    ['Event format', d?.eventFormat || '—'],
+    ['Location', venue || '—'],
+    ...(d?.onlineUrl ? [['Online', [d.onlinePlatform, d.onlineUrl].filter(Boolean).join(' · ')] as [string, string]] : []),
     ['Collection', collection?.name ?? '—'],
+    [
+      'Automated messages',
+      d?.communication?.enabled ? `${d.communication.automations.filter((a) => a.enabled).length} active` : 'Off',
+    ],
   ];
 
   return (
@@ -49,11 +60,6 @@ export default function EventOverview({ event, onBack, onEdit, onOpenQr }: Event
       }
     >
       <div className="space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold text-[#1A1A1A]">{event.name || 'Untitled'}</h2>
-          <p className="text-sm text-[#6B7280] mt-0.5">Event ID {event.id}</p>
-        </div>
-
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((s) => {
             const body = (

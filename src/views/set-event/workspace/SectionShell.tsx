@@ -1,8 +1,10 @@
 import StatusBadge from '../../../components/ui/StatusBadge';
+import CopyIdButton from '../../../components/set-event/CopyIdButton';
 import type { SetEvent } from '../../../data/setEvents';
 
 interface SectionShellProps {
   event: SetEvent;
+  /** Section name, shown in the breadcrumb (the page title is the event). */
   title: string;
   onBack: () => void;
   actions?: React.ReactNode;
@@ -11,7 +13,7 @@ interface SectionShellProps {
   children: React.ReactNode;
 }
 
-// Card frame shared by the event sections: breadcrumb with the event name, title, actions.
+// Card frame shared by the event sections: breadcrumb, the event as the page title, actions.
 export default function SectionShell({ event, title, onBack, actions, flush, children }: SectionShellProps) {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -28,7 +30,10 @@ export default function SectionShell({ event, title, onBack, actions, flush, chi
           </nav>
           <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <h1 className="text-[22px] font-medium text-[#1A1A1A] truncate">{title}</h1>
+              <div className="flex items-baseline gap-2 min-w-0 text-[22px] font-medium">
+                <CopyIdButton id={event.id} />
+                <h1 className="text-[#1A1A1A] truncate">{event.name || 'Untitled'}</h1>
+              </div>
               <StatusBadge status={event.status} shape="pill" />
             </div>
             {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}

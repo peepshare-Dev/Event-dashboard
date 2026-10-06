@@ -89,9 +89,17 @@ export const setEventNavSections: NavSection[] = [
     ],
   },
   {
+    title: 'FORMS',
+    items: [
+      { id: 'regis-forms', label: 'Regis Form', icon: <Icon icon="solar:document-add-linear" width={22} height={22} /> },
+      { id: 'survey-forms', label: 'Survey Form', icon: <Icon icon="solar:chat-square-like-linear" width={22} height={22} /> },
+    ],
+  },
+  {
     title: 'MEDIA',
     items: [
-      { id: 'banner-image', label: 'Banner image', icon: <Icon icon="solar:gallery-wide-linear" width={22} height={22} /> },
+      { id: 'app-banners', label: 'Set Banner in App', icon: <Icon icon="solar:gallery-wide-linear" width={22} height={22} /> },
+      { id: 'app-cover-pages', label: 'Set Cover Page in App', icon: <Icon icon="solar:smartphone-2-linear" width={22} height={22} /> },
     ],
   },
   {
