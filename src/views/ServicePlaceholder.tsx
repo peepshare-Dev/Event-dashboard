@@ -1,6 +1,7 @@
 import { Icon } from '@iconify/react';
 import Header from '../components/Header';
 import type { ServiceConfig } from '../data/mock';
+import { useT } from '@/i18n';
 
 interface ServicePlaceholderProps {
   service: ServiceConfig;
@@ -9,6 +10,7 @@ interface ServicePlaceholderProps {
 }
 
 export default function ServicePlaceholder({ service, onSwitchService, onLogout }: ServicePlaceholderProps) {
+  const t = useT();
   const isStaging = service.environment === 'Staging';
 
   return (
@@ -28,20 +30,20 @@ export default function ServicePlaceholder({ service, onSwitchService, onLogout 
           {isStaging && (
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wide">
               <Icon icon="solar:test-tube-linear" width={11} height={11} />
-              Staging
+              {t('Staging')}
             </span>
           )}
 
           <div>
-            <h1 className="text-xl font-semibold text-[#1A1A1A]">{service.name}</h1>
-            <p className="text-sm text-[#6B7280] mt-2">You are now accessing {service.name}.</p>
+            <h1 className="text-xl font-semibold text-[#1A1A1A]">{t(service.name)}</h1>
+            <p className="text-sm text-[#6B7280] mt-2">{t('You are now accessing {name}.', { name: t(service.name) })}</p>
           </div>
 
           <button
             onClick={onSwitchService}
             className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors font-medium"
           >
-            Switch Service
+            {t('Switch Service')}
           </button>
         </div>
       </main>

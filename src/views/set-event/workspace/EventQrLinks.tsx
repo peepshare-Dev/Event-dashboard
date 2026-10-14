@@ -6,6 +6,7 @@ import NewLinkModal from '../../../components/set-event/NewLinkModal';
 import { CopyButton, QrCodeImage, downloadQrPng } from '../../../components/set-event/qr';
 import SectionShell from './SectionShell';
 import { formatEventDateTime, type QrLink, type SetEvent } from '../../../data/setEvents';
+import { useT } from '@/i18n';
 
 interface EventQrLinksProps {
   event: SetEvent;
@@ -23,13 +24,14 @@ const COLUMNS = ['Link name', 'URL', 'QR Code', 'Date added'];
 const cellClass = 'px-5 first:pl-6 text-[13px] text-[#1A1A1A] border-r border-[#F0F0F0]';
 
 export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksProps) {
+  const t = useT();
   const links = event.details?.qrLinks ?? [];
   const [creating, setCreating] = useState(false);
   const [removing, setRemoving] = useState<QrLink | null>(null);
 
   const newLinkButton = (
     <Button pill icon="solar:add-linear" onClick={() => setCreating(true)} className="w-full sm:w-auto">
-      New link
+      {t('New link')}
     </Button>
   );
 
@@ -40,9 +42,9 @@ export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksPr
           <div className="w-12 h-12 rounded-full bg-[#FFF0E8] flex items-center justify-center mb-3">
             <Icon icon="solar:qr-code-linear" width={24} height={24} className="text-[#FF6115]" />
           </div>
-          <p className="text-sm font-semibold text-[#1A1A1A]">No links yet</p>
+          <p className="text-sm font-semibold text-[#1A1A1A]">{t('No links yet')}</p>
           <p className="text-sm text-[#6B7280] mt-1 max-w-sm">
-            Create a link to get a QR code attendees can scan — for registration, check-in, or a survey.
+            {t('Create a link to get a QR code attendees can scan — for registration, check-in, or a survey.')}
           </p>
           <div className="mt-4">{newLinkButton}</div>
         </div>
@@ -53,11 +55,11 @@ export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksPr
               <tr className="border-b border-[#E5E7EB]">
                 {COLUMNS.map((col) => (
                   <th key={col} scope="col" className="h-11 px-5 first:pl-6 text-left text-xs font-medium text-[#374151] whitespace-nowrap border-r border-[#F0F0F0]">
-                    {col}
+                    {t(col)}
                   </th>
                 ))}
                 <th scope="col" className="w-16">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t('Actions')}</span>
                 </th>
               </tr>
             </thead>
@@ -76,20 +78,20 @@ export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksPr
                       >
                         {link.url}
                       </a>
-                      <CopyButton text={link.url} label={`Copy URL for ${link.name}`} />
+                      <CopyButton text={link.url} label={t('Copy URL for {name}', { name: link.name })} />
                     </div>
                   </td>
                   <td className={cellClass}>
                     <div className="flex items-center gap-3">
-                      <QrCodeImage value={link.url} label={`QR code for ${link.name}`} />
+                      <QrCodeImage value={link.url} label={t('QR code for {name}', { name: link.name })} />
                       <button
                         type="button"
                         onClick={() => downloadQrPng(link.url, `${event.name}-${link.name}`)}
-                        aria-label={`Download QR code for ${link.name}`}
+                        aria-label={t('Download QR code for {name}', { name: link.name })}
                         className="inline-flex items-center gap-1.5 h-8 px-3 text-xs text-[#FF6115] bg-[#FFF0E8] hover:bg-[#FFE4D4] rounded-full transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
                       >
                         <Icon icon="solar:download-linear" width={14} height={14} />
-                        Download
+                        {t('Download')}
                       </button>
                     </div>
                   </td>
@@ -98,8 +100,8 @@ export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksPr
                     <button
                       type="button"
                       onClick={() => setRemoving(link)}
-                      aria-label={`Delete ${link.name}`}
-                      title={`Delete ${link.name}`}
+                      aria-label={t('Delete {name}', { name: link.name })}
+                      title={t('Delete {name}', { name: link.name })}
                       className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
                     >
                       <Icon icon="solar:trash-bin-trash-linear" width={20} height={20} />
@@ -118,7 +120,7 @@ export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksPr
           existingNames={links.map((l) => l.name)}
           onCreate={({ name, url }) => {
             const link: QrLink = { id: `qr-${event.id}-${Date.now()}`, name, url, createdAt: nowLocal() };
-            onChange([link, ...links], `Link “${name}” created`);
+            onChange([link, ...links], t('Link “{name}” created', { name }));
             setCreating(false);
           }}
           onClose={() => setCreating(false)}
@@ -126,16 +128,16 @@ export default function EventQrLinks({ event, onBack, onChange }: EventQrLinksPr
       )}
       {removing && (
         <DeleteConfirmationModal
-          title="Delete link?"
-          confirmLabel="Delete link"
+          title={t('Delete link?')}
+          confirmLabel={t('Delete link')}
           message={
             <>
-              <span className="font-semibold text-[#1A1A1A]">{removing.name}</span> will be removed. Printed QR codes for this
-              link will stop being listed here.
+              <span className="font-semibold text-[#1A1A1A]">{removing.name}</span>{' '}
+              {t('will be removed. Printed QR codes for this link will stop being listed here.')}
             </>
           }
           onConfirm={() => {
-            onChange(links.filter((l) => l.id !== removing.id), `Link “${removing.name}” deleted`);
+            onChange(links.filter((l) => l.id !== removing.id), t('Link “{name}” deleted', { name: removing.name }));
             setRemoving(null);
           }}
           onClose={() => setRemoving(null)}

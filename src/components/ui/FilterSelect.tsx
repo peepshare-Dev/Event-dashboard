@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface FilterSelectProps<T extends string> {
   label: string;
@@ -13,6 +14,7 @@ interface FilterSelectProps<T extends string> {
 export default function FilterSelect<T extends string>({ label, value, options, onChange, className = '' }: FilterSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const listId = useId();
+  const t = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -34,7 +36,7 @@ export default function FilterSelect<T extends string>({ label, value, options, 
         }`}
       >
         <span className="whitespace-nowrap">
-          {label} : {value}
+          {t(label)} : {t(value)}
         </span>
         <Icon
           icon="solar:alt-arrow-down-linear"
@@ -50,7 +52,7 @@ export default function FilterSelect<T extends string>({ label, value, options, 
           <ul
             id={listId}
             role="listbox"
-            aria-label={label}
+            aria-label={t(label)}
             className="absolute left-0 top-full mt-1 min-w-full w-44 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1.5 overflow-hidden"
           >
             {options.map((option) => {
@@ -67,7 +69,7 @@ export default function FilterSelect<T extends string>({ label, value, options, 
                       selected ? 'text-[#FF6115] bg-[#FFF0E8] font-medium' : 'text-[#4B5563] hover:bg-[#F9FAFB]'
                     }`}
                   >
-                    {option}
+                    {t(option)}
                     {selected && <Icon icon="solar:check-linear" width={14} height={14} />}
                   </button>
                 </li>

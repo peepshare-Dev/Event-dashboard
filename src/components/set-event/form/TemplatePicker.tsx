@@ -5,6 +5,7 @@ import Modal from '../../ui/Modal';
 import OptionPickerModal from '../OptionPickerModal';
 import type { FormPreset } from './EventFormBuilder';
 import type { FormTemplate } from '../../../data/formTemplates';
+import { useT } from '@/i18n';
 
 /** Master templates as builder quick-start chips. */
 export const templatesToPresets = (templates: FormTemplate[]): FormPreset[] =>
@@ -28,12 +29,15 @@ interface TemplatePickerProps {
 
 // "Based on …" + Use Template: copies a master Regis / Survey template into this event.
 export default function TemplatePicker({ templates, currentId, hasContent, onApply }: TemplatePickerProps) {
+  const t = useT();
   const [picking, setPicking] = useState(false);
   const [pending, setPending] = useState<FormTemplate | null>(null);
-  const current = templates.find((t) => t.id === currentId);
+  const current = templates.find((tpl) => tpl.id === currentId);
+  const [basedOnBefore, basedOnAfter = ''] = t('Based on template {name}').split('{name}');
+  const [replaceBefore, replaceAfter = ''] = t('The name, description and fields of this form will be replaced with a copy of {name}. The master template isn’t changed.').split('{name}');
 
   const choose = (id: string) => {
-    const template = templates.find((t) => t.id === id);
+    const template = templates.find((tpl) => tpl.id === id);
     setPicking(false);
     if (!template) return;
     if (hasContent) setPending(template);
@@ -47,28 +51,28 @@ export default function TemplatePicker({ templates, currentId, hasContent, onApp
           <Icon icon="solar:copy-linear" width={18} height={18} className="text-[#9CA3AF] flex-shrink-0" />
           {current ? (
             <span className="truncate">
-              Based on template <span className="font-semibold text-[#1A1A1A]">{current.name}</span>
+              {basedOnBefore}<span className="font-semibold text-[#1A1A1A]">{t(current.name)}</span>{basedOnAfter}
             </span>
           ) : (
-            <span>Reuse a form from the master template list.</span>
+            <span>{t('Reuse a form from the master template list.')}</span>
           )}
         </p>
         <Button variant="secondary" icon="solar:document-add-linear" onClick={() => setPicking(true)} disabled={templates.length === 0} className="h-9 sm:flex-shrink-0">
-          {current ? 'Change Template' : 'Use Template'}
+          {current ? t('Change Template') : t('Use Template')}
         </Button>
       </div>
 
       {picking && (
         <OptionPickerModal
-          title="Use Template"
+          title={t('Use Template')}
           icon="solar:document-add-linear"
-          options={templates.map((t) => ({
-            value: t.id,
-            label: t.name,
-            description: `${t.fields.length} ${t.fields.length === 1 ? 'field' : 'fields'}${t.description ? ` · ${t.description}` : ''}`,
+          options={templates.map((tpl) => ({
+            value: tpl.id,
+            label: t(tpl.name),
+            description: `${t(tpl.fields.length === 1 ? '{count} field' : '{count} fields', { count: tpl.fields.length })}${tpl.description ? ` · ${t(tpl.description)}` : ''}`,
           }))}
           initialValue={current?.id ?? null}
-          confirmLabel="Use Template"
+          confirmLabel={t('Use Template')}
           onConfirm={choose}
           onClose={() => setPicking(false)}
         />
@@ -76,12 +80,12 @@ export default function TemplatePicker({ templates, currentId, hasContent, onApp
 
       {pending && (
         <Modal
-          title="Replace current form?"
+          title={t('Replace current form?')}
           onClose={() => setPending(null)}
           footer={
             <>
               <Button variant="secondary" onClick={() => setPending(null)} autoFocus>
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 onClick={() => {
@@ -89,14 +93,15 @@ export default function TemplatePicker({ templates, currentId, hasContent, onApp
                   setPending(null);
                 }}
               >
-                Replace
+                {t('Replace')}
               </Button>
             </>
           }
         >
           <p className="text-sm text-[#4B5563]">
-            The name, description and fields of this form will be replaced with a copy of{' '}
-            <span className="font-semibold text-[#1A1A1A]">{pending.name}</span>. The master template isn’t changed.
+            {replaceBefore}
+            <span className="font-semibold text-[#1A1A1A]">{t(pending.name)}</span>
+            {replaceAfter}
           </p>
         </Modal>
       )}

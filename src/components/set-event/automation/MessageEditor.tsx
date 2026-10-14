@@ -2,93 +2,105 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import BannerDropzone from '../BannerDropzone';
 import FormField, { inputClass, textareaClass } from '../form/FormField';
-import SelectField from '../form/SelectField';
-import { BUTTON_ACTIONS, MESSAGE_VARIABLES, type RichMessage } from '../../../data/automations';
+import { MESSAGE_VARIABLES, type ClaimMessage } from '../../../data/automations';
 import type { PreviewContent } from './MessagePreview';
+import { useT } from '@/i18n';
 
 export const TEXT_LIMIT = 1000;
 
 interface MessageEditorProps {
   content: PreviewContent;
   onChange: (patch: Partial<PreviewContent>) => void;
-  /** Keys: `text`, `image`, `richTitle`, `buttonUrl`. */
+  /** Keys: `text`, `image`, `claimImage`, `claimUrl`, `claimedImage`, `claimedText`. */
   errors: Record<string, string | undefined>;
 }
 
-// Editor for the selected message type (Text / Image / Rich Message).
+// Editor for the selected message type (Text / Image / Claim Gift).
 export default function MessageEditor({ content, onChange, errors }: MessageEditorProps) {
+  const t = useT();
   if (content.type === 'image') {
     return (
-      <FormField label="Image" required error={errors.image} asGroup>
+      <FormField label={t('Image')} required error={errors.image && t(errors.image)} asGroup>
         {() => (
-          <BannerDropzone title="Message image" suggestedSize="1040 × 1040 px (1:1)" value={content.image} onChange={(image) => onChange({ image })} />
+          <BannerDropzone title={t('Message image')} suggestedSize="1040 × 1040 px (1:1)" value={content.image} onChange={(image) => onChange({ image })} />
         )}
       </FormField>
     );
   }
 
-  if (content.type === 'rich') {
-    const rich = content.rich;
-    const setRich = (patch: Partial<RichMessage>) => onChange({ rich: { ...rich, ...patch } });
-    const setButton = (patch: Partial<RichMessage['button']>) => setRich({ button: { ...rich.button, ...patch } });
+  if (content.type === 'claim') {
+    const claim = content.claim;
+    const setClaim = (patch: Partial<ClaimMessage>) => onChange({ claim: { ...claim, ...patch } });
     return (
       <div className="space-y-5">
-        <FormField label="Title" required error={errors.richTitle}>
+        <div className="flex gap-2.5 rounded-lg bg-[#F9FAFB] border border-[#F0F0F0] px-3.5 py-3 text-xs text-[#4B5563]">
+          <Icon icon="solar:info-circle-linear" width={16} height={16} className="text-[#6B7280] flex-shrink-0 mt-px" />
+          <p>
+            {t('Attendees tap the giveaway image to open the link in a webview. When they close it, PEEP OA sends the claimed image and message. All fields are required.')}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+          <FormField label={t('Giveaway Image')} required hint={t('Sent in the broadcast.')} error={errors.claimImage && t(errors.claimImage)} asGroup>
+            {() => (
+              <BannerDropzone
+                title={t('Giveaway image')}
+                suggestedSize="1040 × 1040 px (1:1)"
+                value={claim.image}
+                onChange={(image) => setClaim({ image })}
+                invalid={Boolean(errors.claimImage)}
+              />
+            )}
+          </FormField>
+          <FormField label={t('Claimed Image')} required hint={t('Sent after the gift is claimed.')} error={errors.claimedImage && t(errors.claimedImage)} asGroup>
+            {() => (
+              <BannerDropzone
+                title={t('Claimed image')}
+                suggestedSize="1040 × 1040 px (1:1)"
+                value={claim.claimedImage}
+                onChange={(claimedImage) => setClaim({ claimedImage })}
+                invalid={Boolean(errors.claimedImage)}
+              />
+            )}
+          </FormField>
+        </div>
+        <FormField label={t('Link URL')} required hint={t('Opens in a webview when the image is tapped.')} error={errors.claimUrl && t(errors.claimUrl)}>
           {(id) => (
             <input
               id={id}
-              value={rich.title}
-              onChange={(e) => setRich({ title: e.target.value })}
-              placeholder="e.g. 🎁 Special Offer!"
-              aria-invalid={Boolean(errors.richTitle) || undefined}
-              className={inputClass(Boolean(errors.richTitle))}
+              type="url"
+              inputMode="url"
+              value={claim.url}
+              onChange={(e) => setClaim({ url: e.target.value })}
+              placeholder="https://"
+              aria-invalid={Boolean(errors.claimUrl) || undefined}
+              className={inputClass(Boolean(errors.claimUrl))}
             />
           )}
         </FormField>
-        <FormField label="Description" asGroup>
-          {() => <TextWithVariables value={rich.description} onChange={(description) => setRich({ description })} rows={3} placeholder="Tell attendees what this message is about." />}
-        </FormField>
-        <FormField label="Image" hint="Optional. Shown at the top of the card." asGroup>
-          {() => <BannerDropzone title="Card image" suggestedSize="1040 × 520 px (2:1)" aspect="wide" value={rich.image} onChange={(image) => setRich({ image })} />}
-        </FormField>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
-          <FormField label="Button Label" hint="Leave empty for no button.">
-            {(id) => (
-              <input id={id} value={rich.button.label} onChange={(e) => setButton({ label: e.target.value })} placeholder="e.g. View Event" maxLength={20} className={inputClass()} />
-            )}
-          </FormField>
-          <FormField label="Button Action" hint="What happens when it’s tapped.">
-            {(id) => <SelectField id={id} value={rich.button.action} options={BUTTON_ACTIONS} onChange={(action) => setButton({ action })} placeholder="Select action" />}
-          </FormField>
-          {rich.button.action === 'open_url' && (
-            <FormField label="Button URL" required={Boolean(rich.button.label)} error={errors.buttonUrl} className="sm:col-span-2">
-              {(id) => (
-                <input
-                  id={id}
-                  type="url"
-                  inputMode="url"
-                  value={rich.button.url}
-                  onChange={(e) => setButton({ url: e.target.value })}
-                  placeholder="https://"
-                  aria-invalid={Boolean(errors.buttonUrl) || undefined}
-                  className={inputClass(Boolean(errors.buttonUrl))}
-                />
-              )}
-            </FormField>
+        <FormField label={t('Message After Claiming')} required hint={t('Sent when the attendee closes the webview.')} error={errors.claimedText && t(errors.claimedText)} asGroup>
+          {() => (
+            <TextWithVariables
+              value={claim.claimedText}
+              onChange={(claimedText) => setClaim({ claimedText })}
+              rows={3}
+              placeholder={t('e.g. You’ve claimed your gift from {{event_name}}!')}
+              maxLength={TEXT_LIMIT}
+              invalid={Boolean(errors.claimedText)}
+            />
           )}
-        </div>
+        </FormField>
       </div>
     );
   }
 
   return (
-    <FormField label="Message" required error={errors.text} asGroup>
+    <FormField label={t('Message')} required error={errors.text && t(errors.text)} asGroup>
       {() => (
         <TextWithVariables
           value={content.text}
           onChange={(text) => onChange({ text })}
           rows={6}
-          placeholder="Write your message..."
+          placeholder={t('Write your message...')}
           maxLength={TEXT_LIMIT}
           invalid={Boolean(errors.text)}
         />
@@ -147,6 +159,7 @@ function TextWithVariables({ value, onChange, rows, placeholder, maxLength, inva
 }
 
 export function VariablePicker({ onInsert }: { onInsert: (key: string) => void }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -171,7 +184,7 @@ export function VariablePicker({ onInsert }: { onInsert: (key: string) => void }
         className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium text-[#E5540F] bg-[#FFF0E8] hover:bg-[#FFE4D4] rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
       >
         <Icon icon="solar:code-linear" width={14} height={14} />
-        Insert variable
+        {t('Insert variable')}
       </button>
       {open && (
         <>
@@ -188,7 +201,7 @@ export function VariablePicker({ onInsert }: { onInsert: (key: string) => void }
                 }}
                 className="w-full flex items-center justify-between gap-3 px-3.5 py-2 text-left hover:bg-[#F9FAFB] focus:outline-none focus-visible:bg-[#F9FAFB]"
               >
-                <span className="text-sm text-[#374151]">{v.label}</span>
+                <span className="text-sm text-[#374151]">{t(v.label)}</span>
                 <code className="text-[11px] text-[#9CA3AF]">{`{{${v.key}}}`}</code>
               </button>
             ))}

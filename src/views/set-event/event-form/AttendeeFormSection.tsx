@@ -5,6 +5,7 @@ import EventFormBuilder from '../../../components/set-event/form/EventFormBuilde
 import TemplatePicker, { templatesToPresets } from '../../../components/set-event/form/TemplatePicker';
 import { cloneFields, type FormTemplate } from '../../../data/formTemplates';
 import type { SectionProps } from './formModel';
+import { useT } from '@/i18n';
 
 interface AttendeeFormSectionProps extends SectionProps {
   /** Master Regis Form templates. */
@@ -13,21 +14,22 @@ interface AttendeeFormSectionProps extends SectionProps {
 
 // "Event Form" section: asks Yes / No first, and only then shows the form builder.
 export default function AttendeeFormSection({ form, patch, errors, templates }: AttendeeFormSectionProps) {
+  const t = useT();
   return (
     <EventFormSection
       id="section-event-form"
       icon="solar:document-add-linear"
-      title="Event Form"
-      description="Choose whether attendees need to provide additional information when registering for this event."
+      title={t('Event Form')}
+      description={t('Choose whether attendees need to provide additional information when registering for this event.')}
     >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-[#1A1A1A]">Require Event Form?</p>
-            <p className="text-xs text-[#6B7280] mt-0.5">Does this event require an application or registration form?</p>
+            <p className="text-sm font-medium text-[#1A1A1A]">{t('Require Event Form?')}</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">{t('Does this event require an application or registration form?')}</p>
           </div>
           <SegmentedControl
-            label="Require Event Form?"
+            label={t('Require Event Form?')}
             value={form.requireForm ? 'yes' : 'no'}
             options={[
               { value: 'no', label: 'No' },
@@ -40,7 +42,7 @@ export default function AttendeeFormSection({ form, patch, errors, templates }: 
         {!form.requireForm ? (
           <div className="flex items-center gap-3 p-4 rounded-xl bg-[#F9FAFB] border border-[#F0F0F0]">
             <Icon icon="solar:document-linear" width={22} height={22} className="text-[#9CA3AF] flex-shrink-0" />
-            <p className="text-sm text-[#6B7280]">No additional form is required for this event.</p>
+            <p className="text-sm text-[#6B7280]">{t('No additional form is required for this event.')}</p>
           </div>
         ) : (
           <div className="pt-6 border-t border-[#F0F0F0] space-y-5">
@@ -48,7 +50,7 @@ export default function AttendeeFormSection({ form, patch, errors, templates }: 
               templates={templates}
               currentId={form.formTemplateId}
               hasContent={form.formFields.length > 0}
-              onApply={(t) => patch({ formName: t.name, formDescription: t.description, formFields: cloneFields(t.fields), formTemplateId: t.id })}
+              onApply={(tpl) => patch({ formName: tpl.name, formDescription: tpl.description, formFields: cloneFields(tpl.fields), formTemplateId: tpl.id })}
             />
             <EventFormBuilder
               name={form.formName}

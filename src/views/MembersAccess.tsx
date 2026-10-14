@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { eventMembers, type RoleType } from '../data/mock';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 const ROLE_COLORS: Record<RoleType, string> = {
   'Super Admin': 'bg-purple-50 text-purple-700',
@@ -22,6 +23,7 @@ export default function MembersAccess() {
   const [members, setMembers] = useState(eventMembers);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMember, setEditMember] = useState<typeof eventMembers[0] | null>(null);
+  const t = useT();
 
   const handleRemove = (peepId: string) => {
     setMembers(prev => prev.filter(m => m.peepId !== peepId));
@@ -31,15 +33,15 @@ export default function MembersAccess() {
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold text-[#1A1A1A]">Members & Access</h3>
-          <p className="text-sm text-[#6B7280]">{members.length} members with access to this event</p>
+          <h3 className="text-base font-semibold text-[#1A1A1A]">{t('Members & Access')}</h3>
+          <p className="text-sm text-[#6B7280]">{t('{count} members with access to this event', { count: members.length })}</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center justify-center gap-2 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium px-4 py-2.5 sm:py-2 rounded-lg transition-colors"
         >
           <Icon icon="solar:add-linear" width={14} height={14} />
-          Add Member
+          {t('Add Member')}
         </button>
       </div>
 
@@ -50,7 +52,7 @@ export default function MembersAccess() {
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                 {['PEEP SHARE ID', 'Name', 'Role', 'Permissions', 'Status', 'Added Date', 'Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{t(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -67,26 +69,26 @@ export default function MembersAccess() {
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ROLE_COLORS[m.role]}`}>{m.role}</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${ROLE_COLORS[m.role]}`}>{t(m.role)}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex flex-wrap gap-1 max-w-xs">
                       {m.permissions.map(p => (
-                        <span key={p} className="text-[10px] bg-[#F3F4F6] text-[#6B7280] px-1.5 py-0.5 rounded">{p}</span>
+                        <span key={p} className="text-[10px] bg-[#F3F4F6] text-[#6B7280] px-1.5 py-0.5 rounded">{t(p)}</span>
                       ))}
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${m.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                      {m.status}
+                      {t(m.status)}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-sm text-[#6B7280] whitespace-nowrap">{m.addedDate}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setEditMember(m)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Edit</button>
-                      <button className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Role</button>
-                      <button onClick={() => handleRemove(m.peepId)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">Remove</button>
+                      <button onClick={() => setEditMember(m)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Edit')}</button>
+                      <button className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Role')}</button>
+                      <button onClick={() => handleRemove(m.peepId)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">{t('Remove')}</button>
                     </div>
                   </td>
                 </tr>
@@ -108,26 +110,26 @@ export default function MembersAccess() {
                 <div className="text-sm font-medium text-[#1A1A1A]">{m.name}</div>
                 <div className="text-xs text-[#9CA3AF] font-mono">{m.peepId}</div>
               </div>
-              <span className={`inline-flex flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${ROLE_COLORS[m.role]}`}>{m.role}</span>
+              <span className={`inline-flex flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${ROLE_COLORS[m.role]}`}>{t(m.role)}</span>
             </div>
 
             <div className="flex flex-wrap gap-1 mt-3">
               {m.permissions.map(p => (
-                <span key={p} className="text-[10px] bg-[#F3F4F6] text-[#6B7280] px-1.5 py-0.5 rounded">{p}</span>
+                <span key={p} className="text-[10px] bg-[#F3F4F6] text-[#6B7280] px-1.5 py-0.5 rounded">{t(p)}</span>
               ))}
             </div>
 
             <div className="flex items-center gap-3 mt-3 text-xs text-[#6B7280]">
               <span className={`font-medium px-2 py-0.5 rounded-full ${m.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                {m.status}
+                {t(m.status)}
               </span>
-              <span>Added {m.addedDate}</span>
+              <span>{t('Added {date}', { date: m.addedDate })}</span>
             </div>
 
             <div className="flex items-center gap-1 mt-3 pt-3 border-t border-[#F3F4F6]">
-              <button onClick={() => setEditMember(m)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Edit</button>
-              <button className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Role</button>
-              <button onClick={() => handleRemove(m.peepId)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">Remove</button>
+              <button onClick={() => setEditMember(m)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Edit')}</button>
+              <button className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Role')}</button>
+              <button onClick={() => handleRemove(m.peepId)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">{t('Remove')}</button>
             </div>
           </div>
         ))}
@@ -165,6 +167,7 @@ function AddMemberModal({ onClose, onAdd }: {
   const [searched, setSearched] = useState(false);
   const [role, setRole] = useState<RoleType>('Viewer');
   const [perms, setPerms] = useState<string[]>(['View Event']);
+  const t = useT();
 
   const mockUser = { name: 'Kanya Srisuwan', avatar: 'KS', peepId: 'PPS008' };
 
@@ -192,8 +195,8 @@ function AddMemberModal({ onClose, onAdd }: {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-end">
       <div className="bg-white h-full w-full max-w-md shadow-xl flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
-          <h3 className="text-base font-semibold text-[#1A1A1A]">Add Event Member</h3>
-          <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+          <h3 className="text-base font-semibold text-[#1A1A1A]">{t('Add Event Member')}</h3>
+          <button onClick={onClose} aria-label={t('Close')} className="text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
             <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
@@ -205,11 +208,11 @@ function AddMemberModal({ onClose, onAdd }: {
               <input
                 value={peepId}
                 onChange={e => { setPeepId(e.target.value); setSearched(false); }}
-                placeholder="Search PEEP SHARE ID..."
+                placeholder={t('Search PEEP SHARE ID...')}
                 className="flex-1 px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
               />
               <button onClick={handleSearch} className="px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg text-sm text-[#6B7280] hover:bg-[#F3F4F6] transition-colors">
-                Search
+                {t('Search')}
               </button>
             </div>
           </div>
@@ -224,7 +227,7 @@ function AddMemberModal({ onClose, onAdd }: {
                   <div className="text-sm font-semibold text-[#1A1A1A]">{mockUser.name}</div>
                   <div className="text-xs text-[#6B7280]">{peepId || mockUser.peepId}</div>
                 </div>
-                <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">Found</span>
+                <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">{t('Found')}</span>
               </div>
             </div>
           )}
@@ -232,18 +235,18 @@ function AddMemberModal({ onClose, onAdd }: {
           {searched && (
             <>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[#374151]">Role</label>
+                <label className="text-xs font-medium text-[#374151]">{t('Role')}</label>
                 <select
                   value={role}
                   onChange={e => setRole(e.target.value as RoleType)}
                   className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] bg-white"
                 >
-                  {ROLES.map(r => <option key={r}>{r}</option>)}
+                  {ROLES.map(r => <option key={r} value={r}>{t(r)}</option>)}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-[#374151]">Permissions</label>
+                <label className="text-xs font-medium text-[#374151]">{t('Permissions')}</label>
                 <div className="border border-[#E5E7EB] rounded-xl overflow-hidden">
                   {ALL_PERMISSIONS.map(p => (
                     <label key={p} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F9FAFB] cursor-pointer border-b border-[#F3F4F6] last:border-0">
@@ -253,7 +256,7 @@ function AddMemberModal({ onClose, onAdd }: {
                         onChange={() => togglePerm(p)}
                         className="w-4 h-4 accent-[#FF6115]"
                       />
-                      <span className="text-sm text-[#4B5563]">{p}</span>
+                      <span className="text-sm text-[#4B5563]">{t(p)}</span>
                     </label>
                   ))}
                 </div>
@@ -263,13 +266,13 @@ function AddMemberModal({ onClose, onAdd }: {
         </div>
 
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E5E7EB]">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">{t('Cancel')}</button>
           <button
             onClick={handleAdd}
             disabled={!searched}
             className="px-4 py-2 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Add Member
+            {t('Add Member')}
           </button>
         </div>
       </div>
@@ -284,6 +287,7 @@ function EditMemberModal({ member, onClose, onSave }: {
 }) {
   const [role, setRole] = useState<RoleType>(member.role);
   const [perms, setPerms] = useState<string[]>(member.permissions);
+  const t = useT();
 
   const togglePerm = (p: string) => {
     setPerms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
@@ -293,41 +297,41 @@ function EditMemberModal({ member, onClose, onSave }: {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] flex-shrink-0">
-          <h3 className="text-base font-semibold text-[#1A1A1A] truncate">Edit Access — {member.name}</h3>
-          <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280] flex-shrink-0 ml-2">
+          <h3 className="text-base font-semibold text-[#1A1A1A] truncate">{t('Edit Access — {name}', { name: member.name })}</h3>
+          <button onClick={onClose} aria-label={t('Close')} className="text-[#9CA3AF] hover:text-[#6B7280] flex-shrink-0 ml-2">
             <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
         <div className="p-6 space-y-4 overflow-y-auto">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#374151]">Role</label>
+            <label className="text-xs font-medium text-[#374151]">{t('Role')}</label>
             <select
               value={role}
               onChange={e => setRole(e.target.value as RoleType)}
               className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] bg-white"
             >
-              {ROLES.map(r => <option key={r}>{r}</option>)}
+              {ROLES.map(r => <option key={r} value={r}>{t(r)}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#374151]">Permissions</label>
+            <label className="text-xs font-medium text-[#374151]">{t('Permissions')}</label>
             <div className="border border-[#E5E7EB] rounded-xl overflow-hidden">
               {ALL_PERMISSIONS.map(p => (
                 <label key={p} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#F9FAFB] cursor-pointer border-b border-[#F3F4F6] last:border-0">
                   <input type="checkbox" checked={perms.includes(p)} onChange={() => togglePerm(p)} className="w-4 h-4 accent-[#FF6115]" />
-                  <span className="text-sm text-[#4B5563]">{p}</span>
+                  <span className="text-sm text-[#4B5563]">{t(p)}</span>
                 </label>
               ))}
             </div>
           </div>
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E5E7EB] flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">{t('Cancel')}</button>
           <button
             onClick={() => onSave({ ...member, role, permissions: perms })}
             className="px-4 py-2 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors"
           >
-            Save Changes
+            {t('Save Changes')}
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import PickerInput from '../ui/PickerInput';
 import type { SetEventStatus } from '../../data/setEvents';
+import { useT } from '@/i18n';
 
 type PanelStatus = Exclude<SetEventStatus, 'Trash'>;
 
@@ -51,6 +52,7 @@ export default function StatusVisibilityPanel({
   onClose,
   align = 'right',
 }: StatusVisibilityPanelProps) {
+  const t = useT();
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -64,23 +66,23 @@ export default function StatusVisibilityPanel({
       <div className="fixed inset-0 z-10" onClick={onClose} />
       <div
         role="dialog"
-        aria-label="Status & visibility"
+        aria-label={t('Status & visibility')}
         // Pinned inside the viewport on phones; anchored under the ⋯ button from tablet up.
         className={`fixed inset-x-4 top-20 max-h-[calc(100vh-6rem)] overflow-y-auto sm:absolute sm:inset-x-auto ${align === 'left' ? 'sm:left-0' : 'sm:right-0'} sm:top-full sm:mt-2 sm:max-h-none sm:overflow-visible z-30 sm:w-[340px] bg-white border border-[#D1D5DB] rounded-lg shadow-lg p-6`}
       >
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Status &amp; visibility</h2>
+          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">{t('Status & visibility')}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="w-8 h-8 -mr-2 flex items-center justify-center rounded-lg text-[#1A1A1A] hover:bg-[#F9FAFB]"
           >
             <Icon icon="solar:close-linear" width={20} height={20} />
           </button>
         </div>
 
-        <div role="radiogroup" aria-label="Status" className="space-y-4">
+        <div role="radiogroup" aria-label={t('Status')} className="space-y-4">
           {STATUS_OPTIONS.map((option) => {
             const checked = status === option.value;
             const locked = lockedStatuses.includes(option.value);
@@ -105,10 +107,10 @@ export default function StatusVisibilityPanel({
                     {checked && <span className="w-2 h-2 rounded-full bg-white" />}
                   </span>
                   <span>
-                    <span className="block text-[15px] text-[#1A1A1A]">{option.label}</span>
+                    <span className="block text-[15px] text-[#1A1A1A]">{t(option.label)}</span>
                     <span className="block text-sm text-[#6B7280] mt-0.5">
-                      {option.description}
-                      {locked && ' Available after Submit to Review.'}
+                      {t(option.description)}
+                      {locked && ` ${t('Available after Submit to Review.')}`}
                     </span>
                   </span>
                 </label>
@@ -118,7 +120,7 @@ export default function StatusVisibilityPanel({
                     <div className="flex gap-2">
                       <PickerInput
                         type="date"
-                        placeholder="DD / MM / YYYY"
+                        placeholder={t('DD / MM / YYYY')}
                         value={scheduleDate}
                         invalid={Boolean(scheduleError)}
                         onChange={(date) => onScheduleChange({ date })}
@@ -126,14 +128,14 @@ export default function StatusVisibilityPanel({
                       />
                       <PickerInput
                         type="time"
-                        placeholder="Set time"
+                        placeholder={t('Set time')}
                         value={scheduleTime}
                         invalid={Boolean(scheduleError)}
                         onChange={(time) => onScheduleChange({ time })}
                         className="w-28"
                       />
                     </div>
-                    {scheduleError && <p className="mt-1.5 text-xs text-[#DC2626]">{scheduleError}</p>}
+                    {scheduleError && <p className="mt-1.5 text-xs text-[#DC2626]">{t(scheduleError)}</p>}
                   </div>
                 )}
               </div>
@@ -159,8 +161,8 @@ export default function StatusVisibilityPanel({
             {passwordEnabled && <Icon icon="solar:check-linear" width={14} height={14} className="text-white" />}
           </span>
           <span>
-            <span className="block text-[15px] text-[#1A1A1A]">Password protected</span>
-            <span className="block text-sm text-[#6B7280] mt-0.5">Only visible to those who know the password</span>
+            <span className="block text-[15px] text-[#1A1A1A]">{t('Password protected')}</span>
+            <span className="block text-sm text-[#6B7280] mt-0.5">{t('Only visible to those who know the password')}</span>
           </span>
         </label>
 
@@ -171,8 +173,8 @@ export default function StatusVisibilityPanel({
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
-                placeholder="Enter a password"
-                aria-label="Event password"
+                placeholder={t('Enter a password')}
+                aria-label={t('Event password')}
                 aria-invalid={Boolean(passwordError)}
                 autoComplete="new-password"
                 autoFocus
@@ -183,13 +185,13 @@ export default function StatusVisibilityPanel({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('Hide password') : t('Show password')}
                 className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md text-[#9CA3AF] hover:text-[#6B7280]"
               >
                 <Icon icon={showPassword ? 'solar:eye-closed-linear' : 'solar:eye-linear'} width={16} height={16} />
               </button>
             </div>
-            {passwordError && <p className="mt-1.5 text-xs text-[#DC2626]">{passwordError}</p>}
+            {passwordError && <p className="mt-1.5 text-xs text-[#DC2626]">{t(passwordError)}</p>}
           </div>
         )}
 
@@ -202,7 +204,7 @@ export default function StatusVisibilityPanel({
               className="inline-flex items-center gap-2 text-sm text-[#DC2626] hover:text-[#B91C1C]"
             >
               <Icon icon="solar:trash-bin-trash-linear" width={16} height={16} />
-              Move to Trash
+              {t('Move to Trash')}
             </button>
           </>
         )}

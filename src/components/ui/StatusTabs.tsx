@@ -1,3 +1,5 @@
+import { useT } from '@/i18n';
+
 interface StatusTabsProps<T extends string> {
   tabs: readonly T[];
   active: T;
@@ -8,6 +10,7 @@ interface StatusTabsProps<T extends string> {
 
 // Pill tabs: the active tab gets a soft orange pill, inactive counts sit in a gray circle.
 export default function StatusTabs<T extends string>({ tabs, active, counts, onChange, className = '' }: StatusTabsProps<T>) {
+  const t = useT();
   return (
     <div className={`overflow-x-auto -mx-1 px-1 ${className}`}>
       <div role="tablist" className="flex items-center gap-1 min-w-max">
@@ -24,7 +27,7 @@ export default function StatusTabs<T extends string>({ tabs, active, counts, onC
                 isActive ? 'bg-[#FFF0E8] text-[#FF6115] font-semibold' : 'text-[#9CA3AF] hover:text-[#4B5563]'
               }`}
             >
-              {tab}
+              {t(tab)}
               {count !== undefined &&
                 (isActive ? (
                   <span className="text-sm font-semibold">{count}</span>

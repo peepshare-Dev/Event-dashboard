@@ -3,6 +3,7 @@ import Button from '../../../components/ui/Button';
 import SectionShell from './SectionShell';
 import { mockCollections } from '../../Collections';
 import { REGISTRATION_TYPE_LABELS, formatEventDateTime, type SetEvent } from '../../../data/setEvents';
+import { useT } from '@/i18n';
 
 interface EventOverviewProps {
   event: SetEvent;
@@ -16,35 +17,36 @@ const range = (start = '', end = '') =>
   start ? `${formatEventDateTime(start)} → ${!end ? '—' : end.slice(0, 10) === start.slice(0, 10) ? end.slice(11, 16) : formatEventDateTime(end)}` : '—';
 
 export default function EventOverview({ event, onBack, onEdit, onOpenQr }: EventOverviewProps) {
+  const t = useT();
   const d = event.details;
   const collection = mockCollections.find((c) => c.id === d?.collectionId);
 
   const stats = [
-    { label: 'Registrants', value: event.registrants.toLocaleString(), icon: 'solar:users-group-rounded-linear' },
-    { label: 'Registration forms', value: String((d?.registrationForms.length ?? 0) + (d?.eventForm?.enabled ? 1 : 0)), icon: 'solar:document-text-linear' },
-    { label: 'QR links', value: String(d?.qrLinks?.length ?? 0), icon: 'solar:qr-code-linear', onClick: onOpenQr },
-    { label: 'Collection files', value: collection ? collection.files.toLocaleString() : '—', icon: 'solar:folder-linear' },
+    { label: t('Registrants'), value: event.registrants.toLocaleString(), icon: 'solar:users-group-rounded-linear' },
+    { label: t('Registration forms'), value: String((d?.registrationForms.length ?? 0) + (d?.eventForm?.enabled ? 1 : 0)), icon: 'solar:document-text-linear' },
+    { label: t('QR links'), value: String(d?.qrLinks?.length ?? 0), icon: 'solar:qr-code-linear', onClick: onOpenQr },
+    { label: t('Collection files'), value: collection ? collection.files.toLocaleString() : '—', icon: 'solar:folder-linear' },
   ];
 
   const venue = [d?.venueName, d?.latitude && d?.longitude ? `${d.latitude}, ${d.longitude}` : ''].filter(Boolean).join(' · ');
   const details: [string, string][] = [
-    ['Event date', range(event.startTime, event.endTime)],
-    ['Registration period', range(d?.registrationOpensAt || d?.registrationStart, d?.registrationClosesAt || d?.registrationEnd)],
-    ['Event type', d?.eventType || '—'],
-    ['Organizer', event.category || '—'],
-    ['Registration', d?.registrationType ? REGISTRATION_TYPE_LABELS[d.registrationType] : event.ticketType],
-    ['Capacity', d?.maxParticipants != null ? `${d.maxParticipants.toLocaleString()} people` : d?.registrationType ? 'Unlimited' : '—'],
-    ['Author', event.author],
-    ['Allow join', d ? (d.allowJoin ? 'Active' : 'Closed') : '—'],
-    ['Send survey', formatEventDateTime(d?.surveySendTime ?? '')],
-    ['QR code expires', formatEventDateTime(d?.qrExpiresAt ?? '')],
-    ['Event format', d?.eventFormat || '—'],
-    ['Location', venue || '—'],
-    ...(d?.onlineUrl ? [['Online', [d.onlinePlatform, d.onlineUrl].filter(Boolean).join(' · ')] as [string, string]] : []),
-    ['Collection', collection?.name ?? '—'],
+    [t('Event date'), range(event.startTime, event.endTime)],
+    [t('Registration period'), range(d?.registrationOpensAt || d?.registrationStart, d?.registrationClosesAt || d?.registrationEnd)],
+    [t('Event type'), d?.eventType ? t(d.eventType) : '—'],
+    [t('Organizer'), event.category || '—'],
+    [t('Registration'), d?.registrationType ? t(REGISTRATION_TYPE_LABELS[d.registrationType]) : t(event.ticketType)],
+    [t('Capacity'), d?.maxParticipants != null ? t('{count} people', { count: d.maxParticipants.toLocaleString() }) : d?.registrationType ? t('Unlimited') : '—'],
+    [t('Author'), event.author],
+    [t('Allow join'), d ? (d.allowJoin ? t('Active') : t('Closed')) : '—'],
+    [t('Send survey'), formatEventDateTime(d?.surveySendTime ?? '')],
+    [t('QR code expires'), formatEventDateTime(d?.qrExpiresAt ?? '')],
+    [t('Event format'), d?.eventFormat ? t(d.eventFormat) : '—'],
+    [t('Location'), venue || '—'],
+    ...(d?.onlineUrl ? [[t('Online'), [d.onlinePlatform, d.onlineUrl].filter(Boolean).join(' · ')] as [string, string]] : []),
+    [t('Collection'), collection?.name ?? '—'],
     [
-      'Automated messages',
-      d?.communication?.enabled ? `${d.communication.automations.filter((a) => a.enabled).length} active` : 'Off',
+      t('Automated messages'),
+      d?.communication?.enabled ? t('{count} active', { count: d.communication.automations.filter((a) => a.enabled).length }) : t('Off'),
     ],
   ];
 
@@ -55,7 +57,7 @@ export default function EventOverview({ event, onBack, onEdit, onOpenQr }: Event
       onBack={onBack}
       actions={
         <Button pill variant="secondary" icon="solar:pen-new-square-linear" onClick={onEdit}>
-          Edit event
+          {t('Edit event')}
         </Button>
       }
     >

@@ -102,14 +102,12 @@ export type PaymentMethod = 'PromptPay' | 'Credit / Debit Card' | 'Bank Transfer
 export type FormFieldType =
   | 'short-text'
   | 'long-text'
-  | 'number'
-  | 'email'
-  | 'phone'
-  | 'date'
   | 'single-choice'
   | 'multiple-choice'
   | 'dropdown'
-  | 'file';
+  | 'rating'
+  /** Not a question: a section title (and description) that groups the questions below it. */
+  | 'heading';
 
 export interface EventFormField {
   id: string;
@@ -291,8 +289,8 @@ const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
       description: 'Tell us a little about yourself before the festival.',
       fields: [
         field('f-5931-1', 'Full Name', 'short-text'),
-        field('f-5931-2', 'Email', 'email'),
-        field('f-5931-3', 'Phone Number', 'phone'),
+        field('f-5931-2', 'Email', 'short-text'),
+        field('f-5931-3', 'Phone Number', 'short-text'),
         field('f-5931-4', 'Ticket Zone', 'dropdown', true, ['GA', 'VIP', 'Backstage']),
       ],
     },
@@ -314,7 +312,7 @@ const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
       enabled: true,
       name: 'Jazz Night Sign-up',
       description: '',
-      fields: [field('f-4827-1', 'Full Name', 'short-text'), field('f-4827-2', 'Seats', 'number'), field('f-4827-3', 'Dietary Needs', 'long-text', false)],
+      fields: [field('f-4827-1', 'Full Name', 'short-text'), field('f-4827-2', 'Seats', 'short-text'), field('f-4827-3', 'Dietary Needs', 'long-text', false)],
     },
     surveyForm: {
       enabled: true,
@@ -331,7 +329,7 @@ const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
       description: 'Please confirm your attendance by 25 September.',
       fields: [
         field('f-7394-1', 'Full Name', 'short-text'),
-        field('f-7394-2', 'Email', 'email'),
+        field('f-7394-2', 'Email', 'short-text'),
         field('f-7394-3', 'Bringing a guest?', 'single-choice', true, ['Yes', 'No']),
         field('f-7394-4', 'Guest Name', 'short-text', false),
         field('f-7394-5', 'Dietary Requirements', 'multiple-choice', false, ['Vegetarian', 'Vegan', 'Halal', 'No seafood']),
@@ -354,7 +352,7 @@ const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
       enabled: false,
       name: 'Harmony Bash Early Access',
       description: 'Early-access sign-up (closed).',
-      fields: [field('f-8249-1', 'Full Name', 'short-text'), field('f-8249-2', 'Email', 'email'), field('f-8249-3', 'Date of Birth', 'date')],
+      fields: [field('f-8249-1', 'Full Name', 'short-text'), field('f-8249-2', 'Email', 'short-text'), field('f-8249-3', 'Date of Birth', 'short-text')],
     },
     surveyForm: {
       enabled: true,
@@ -387,9 +385,9 @@ const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
       description: 'Apply to join the Electric Pulse crew.',
       fields: [
         field('f-6512-1', 'Full Name', 'short-text'),
-        field('f-6512-2', 'Age', 'number'),
+        field('f-6512-2', 'Age', 'short-text'),
         field('f-6512-3', 'Available Days', 'multiple-choice', true, ['Day 1', 'Day 2']),
-        field('f-6512-4', 'Portfolio / CV', 'file', false),
+        field('f-6512-4', 'Portfolio / CV', 'short-text', false),
       ],
     },
   },
@@ -400,7 +398,7 @@ const SAMPLE_FORMS: Record<number, Partial<SetEventDetails>> = {
       description: 'Register each member of your group for an entry wristband.',
       fields: [
         field('f-3906-1', 'Full Name', 'short-text'),
-        field('f-3906-2', 'Group Size', 'number'),
+        field('f-3906-2', 'Group Size', 'short-text'),
         field('f-3906-3', 'Arrival Day', 'single-choice', true, ['Friday', 'Saturday', 'Sunday']),
       ],
     },
@@ -420,39 +418,39 @@ const REGIS_BY_KIND: { match: string[]; suffix: string; description: string; fie
     match: ['Fun Run'],
     suffix: 'Runner Registration',
     description: 'Race kit pick-up details will be sent after you register.',
-    fields: [['Full Name', 'short-text'], ['Age', 'number'], ['Shirt Size', 'dropdown', true, ['S', 'M', 'L', 'XL']], ['Emergency Contact', 'phone']],
+    fields: [['Full Name', 'short-text'], ['Age', 'short-text'], ['Shirt Size', 'dropdown', true, ['S', 'M', 'L', 'XL']], ['Emergency Contact', 'short-text']],
   },
   {
     match: ['Tech Meetup', 'Live Session'],
     suffix: 'Sign-up',
     description: '',
-    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['Company', 'short-text', false], ['Job Title', 'short-text', false]],
+    fields: [['Full Name', 'short-text'], ['Email', 'short-text'], ['Company', 'short-text', false], ['Job Title', 'short-text', false]],
   },
   {
     match: ['Workshop', 'Wellness Expo'],
     suffix: 'Booking',
     templateId: 'tpl-workshop',
     description: 'Seats are limited — book your spot.',
-    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['Experience Level', 'single-choice', true, ['Beginner', 'Intermediate', 'Advanced']], ['Anything we should know?', 'long-text', false]],
+    fields: [['Full Name', 'short-text'], ['Email', 'short-text'], ['Experience Level', 'single-choice', true, ['Beginner', 'Intermediate', 'Advanced']], ['Anything we should know?', 'long-text', false]],
   },
   {
     match: ['Food Fair', 'Art Market', 'Night Market', 'Book Fest'],
     suffix: 'Vendor Application',
     description: 'Apply for a booth. We’ll confirm within 3 working days.',
-    fields: [['Shop Name', 'short-text'], ['Contact Person', 'short-text'], ['Phone Number', 'phone'], ['Product Category', 'dropdown', true, ['Food', 'Drinks', 'Crafts', 'Fashion', 'Other']], ['Product Photos', 'file', false]],
+    fields: [['Shop Name', 'short-text'], ['Contact Person', 'short-text'], ['Phone Number', 'short-text'], ['Product Category', 'dropdown', true, ['Food', 'Drinks', 'Crafts', 'Fashion', 'Other']], ['Product Photos', 'short-text', false]],
   },
   {
     match: ['Career Day'],
     suffix: 'Candidate Registration',
     description: '',
-    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['University', 'short-text'], ['Fields of Interest', 'multiple-choice', true, ['Engineering', 'Marketing', 'Finance', 'Design']], ['Resume', 'file', false]],
+    fields: [['Full Name', 'short-text'], ['Email', 'short-text'], ['University', 'short-text'], ['Fields of Interest', 'multiple-choice', true, ['Engineering', 'Marketing', 'Finance', 'Design']], ['Resume', 'short-text', false]],
   },
   {
     match: [],
     suffix: 'Registration',
     templateId: 'tpl-standard',
     description: '',
-    fields: [['Full Name', 'short-text'], ['Email', 'email'], ['Phone Number', 'phone']],
+    fields: [['Full Name', 'short-text'], ['Email', 'short-text'], ['Phone Number', 'short-text']],
   },
 ];
 

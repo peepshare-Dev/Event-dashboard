@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import type { NavSection } from '../data/navigation';
+import { useT } from '@/i18n';
 
 // --- Component ---
 
@@ -35,6 +36,7 @@ function SidebarLogo({
   onToggleCollapse?: () => void;
   onClose?: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-3 px-5 py-5 border-b border-[#E5E7EB]">
       <div className="w-8 h-8 rounded-lg bg-[#FF6115] flex items-center justify-center flex-shrink-0">
@@ -43,12 +45,13 @@ function SidebarLogo({
       {!collapsed && (
         <div className="min-w-0">
           <div className="font-bold text-sm text-[#1A1A1A] leading-tight">{logoTitle}</div>
-          <div className="text-xs text-[#6B7280]">{logoSubtitle}</div>
+          <div className="text-xs text-[#6B7280]">{t(logoSubtitle)}</div>
         </div>
       )}
       {onToggleCollapse && (
         <button
           onClick={onToggleCollapse}
+          aria-label={collapsed ? t('Expand sidebar') : t('Collapse sidebar')}
           className="ml-auto text-[#6B7280] hover:text-[#1A1A1A] flex-shrink-0 transition-colors"
         >
           {collapsed ? (
@@ -62,7 +65,7 @@ function SidebarLogo({
         <button
           onClick={onClose}
           className="ml-auto text-[#6B7280] hover:text-[#1A1A1A] flex-shrink-0 transition-colors"
-          aria-label="Close menu"
+          aria-label={t('Close menu')}
         >
           <Icon icon="solar:close-linear" width={18} height={18} />
         </button>
@@ -85,43 +88,67 @@ function SidebarNav({
   size?: 'md' | 'lg';
 }) {
   const lg = size === 'lg';
+  const t = useT();
   return (
     <nav className="flex-1 overflow-y-auto py-3">
       {sections.map((section) => (
         <div key={section.title} className="mb-1">
           {!collapsed && (
             <div className={`px-5 pt-4 text-[10px] font-semibold tracking-widest text-[#9CA3AF] uppercase ${lg ? 'pb-2' : 'pb-1'}`}>
-              {section.title}
+              {t(section.title)}
             </div>
           )}
           {section.items.map((item) => {
-            const isActive = active === item.id;
+            const isActive = active === item.id || Boolean(item.children?.some((c) => c.id === active));
             return (
-              <button
-                key={item.id}
-                onClick={() => onItemClick(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-4 mx-2 transition-colors ${lg ? 'py-3 rounded-xl text-base mb-1.5' : 'py-2.5 rounded-lg text-sm mb-0.5'} ${collapsed ? 'justify-center' : ''} ${
-                  isActive
-                    ? 'bg-[#FFF0E8] text-[#FF6115] font-medium'
-                    : `${lg ? 'text-[#374151]' : 'text-[#4B5563]'} hover:bg-[#F9FAFB] hover:text-[#1A1A1A]`
-                }`}
-                style={{ width: collapsed ? 48 : 'calc(100% - 16px)' }}
-              >
-                <span className={`flex-shrink-0 ${isActive ? 'text-[#FF6115]' : lg ? 'text-[#4B5563]' : 'text-[#9CA3AF]'}`}>
-                  {item.icon}
-                </span>
-                {!collapsed && (
-                  <>
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.badge !== undefined && (
-                      <span className="text-[10px] font-semibold bg-[#FF6115] text-white rounded-full px-1.5 py-0.5 leading-none">
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
+              <div key={item.id}>
+                <button
+                  onClick={() => onItemClick(item.children?.[0].id ?? item.id)}
+                  title={collapsed ? t(item.label) : undefined}
+                  className={`w-full flex items-center gap-3 px-4 mx-2 transition-colors ${lg ? 'py-3 rounded-xl text-base mb-1.5' : 'py-2.5 rounded-lg text-sm mb-0.5'} ${collapsed ? 'justify-center' : ''} ${
+                    isActive
+                      ? 'bg-[#FFF0E8] text-[#FF6115] font-medium'
+                      : `${lg ? 'text-[#374151]' : 'text-[#4B5563]'} hover:bg-[#F9FAFB] hover:text-[#1A1A1A]`
+                  }`}
+                  style={{ width: collapsed ? 48 : 'calc(100% - 16px)' }}
+                >
+                  <span className={`flex-shrink-0 ${isActive ? 'text-[#FF6115]' : lg ? 'text-[#4B5563]' : 'text-[#9CA3AF]'}`}>
+                    {item.icon}
+                  </span>
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-left">{t(item.label)}</span>
+                      {item.badge !== undefined && (
+                        <span className="text-[10px] font-semibold bg-[#FF6115] text-white rounded-full px-1.5 py-0.5 leading-none">
+                          {item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </button>
+                {item.children && !collapsed && (
+                  <ul className={`${lg ? '-mt-0.5 mb-1.5' : 'mb-0.5'}`}>
+                    {item.children.map((child) => {
+                      const childActive = active === child.id;
+                      return (
+                        <li key={child.id}>
+                          <button
+                            onClick={() => onItemClick(child.id)}
+                            aria-current={childActive ? 'page' : undefined}
+                            className={`flex items-center gap-2.5 pl-[52px] pr-4 mx-2 rounded-lg text-left transition-colors ${lg ? 'py-2 text-[15px]' : 'py-1.5 text-sm'} ${
+                              childActive ? 'text-[#FF6115] font-medium' : 'text-[#6B7280] hover:text-[#1A1A1A] hover:bg-[#F9FAFB]'
+                            }`}
+                            style={{ width: 'calc(100% - 16px)' }}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${childActive ? 'bg-[#FF6115]' : 'bg-[#C4C8CF]'}`} aria-hidden="true" />
+                            {t(child.label)}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -131,6 +158,7 @@ function SidebarNav({
 }
 
 function SidebarUser({ collapsed, userInitials, userName, userRoleLabel }: { collapsed: boolean; userInitials: string; userName: string; userRoleLabel: string }) {
+  const t = useT();
   if (collapsed) return null;
   return (
     <div className="border-t border-[#E5E7EB] px-4 py-3">
@@ -140,7 +168,7 @@ function SidebarUser({ collapsed, userInitials, userName, userRoleLabel }: { col
         </div>
         <div className="min-w-0">
           <div className="text-xs font-medium text-[#1A1A1A] truncate">{userName}</div>
-          <div className="text-[10px] text-[#6B7280]">{userRoleLabel}</div>
+          <div className="text-[10px] text-[#6B7280]">{t(userRoleLabel)}</div>
         </div>
       </div>
     </div>

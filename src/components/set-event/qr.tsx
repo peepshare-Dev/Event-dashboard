@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 const QR_COLORS = { dark: '#1A1A1A', light: '#FFFFFF' };
 
@@ -59,6 +60,7 @@ async function copyText(text: string) {
 }
 
 export function CopyButton({ text, label }: { text: string; label: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -74,14 +76,14 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
         await copyText(text);
         setCopied(true);
       }}
-      aria-label={copied ? 'Copied' : label}
-      title={copied ? 'Copied' : label}
+      aria-label={copied ? t('Copied') : label}
+      title={copied ? t('Copied') : label}
       className={`inline-flex items-center gap-1 h-8 px-2 rounded-lg text-xs transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40 ${
         copied ? 'text-[#16A34A] bg-[#F0FDF4]' : 'text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8]'
       }`}
     >
       <Icon icon={copied ? 'solar:check-linear' : 'solar:copy-linear'} width={16} height={16} />
-      <span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
+      <span aria-live="polite">{copied ? t('Copied') : t('Copy')}</span>
     </button>
   );
 }

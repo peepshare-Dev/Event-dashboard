@@ -120,6 +120,36 @@ const bannerSeed: PromoItem[] = [
   }),
 ];
 
+// Banners on the Community page (a separate list and order from the Home page).
+const communityBannerSeed: PromoItem[] = [
+  item('cbn', {
+    name: 'Runner Club Meetup',
+    priority: 1,
+    image: artwork('Runner Club Meetup', 'Join the Sunday run · Lumpini Park', '#0F766E', '#14B8A6', '#CCFBF1'),
+    clickAction: 'content',
+    destinationType: 'community',
+    destinationId: 'com-11',
+    destinationLabel: 'Runners Club BKK',
+  }),
+  item('cbn', {
+    name: 'Share Your Event Photos',
+    priority: 2,
+    image: artwork('Share Your Event Photos', 'Post with #PeepShare · Win merch', '#1D4ED8', '#6366F1', '#DBEAFE'),
+    displayMode: 'schedule',
+    startAt: '2026-10-01T00:00',
+    endAt: '2026-10-31T23:59',
+    clickAction: 'none',
+  }),
+  item('cbn', {
+    name: 'Community Guidelines',
+    priority: 3,
+    image: artwork('Community Guidelines', 'Be kind · Be safe · Have fun', '#374151', '#6B7280', '#F3F4F6'),
+    status: 'inactive',
+    clickAction: 'url',
+    destinationUrl: 'https://peepshare.com/community-guidelines',
+  }),
+];
+
 const coverSeed: PromoItem[] = [
   item('cvr', {
     name: 'MonoMax Watch Party 2026',
@@ -228,6 +258,7 @@ function createPromoApi(prefix: string, seed: PromoItem[]): PromoApi {
 }
 
 export const appBannerApi = createPromoApi('bnr', bannerSeed);
+export const communityBannerApi = createPromoApi('cbn', communityBannerSeed);
 export const coverPageApi = createPromoApi('cvr', coverSeed);
 
 // --- Content & coupon search ---

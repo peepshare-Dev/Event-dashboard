@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import PickerInput from './PickerInput';
+import { useT } from '@/i18n';
 
 interface DateRangePickerProps {
   /** `YYYY-MM-DD` or empty */
@@ -11,12 +12,13 @@ interface DateRangePickerProps {
 }
 
 export default function DateRangePicker({ start, end, onChange, className = '' }: DateRangePickerProps) {
+  const t = useT();
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <PickerInput
         type="date"
         icon="solar:calendar-minimalistic-linear"
-        placeholder="Start Date"
+        placeholder={t('Start Date')}
         value={start}
         max={end}
         onChange={(value) => onChange({ start: value, end })}
@@ -26,7 +28,7 @@ export default function DateRangePicker({ start, end, onChange, className = '' }
       <PickerInput
         type="date"
         icon="solar:calendar-minimalistic-linear"
-        placeholder="End Date"
+        placeholder={t('End Date')}
         value={end}
         min={start}
         onChange={(value) => onChange({ start, end: value })}

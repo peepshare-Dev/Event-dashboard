@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { events } from '../data/mock';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 const USED_GB = 28.5;
 const TOTAL_GB = 100;
@@ -35,6 +36,7 @@ function getUsageState(): 'normal' | 'warning' | 'full' {
 }
 
 export default function CloudManagement() {
+  const t = useT();
   const [search, setSearch] = useState('');
   const usageState = getUsageState();
 
@@ -47,16 +49,16 @@ export default function CloudManagement() {
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-[#1A1A1A]">Cloud Management</h2>
-        <p className="text-sm text-[#6B7280] mt-0.5">Manage your PEEP SHARE cloud storage and storage plans</p>
+        <h2 className="text-xl font-semibold text-[#1A1A1A]">{t('Cloud Management')}</h2>
+        <p className="text-sm text-[#6B7280] mt-0.5">{t('Manage your PEEP SHARE cloud storage and storage plans')}</p>
       </div>
 
       {/* Warning banner if near full */}
       {usageState === 'warning' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 flex flex-wrap items-center gap-3">
           <Icon icon="solar:danger-triangle-linear" width={16} height={16} color="#D97706" className="flex-shrink-0" />
-          <span className="text-sm text-amber-800 font-medium">Storage almost full — {USED_GB} GB / {TOTAL_GB} GB used. {AVAILABLE_GB} GB remaining.</span>
-          <button className="sm:ml-auto text-xs font-semibold text-[#FF6115] hover:underline">Upgrade Storage</button>
+          <span className="text-sm text-amber-800 font-medium">{t('Storage almost full — {used} GB / {total} GB used. {available} GB remaining.', { used: USED_GB, total: TOTAL_GB, available: AVAILABLE_GB })}</span>
+          <button className="sm:ml-auto text-xs font-semibold text-[#FF6115] hover:underline">{t('Upgrade Storage')}</button>
         </div>
       )}
 
@@ -68,10 +70,10 @@ export default function CloudManagement() {
             <div className="w-8 h-8 rounded-lg bg-[#FFF0E8] flex items-center justify-center">
               <Icon icon="solar:cloud-linear" width={16} height={16} color="#FF6115" />
             </div>
-            <h3 className="text-sm font-semibold text-[#1A1A1A]">Cloud Storage</h3>
+            <h3 className="text-sm font-semibold text-[#1A1A1A]">{t('Cloud Storage')}</h3>
           </div>
           <div className="text-3xl font-bold text-[#1A1A1A] mb-0.5">{AVAILABLE_GB} GB</div>
-          <div className="text-sm text-[#6B7280] mb-4">available</div>
+          <div className="text-sm text-[#6B7280] mb-4">{t('available')}</div>
 
           {/* Progress bar */}
           <div className="h-2.5 bg-[#F3F4F6] rounded-full overflow-hidden mb-2">
@@ -81,8 +83,8 @@ export default function CloudManagement() {
             />
           </div>
           <div className="flex justify-between text-xs text-[#9CA3AF] mb-5">
-            <span>{USED_GB} GB used</span>
-            <span>{TOTAL_GB} GB total</span>
+            <span>{t('{size} GB used', { size: USED_GB })}</span>
+            <span>{t('{size} GB total', { size: TOTAL_GB })}</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 mb-5">
@@ -93,19 +95,19 @@ export default function CloudManagement() {
             ].map(s => (
               <div key={s.label} className="bg-[#F9FAFB] rounded-lg p-2.5 text-center">
                 <div className="text-sm font-semibold text-[#1A1A1A]">{s.value}</div>
-                <div className="text-[10px] text-[#9CA3AF]">{s.label}</div>
+                <div className="text-[10px] text-[#9CA3AF]">{t(s.label)}</div>
               </div>
             ))}
           </div>
 
           <button className="w-full py-2 text-sm font-medium border border-[#E5E7EB] text-[#6B7280] rounded-lg hover:bg-[#F9FAFB] transition-colors">
-            Manage Storage
+            {t('Manage Storage')}
           </button>
         </div>
 
         {/* Storage Breakdown */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
-          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">Storage Usage</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">{t('Storage Usage')}</h3>
           <div className="space-y-3">
             {FILE_BREAKDOWN.map(f => {
               const pct = (f.gb / TOTAL_GB) * 100;
@@ -114,7 +116,7 @@ export default function CloudManagement() {
                   <div className="flex items-center justify-between text-sm mb-1">
                     <div className="flex items-center gap-2">
                       <div className={`w-2.5 h-2.5 rounded-sm ${f.color}`} />
-                      <span className="text-[#4B5563]">{f.label}</span>
+                      <span className="text-[#4B5563]">{t(f.label)}</span>
                     </div>
                     <span className="font-medium text-[#1A1A1A]">{f.gb > 0 ? `${f.gb} GB` : '—'}</span>
                   </div>
@@ -126,42 +128,42 @@ export default function CloudManagement() {
             })}
           </div>
           <div className="mt-4 pt-4 border-t border-[#E5E7EB] flex items-center justify-between text-sm">
-            <span className="text-[#6B7280]">Total Used</span>
+            <span className="text-[#6B7280]">{t('Total Used')}</span>
             <span className="font-bold text-[#1A1A1A]">{USED_GB} GB</span>
           </div>
         </div>
 
         {/* Current Plan */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 flex flex-col">
-          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">Current Plan</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">{t('Current Plan')}</h3>
           <div className="flex-1">
             <div className="text-2xl font-bold text-[#1A1A1A] mb-0.5">100 GB</div>
-            <div className="text-sm text-[#6B7280] mb-4">Cloud Storage</div>
+            <div className="text-sm text-[#6B7280] mb-4">{t('Cloud Storage')}</div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B7280]">Status</span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">Active</span>
+                <span className="text-[#6B7280]">{t('Status')}</span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">{t('Active')}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B7280]">Renewal</span>
+                <span className="text-[#6B7280]">{t('Renewal')}</span>
                 <span className="font-medium text-[#1A1A1A]">31 Dec 2027</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-[#6B7280]">Billing</span>
-                <span className="font-medium text-[#1A1A1A]">Monthly</span>
+                <span className="text-[#6B7280]">{t('Billing')}</span>
+                <span className="font-medium text-[#1A1A1A]">{t('Monthly')}</span>
               </div>
             </div>
           </div>
           <button className="mt-5 w-full py-2 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors">
-            Manage Plan
+            {t('Manage Plan')}
           </button>
         </div>
       </div>
 
       {/* Upgrade Storage */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">Upgrade Storage</h3>
-        <p className="text-xs text-[#9CA3AF] mb-4">Choose a storage plan that fits your event scale</p>
+        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-1">{t('Upgrade Storage')}</h3>
+        <p className="text-xs text-[#9CA3AF] mb-4">{t('Choose a storage plan that fits your event scale')}</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {PACKAGES.map(pkg => (
             <div
@@ -175,14 +177,14 @@ export default function CloudManagement() {
               <div className="text-lg font-bold text-[#1A1A1A] mb-0.5">{pkg.size}</div>
               {pkg.current ? (
                 <>
-                  <div className="text-xs text-[#FF6115] font-medium mb-3">Current Plan</div>
-                  <span className="text-xs text-[#FF6115] font-semibold bg-[#FF6115]/10 px-3 py-1 rounded-full">Active</span>
+                  <div className="text-xs text-[#FF6115] font-medium mb-3">{t('Current Plan')}</div>
+                  <span className="text-xs text-[#FF6115] font-semibold bg-[#FF6115]/10 px-3 py-1 rounded-full">{t('Active')}</span>
                 </>
               ) : (
                 <>
-                  <div className="text-sm text-[#6B7280] mb-3">{pkg.price} / month</div>
+                  <div className="text-sm text-[#6B7280] mb-3">{t('{price} / month', { price: pkg.price ?? '' })}</div>
                   <button className="w-full py-1.5 text-xs font-semibold border border-[#FF6115] text-[#FF6115] rounded-lg hover:bg-[#FF6115] hover:text-white transition-colors">
-                    Upgrade
+                    {t('Upgrade')}
                   </button>
                 </>
               )}
@@ -194,12 +196,12 @@ export default function CloudManagement() {
       {/* Storage Usage by Event */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h3 className="text-sm font-semibold text-[#1A1A1A]">Storage Usage by Event</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A]">{t('Storage Usage by Event')}</h3>
           <div className="relative">
             <Icon icon="solar:magnifer-linear" width={13} height={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
             <input
               type="text"
-              placeholder="Search events..."
+              placeholder={t('Search events...')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-8 pr-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] w-full sm:w-52"
@@ -211,7 +213,7 @@ export default function CloudManagement() {
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                 {['Event', 'Collection', 'Files', 'Storage Used', 'Last Updated', 'Status'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{t(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -232,10 +234,10 @@ export default function CloudManagement() {
                       <div className="h-full bg-[#FF6115] rounded-full" style={{ width: `${(row.gb / TOTAL_GB) * 100}%` }} />
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-[#9CA3AF] whitespace-nowrap">{row.updated}</td>
+                  <td className="px-4 py-3.5 text-sm text-[#9CA3AF] whitespace-nowrap">{t(row.updated)}</td>
                   <td className="px-4 py-3.5">
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${row.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {row.status}
+                      {t(row.status)}
                     </span>
                   </td>
                 </tr>

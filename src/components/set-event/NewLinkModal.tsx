@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { QrCodeImage } from './qr';
+import { useT } from '@/i18n';
 
 interface NewLinkModalProps {
   /** Suggested base URL for this event, e.g. `https://peepshare.com/e/4827/` */
@@ -26,17 +27,18 @@ const fieldClass = (invalid: boolean) =>
   }`;
 
 export default function NewLinkModal({ baseUrl, existingNames, onCreate, onClose }: NewLinkModalProps) {
+  const t = useT();
   const [name, setName] = useState('');
   const [url, setUrl] = useState(baseUrl);
   const [touched, setTouched] = useState(false);
 
   const trimmedName = name.trim();
   const nameError = !trimmedName
-    ? 'Enter a link name.'
+    ? t('Enter a link name.')
     : existingNames.some((n) => n.toLowerCase() === trimmedName.toLowerCase())
-      ? 'A link with this name already exists.'
+      ? t('A link with this name already exists.')
       : '';
-  const urlError = validUrl(url) ? '' : 'Enter a full URL starting with https://';
+  const urlError = validUrl(url) ? '' : t('Enter a full URL starting with https://');
   const canCreate = !nameError && !urlError;
 
   const create = () => {
@@ -46,15 +48,15 @@ export default function NewLinkModal({ baseUrl, existingNames, onCreate, onClose
 
   return (
     <Modal
-      title="New link"
+      title={t('New link')}
       onClose={onClose}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button icon="solar:add-linear" onClick={create}>
-            Create link
+            {t('Create link')}
           </Button>
         </>
       }
@@ -67,19 +69,19 @@ export default function NewLinkModal({ baseUrl, existingNames, onCreate, onClose
         className="space-y-4"
       >
         <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-[#374151]">Link name</span>
+          <span className="text-xs font-medium text-[#374151]">{t('Link name')}</span>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Registration page"
+            placeholder={t('e.g. Registration page')}
             aria-invalid={touched && Boolean(nameError)}
             className={fieldClass(touched && Boolean(nameError))}
           />
           {touched && nameError && <span className="block text-xs text-[#DC2626]">{nameError}</span>}
         </label>
         <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-[#374151]">URL</span>
+          <span className="text-xs font-medium text-[#374151]">{t('URL')}</span>
           <input
             type="url"
             inputMode="url"
@@ -92,7 +94,7 @@ export default function NewLinkModal({ baseUrl, existingNames, onCreate, onClose
           {touched && urlError ? (
             <span className="block text-xs text-[#DC2626]">{urlError}</span>
           ) : (
-            <span className="block text-xs text-[#6B7280]">Registration page, check-in scanner, survey or any web page.</span>
+            <span className="block text-xs text-[#6B7280]">{t('Registration page, check-in scanner, survey or any web page.')}</span>
           )}
         </label>
         {/* Hidden submit so Enter creates the link. */}
@@ -100,11 +102,11 @@ export default function NewLinkModal({ baseUrl, existingNames, onCreate, onClose
 
         <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F9FAFB] border border-[#F0F0F0]">
           {validUrl(url) ? (
-            <QrCodeImage value={url.trim()} size={64} label="QR code preview" />
+            <QrCodeImage value={url.trim()} size={64} label={t('QR code preview')} />
           ) : (
             <span className="w-16 h-16 rounded-md bg-[#F3F4F6] flex-shrink-0" aria-hidden="true" />
           )}
-          <p className="text-xs text-[#6B7280]">A QR code is generated from the URL and can be downloaded from the table.</p>
+          <p className="text-xs text-[#6B7280]">{t('A QR code is generated from the URL and can be downloaded from the table.')}</p>
         </div>
       </form>
     </Modal>

@@ -5,6 +5,7 @@ import SelectField from '../../../components/set-event/form/SelectField';
 import ChoiceCards from '../../../components/set-event/form/ChoiceCards';
 import { ONLINE_PLATFORMS, type EventFormat } from '../../../data/setEvents';
 import { coordsFromMapLink, hasOnlineLocation, hasPhysicalLocation, validateUrl, type SectionProps } from './formModel';
+import { useT } from '@/i18n';
 
 const FORMAT_OPTIONS: { value: EventFormat; label: string; description: string; icon: string }[] = [
   { value: 'Offline', label: 'Offline', description: 'At a physical venue.', icon: 'solar:map-point-linear' },
@@ -15,17 +16,18 @@ const FORMAT_OPTIONS: { value: EventFormat; label: string; description: string; 
 const platformOptions = ONLINE_PLATFORMS.map((p) => ({ value: p, label: p }));
 
 export default function LocationSection({ form, patch, errors }: SectionProps) {
+  const t = useT();
   const physical = hasPhysicalLocation(form.eventFormat);
   const online = hasOnlineLocation(form.eventFormat);
   const hybrid = form.eventFormat === 'Hybrid';
 
   return (
-    <EventFormSection id="section-location" icon="solar:map-point-linear" title="Location" description="Tell attendees where your event will take place.">
+    <EventFormSection id="section-location" icon="solar:map-point-linear" title={t('Location')} description={t('Tell attendees where your event will take place.')}>
       <div className="space-y-6">
-        <FormField label="Event Format" required error={errors.eventFormat} asGroup>
+        <FormField label={t('Event Format')} required error={errors.eventFormat} asGroup>
           {() => (
             <ChoiceCards
-              label="Event Format"
+              label={t('Event Format')}
               value={form.eventFormat}
               options={FORMAT_OPTIONS}
               onChange={(eventFormat) => patch({ eventFormat })}
@@ -38,20 +40,20 @@ export default function LocationSection({ form, patch, errors }: SectionProps) {
         {!form.eventFormat && (
           <p className="flex items-center gap-2 text-sm text-[#6B7280]">
             <Icon icon="solar:info-circle-linear" width={16} height={16} className="flex-shrink-0" />
-            Choose a format to add the venue or online details.
+            {t('Choose a format to add the venue or online details.')}
           </p>
         )}
 
         {physical && (
           <div className={hybrid ? 'rounded-xl border border-[#E5E7EB] p-4 sm:p-5' : ''}>
-            {hybrid && <SubHeading icon="solar:map-point-linear" title="Physical Location" />}
+            {hybrid && <SubHeading icon="solar:map-point-linear" title={t('Physical Location')} />}
             <PhysicalLocationFields form={form} patch={patch} errors={errors} />
           </div>
         )}
 
         {online && (
           <div className={hybrid ? 'rounded-xl border border-[#E5E7EB] p-4 sm:p-5' : ''}>
-            {hybrid && <SubHeading icon="solar:monitor-linear" title="Online Event Information" />}
+            {hybrid && <SubHeading icon="solar:monitor-linear" title={t('Online Event Information')} />}
             <OnlineFields form={form} patch={patch} errors={errors} />
           </div>
         )}
@@ -70,6 +72,7 @@ function SubHeading({ icon, title }: { icon: string; title: string }) {
 }
 
 function PhysicalLocationFields({ form, patch, errors }: SectionProps) {
+  const t = useT();
   // A pasted Google Maps link that carries coordinates fills in Latitude / Longitude.
   const changeMapLink = (mapLink: string) => {
     const coords = coordsFromMapLink(mapLink);
@@ -78,33 +81,33 @@ function PhysicalLocationFields({ form, patch, errors }: SectionProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
-      <FormField label="Venue Name" required error={errors.venueName} className="md:col-span-2">
+      <FormField label={t('Venue Name')} required error={errors.venueName} className="md:col-span-2">
         {(id) => (
           <input
             id={id}
             value={form.venueName}
             onChange={(e) => patch({ venueName: e.target.value })}
-            placeholder="e.g. Impact Arena, Muang Thong Thani"
+            placeholder={t('e.g. Impact Arena, Muang Thong Thani')}
             aria-invalid={Boolean(errors.venueName) || undefined}
             className={inputClass(Boolean(errors.venueName))}
           />
         )}
       </FormField>
 
-      <FormField label="Address" className="md:col-span-2">
+      <FormField label={t('Address')} className="md:col-span-2">
         {(id) => (
           <textarea
             id={id}
             rows={2}
             value={form.address}
             onChange={(e) => patch({ address: e.target.value })}
-            placeholder="Street, district, province, postal code"
+            placeholder={t('Street, district, province, postal code')}
             className={textareaClass()}
           />
         )}
       </FormField>
 
-      <FormField label="Google Maps Link" hint="Paste a link with coordinates to fill in Latitude and Longitude." error={errors.mapLink} className="md:col-span-2">
+      <FormField label={t('Google Maps Link')} hint={t('Paste a link with coordinates to fill in Latitude and Longitude.')} error={errors.mapLink} className="md:col-span-2">
         {(id) => (
           <div
             className={`flex h-12 bg-white border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#FF6115]/30 focus-within:border-[#FF6115] ${
@@ -125,8 +128,8 @@ function PhysicalLocationFields({ form, patch, errors }: SectionProps) {
               type="button"
               onClick={() => window.open(form.mapLink.trim(), '_blank', 'noopener,noreferrer')}
               disabled={!form.mapLink.trim() || Boolean(validateUrl(form.mapLink))}
-              aria-label="Open link in Google Maps"
-              title="Open link in Google Maps"
+              aria-label={t('Open link in Google Maps')}
+              title={t('Open link in Google Maps')}
               className="w-14 flex items-center justify-center flex-shrink-0 text-[#FF6115] bg-[#FFF0E8] hover:bg-[#FFE4D4] transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF6115]/40"
             >
               <Icon icon="solar:link-linear" width={22} height={22} />
@@ -135,27 +138,27 @@ function PhysicalLocationFields({ form, patch, errors }: SectionProps) {
         )}
       </FormField>
 
-      <FormField label="Latitude" error={errors.latitude}>
+      <FormField label={t('Latitude')} error={errors.latitude}>
         {(id) => (
           <input
             id={id}
             inputMode="decimal"
             value={form.latitude}
             onChange={(e) => patch({ latitude: e.target.value })}
-            placeholder="e.g. 13.7466"
+            placeholder={t('e.g. {value}', { value: '13.7466' })}
             aria-invalid={Boolean(errors.latitude) || undefined}
             className={inputClass(Boolean(errors.latitude))}
           />
         )}
       </FormField>
-      <FormField label="Longitude" error={errors.longitude}>
+      <FormField label={t('Longitude')} error={errors.longitude}>
         {(id) => (
           <input
             id={id}
             inputMode="decimal"
             value={form.longitude}
             onChange={(e) => patch({ longitude: e.target.value })}
-            placeholder="e.g. 100.5393"
+            placeholder={t('e.g. {value}', { value: '100.5393' })}
             aria-invalid={Boolean(errors.longitude) || undefined}
             className={inputClass(Boolean(errors.longitude))}
           />
@@ -170,21 +173,22 @@ function PhysicalLocationFields({ form, patch, errors }: SectionProps) {
 }
 
 function OnlineFields({ form, patch, errors }: SectionProps) {
+  const t = useT();
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
-      <FormField label="Online Platform">
+      <FormField label={t('Online Platform')}>
         {(id) => (
           <SelectField
             id={id}
             value={form.onlinePlatform}
             options={platformOptions}
             onChange={(onlinePlatform) => patch({ onlinePlatform })}
-            placeholder="Select platform"
+            placeholder={t('Select platform')}
             icon="solar:videocamera-record-linear"
           />
         )}
       </FormField>
-      <FormField label="Meeting / Event URL" required error={errors.onlineUrl}>
+      <FormField label={t('Meeting / Event URL')} required error={errors.onlineUrl}>
         {(id) => (
           <input
             id={id}
@@ -198,14 +202,14 @@ function OnlineFields({ form, patch, errors }: SectionProps) {
           />
         )}
       </FormField>
-      <FormField label="Access Instructions" hint="Shared with registered attendees, e.g. passcode or when the link opens." className="md:col-span-2">
+      <FormField label={t('Access Instructions')} hint={t('Shared with registered attendees, e.g. passcode or when the link opens.')} className="md:col-span-2">
         {(id) => (
           <textarea
             id={id}
             rows={3}
             value={form.accessInstructions}
             onChange={(e) => patch({ accessInstructions: e.target.value })}
-            placeholder="e.g. Passcode 2026. The room opens 15 minutes before the start time."
+            placeholder={t('e.g. Passcode 2026. The room opens 15 minutes before the start time.')}
             className={textareaClass()}
           />
         )}
@@ -215,6 +219,7 @@ function OnlineFields({ form, patch, errors }: SectionProps) {
 }
 
 function MapPreview({ latitude, longitude }: { latitude: string; longitude: string }) {
+  const t = useT();
   const lat = Number(latitude);
   const lng = Number(longitude);
   const valid =
@@ -223,13 +228,13 @@ function MapPreview({ latitude, longitude }: { latitude: string; longitude: stri
     return (
       <div className="h-44 rounded-xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB] flex flex-col items-center justify-center gap-2 px-4 text-center">
         <Icon icon="solar:map-point-linear" width={28} height={28} className="text-[#9CA3AF]" />
-        <p className="text-xs text-[#6B7280]">Enter latitude & longitude or paste a Google Maps link to preview the location.</p>
+        <p className="text-xs text-[#6B7280]">{t('Enter latitude & longitude or paste a Google Maps link to preview the location.')}</p>
       </div>
     );
   }
   return (
     <iframe
-      title="Event location map"
+      title={t('Event location map')}
       src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
       loading="lazy"
       referrerPolicy="no-referrer-when-downgrade"

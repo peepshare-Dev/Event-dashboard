@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface BackToTopProps {
   /** Scroll distance (px) before the button appears. */
@@ -15,6 +16,7 @@ export default function BackToTop({ threshold = 400 }: BackToTopProps) {
   const scrollerRef = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [bottom, setBottom] = useState(GAP);
+  const t = useT();
 
   useEffect(() => {
     const scroller = anchorRef.current?.closest('main');
@@ -47,8 +49,8 @@ export default function BackToTop({ threshold = 400 }: BackToTopProps) {
       <button
         type="button"
         onClick={toTop}
-        aria-label="Back to top"
-        title="Back to top"
+        aria-label={t('Back to top')}
+        title={t('Back to top')}
         aria-hidden={!visible}
         tabIndex={visible ? 0 : -1}
         style={{ bottom }}

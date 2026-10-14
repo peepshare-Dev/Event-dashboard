@@ -5,6 +5,7 @@ import OptionPickerModal from '../../../components/set-event/OptionPickerModal';
 import SectionShell from './SectionShell';
 import { mockCollections } from '../../Collections';
 import type { SetEvent } from '../../../data/setEvents';
+import { useT } from '@/i18n';
 
 interface EventCollectionProps {
   event: SetEvent;
@@ -13,6 +14,7 @@ interface EventCollectionProps {
 }
 
 export default function EventCollection({ event, onBack, onChange }: EventCollectionProps) {
+  const t = useT();
   const [picking, setPicking] = useState(false);
   const collection = mockCollections.find((c) => c.id === event.details?.collectionId);
 
@@ -23,7 +25,7 @@ export default function EventCollection({ event, onBack, onChange }: EventCollec
       onBack={onBack}
       actions={
         <Button pill icon={collection ? 'solar:refresh-circle-linear' : 'solar:add-linear'} onClick={() => setPicking(true)} className="w-full sm:w-auto">
-          {collection ? 'Change collection' : 'Link collection'}
+          {collection ? t('Change collection') : t('Link collection')}
         </Button>
       }
     >
@@ -33,18 +35,18 @@ export default function EventCollection({ event, onBack, onChange }: EventCollec
             <Icon icon="solar:folder-linear" width={26} height={26} className="text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#6B7280]">Linked collection</p>
+            <p className="text-xs text-[#6B7280]">{t('Linked collection')}</p>
             <p className="text-base font-semibold text-[#1A1A1A] truncate">{collection.name}</p>
             <p className="text-sm text-[#4B5563] mt-1">
-              {collection.files.toLocaleString()} files · {collection.storageGb} GB · Owner {collection.owner} · Updated {collection.lastUpdated}
+              {t('{files} files · {size} GB · Owner {owner} · Updated {date}', { files: collection.files.toLocaleString(), size: collection.storageGb, owner: collection.owner, date: collection.lastUpdated })}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => onChange(null, `Collection unlinked from “${event.name}”`)}
+            onClick={() => onChange(null, t('Collection unlinked from “{event}”', { event: event.name }))}
             className="self-start sm:self-center h-9 px-4 text-sm text-[#DC2626] bg-white rounded-lg hover:bg-[#FEF2F2] transition-colors"
           >
-            Unlink
+            {t('Unlink')}
           </button>
         </div>
       ) : (
@@ -52,23 +54,23 @@ export default function EventCollection({ event, onBack, onChange }: EventCollec
           <div className="w-12 h-12 rounded-full bg-[#FFF0E8] flex items-center justify-center mb-3">
             <Icon icon="solar:folder-linear" width={24} height={24} className="text-[#FF6115]" />
           </div>
-          <p className="text-sm font-semibold text-[#1A1A1A]">No collection linked</p>
+          <p className="text-sm font-semibold text-[#1A1A1A]">{t('No collection linked')}</p>
           <p className="text-sm text-[#6B7280] mt-1 max-w-sm">
-            Link a Collection to share this event's photos and files with attendees.
+            {t('Link a Collection to share this event\'s photos and files with attendees.')}
           </p>
         </div>
       )}
 
       {picking && (
         <OptionPickerModal
-          title="Select Collection"
+          title={t('Select Collection')}
           icon="solar:folder-linear"
-          options={mockCollections.map((c) => ({ value: c.id, label: c.name, description: `${c.files.toLocaleString()} files · ${c.linkedEvent}` }))}
+          options={mockCollections.map((c) => ({ value: c.id, label: c.name, description: `${t('{count} files', { count: c.files.toLocaleString() })} · ${c.linkedEvent}` }))}
           initialValue={collection?.id ?? null}
-          confirmLabel="Link collection"
+          confirmLabel={t('Link collection')}
           onConfirm={(id) => {
-            const name = mockCollections.find((c) => c.id === id)?.name ?? 'Collection';
-            onChange(id, `“${name}” linked to “${event.name}”`);
+            const name = mockCollections.find((c) => c.id === id)?.name ?? t('Collection');
+            onChange(id, t('“{name}” linked to “{event}”', { name, event: event.name }));
             setPicking(false);
           }}
           onClose={() => setPicking(false)}

@@ -4,68 +4,30 @@ import Header from '../components/Header';
 import BackToTop from '../components/ui/BackToTop';
 import EventList from './EventList';
 import EventDetail from './EventDetail';
-import RegistrationData from './RegistrationData';
-import SurveyFeedback from './SurveyFeedback';
-import PhotoManagement from './PhotoManagement';
-import SyncActivity from './SyncActivity';
-import CloudManagement from './CloudManagement';
-import Collections from './Collections';
-import { adminNavSections, dataViewerNavSections, type DashboardRole } from '../data/navigation';
+import { eventDashboardNavSections } from '../data/navigation';
 import type { Event } from '../data/mock';
 
-const DATA_VIEWER_TABS = ['Registration', 'Survey'] as const;
-
-type NavId =
-  | 'event-list'
-  | 'registration'
-  | 'survey'
-  | 'cloud'
-  | 'collections'
-  | 'photos'
-  | 'sync';
-
-const ROLE_OPTIONS = [
-  { value: 'admin', label: 'Super Admin' },
-  { value: 'data-viewer', label: 'Data Viewer' },
-];
-
-const ROLE_LABELS: Record<DashboardRole, string> = {
-  admin: 'Super Admin',
-  'data-viewer': 'Data Viewer',
-};
+// Data Viewers see registration and survey data inside each event.
+const EVENT_TABS = ['Registration', 'Survey'] as const;
+const ROLE_LABEL = 'Data Viewer';
 
 interface EventDashboardAppProps {
   onSwitchService: () => void;
   onLogout: () => void;
 }
 
+// Event Dashboard is for Data Viewers only: the Event List, then each event's data.
 export default function EventDashboardApp({ onSwitchService, onLogout }: EventDashboardAppProps) {
-  const [role, setRole] = useState<DashboardRole>('admin');
-  const [activeNav, setActiveNav] = useState<NavId>('event-list');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  const navSections = role === 'admin' ? adminNavSections : dataViewerNavSections;
-
-  const handleNavigate = (id: string) => {
-    setActiveNav(id as NavId);
-    setSelectedEvent(null);
-  };
-
-  const handleRoleChange = (nextRole: string) => {
-    const parsedRole = nextRole as DashboardRole;
-    setRole(parsedRole);
-    setSelectedEvent(null);
-    setActiveNav('event-list');
-  };
 
   return (
     <div className="flex h-screen bg-[#F5F7FA] overflow-hidden">
       <Sidebar
-        active={activeNav}
-        onNavigate={handleNavigate}
-        sections={navSections}
-        userRoleLabel={ROLE_LABELS[role]}
+        active="event-list"
+        onNavigate={() => setSelectedEvent(null)}
+        sections={eventDashboardNavSections}
+        userRoleLabel={ROLE_LABEL}
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
       />
@@ -75,28 +37,14 @@ export default function EventDashboardApp({ onSwitchService, onLogout }: EventDa
           onMenuClick={() => setMobileNavOpen(true)}
           onSwitchService={onSwitchService}
           onLogout={onLogout}
-          userRoleLabel={ROLE_LABELS[role]}
-          roleSwitcher={{ role, options: ROLE_OPTIONS, onChange: handleRoleChange }}
+          userRoleLabel={ROLE_LABEL}
         />
 
         <main className="relative flex-1 overflow-y-auto overflow-x-hidden">
-          {/* Event Detail overrides nav */}
           {selectedEvent ? (
-            <EventDetail
-              event={selectedEvent}
-              onBack={() => setSelectedEvent(null)}
-              visibleTabs={role === 'data-viewer' ? DATA_VIEWER_TABS : undefined}
-            />
+            <EventDetail event={selectedEvent} onBack={() => setSelectedEvent(null)} visibleTabs={EVENT_TABS} />
           ) : (
-            <>
-              {activeNav === 'event-list' && <EventList onSelectEvent={(ev) => setSelectedEvent(ev)} />}
-              {activeNav === 'registration' && <RegistrationData />}
-              {activeNav === 'survey' && <SurveyFeedback />}
-              {activeNav === 'cloud' && <CloudManagement />}
-              {activeNav === 'collections' && <Collections />}
-              {activeNav === 'photos' && <PhotoManagement />}
-              {activeNav === 'sync' && <SyncActivity />}
-            </>
+            <EventList dashboard onSelectEvent={(ev) => setSelectedEvent(ev)} />
           )}
           <BackToTop />
         </main>

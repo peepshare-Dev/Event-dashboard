@@ -1,4 +1,5 @@
 import type { SetEventStatus } from '../../data/setEvents';
+import { useT } from '@/i18n';
 
 // Dot + label on a neutral chip, so status never relies on color alone.
 const STATUS_STYLES: Record<SetEventStatus, { dot: string; text: string; bg: string }> = {
@@ -21,13 +22,14 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, shape = 'chip' }: StatusBadgeProps) {
+  const t = useT();
   const style = STATUS_STYLES[status];
   const shapeClass =
     shape === 'pill' ? 'rounded-full px-2.5 py-1 bg-[#F9FAFB] border-transparent' : `rounded-[4px] px-1.5 py-0.5 ${style.bg}`;
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs border whitespace-nowrap ${shapeClass} ${style.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} aria-hidden="true" />
-      {status}
+      {t(status)}
     </span>
   );
 }

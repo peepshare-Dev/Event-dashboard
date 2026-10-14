@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface RichTextEditorProps {
   /** Initial HTML. The editor is uncontrolled after mount. */
@@ -43,6 +44,7 @@ function normalizeUrl(raw: string): string | null {
 // Lightweight contentEditable editor built on document.execCommand — enough for event
 // descriptions without pulling in an editor dependency.
 export default function RichTextEditor({ defaultValue = '', onChange, placeholder = 'Write a description…', ariaLabel }: RichTextEditorProps) {
+  const t = useT();
   const editorRef = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
   const imageInput = useRef<HTMLInputElement>(null);
@@ -126,7 +128,7 @@ export default function RichTextEditor({ defaultValue = '', onChange, placeholde
       {/* Toolbar */}
       <div
         role="toolbar"
-        aria-label="Formatting"
+        aria-label={t('Formatting')}
         className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 sm:px-5 py-2.5 bg-[#F9FAFB] rounded-t-2xl border-b border-[#F0F0F0]"
       >
         <ToolGroup>
@@ -225,11 +227,11 @@ export default function RichTextEditor({ defaultValue = '', onChange, placeholde
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
                   placeholder="https://"
-                  aria-label="Link URL"
+                  aria-label={t('Link URL')}
                   className="flex-1 min-w-0 h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
                 />
                 <button type="submit" disabled={!normalizeUrl(linkUrl)} className="h-9 px-3 text-sm font-medium text-white bg-[#FF6115] hover:bg-[#E5540F] rounded-lg disabled:opacity-40">
-                  Apply
+                  {t('Apply')}
                 </button>
               </form>
             }
@@ -259,14 +261,14 @@ export default function RichTextEditor({ defaultValue = '', onChange, placeholde
 
       {/* Editing surface */}
       <div className="relative">
-        {isEmpty && <div className="absolute left-5 top-4 text-sm text-[#9CA3AF] pointer-events-none">{placeholder}</div>}
+        {isEmpty && <div className="absolute left-5 top-4 text-sm text-[#9CA3AF] pointer-events-none">{t(placeholder)}</div>}
         <div
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
           role="textbox"
           aria-multiline="true"
-          aria-label={ariaLabel ?? placeholder}
+          aria-label={ariaLabel ?? t(placeholder)}
           onInput={emitChange}
           className="rich-text min-h-40 max-h-[480px] overflow-y-auto px-5 py-4 text-sm text-[#1A1A1A] focus:outline-none"
         />
@@ -288,11 +290,12 @@ function ToolButton({ label, active, caret, onClick, children }: {
   onClick: () => void;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
-      title={label}
-      aria-label={label}
+      title={t(label)}
+      aria-label={t(label)}
       aria-pressed={active}
       // Keep the editor's selection when clicking toolbar buttons.
       onMouseDown={(e) => e.preventDefault()}
@@ -334,6 +337,7 @@ function PopoverAnchor({ open, onClose, panel, align = 'left', children }: {
 }
 
 function Swatches({ colors, onPick }: { colors: string[]; onPick: (color: string) => void }) {
+  const t = useT();
   return (
     <div className="grid grid-cols-4 gap-1.5 w-36">
       {colors.map((color) => (
@@ -341,7 +345,7 @@ function Swatches({ colors, onPick }: { colors: string[]; onPick: (color: string
           key={color}
           type="button"
           onClick={() => onPick(color)}
-          aria-label={color === 'transparent' ? 'No highlight' : color}
+          aria-label={color === 'transparent' ? t('No highlight') : color}
           className="w-7 h-7 rounded-md border border-[#E5E7EB] hover:scale-105 transition-transform flex items-center justify-center"
           style={{ backgroundColor: color }}
         >
@@ -353,6 +357,7 @@ function Swatches({ colors, onPick }: { colors: string[]; onPick: (color: string
 }
 
 function MenuList({ items }: { items: { label: string; onClick: () => void }[] }) {
+  const t = useT();
   return (
     <div className="w-40 -m-1">
       {items.map((item) => (
@@ -362,7 +367,7 @@ function MenuList({ items }: { items: { label: string; onClick: () => void }[] }
           onClick={item.onClick}
           className="w-full text-left px-3 py-2 text-sm text-[#4B5563] rounded-lg hover:bg-[#F9FAFB]"
         >
-          {item.label}
+          {t(item.label)}
         </button>
       ))}
     </div>

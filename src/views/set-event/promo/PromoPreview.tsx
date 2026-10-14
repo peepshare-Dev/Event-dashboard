@@ -2,12 +2,14 @@ import { Icon } from '@iconify/react';
 import PromoStatusBadge from './PromoStatusBadge';
 import type { Placement } from './placements';
 import { CLICK_ACTIONS, describeClick, formatDay, showFrequencyLabel, type BannerDisplayStatus, type PromoItem } from '../../../data/appBanners';
+import { useT } from '@/i18n';
 
 /** Image in the placement's shape (wide banner or portrait cover page), or a placeholder. */
 export function PromoThumbnail({ item, shape, className = '' }: { item: Pick<PromoItem, 'image' | 'name'>; shape: Placement['shape']; className?: string }) {
+  const t = useT();
   const aspect = shape === 'banner' ? 'aspect-[1432/480]' : 'aspect-[3/4]';
   return item.image ? (
-    <img src={item.image.url} alt={`${item.name || 'Untitled'} image`} className={`block ${aspect} object-cover rounded-lg bg-[#F3F4F6] ${className}`} />
+    <img src={item.image.url} alt={t('{name} image', { name: item.name || t('Untitled') })} className={`block ${aspect} object-cover rounded-lg bg-[#F3F4F6] ${className}`} />
   ) : (
     <div className={`${aspect} rounded-lg bg-[#F3F4F6] border border-dashed border-[#D1D5DB] flex items-center justify-center ${className}`}>
       <Icon icon={shape === 'banner' ? 'solar:gallery-wide-linear' : 'solar:smartphone-2-linear'} width={20} height={20} className="text-[#9CA3AF]" />
@@ -24,30 +26,31 @@ interface PromoPreviewProps {
 
 // Contextual preview: a banner in the app's home carousel, or a cover page popup over the app.
 export default function PromoPreview({ placement, item, position, shownAs }: PromoPreviewProps) {
+  const t = useT();
   const action = CLICK_ACTIONS.find((c) => c.value === item.clickAction)!;
   return (
     <div className="space-y-4">
       {placement.shape === 'banner' ? <BannerScreen item={item} placement={placement} /> : <CoverScreen item={item} placement={placement} />}
 
       <dl className="space-y-3 text-sm">
-        <Row label="On click">
+        <Row label={t('On click')}>
           <span className="flex items-start gap-1.5 min-w-0 font-medium">
             <Icon icon={action.icon} width={16} height={16} className="mt-0.5 text-[#FF6115] flex-shrink-0" />
-            <span className="break-words min-w-0">{describeClick(item)}</span>
+            <span className="break-words min-w-0">{describeClick(item, t)}</span>
           </span>
         </Row>
-        <Row label="Shown">
+        <Row label={t('Shown')}>
           {item.displayMode === 'always'
-            ? 'Always'
+            ? t('Always')
             : item.startAt && item.endAt
-              ? `${formatDay(item.startAt)} ${item.startAt.slice(11, 16)} → ${formatDay(item.endAt)} ${item.endAt.slice(11, 16)}`
-              : 'Set the display period'}
+              ? `${formatDay(item.startAt, t)} ${item.startAt.slice(11, 16)} → ${formatDay(item.endAt, t)} ${item.endAt.slice(11, 16)}`
+              : t('Set the display period')}
         </Row>
-        {placement.frequency && <Row label="Frequency">{showFrequencyLabel(item.showFrequency)}</Row>}
-        <Row label="Status">
+        {placement.frequency && <Row label={t('Frequency')}>{t(showFrequencyLabel(item.showFrequency))}</Row>}
+        <Row label={t('Status')}>
           <PromoStatusBadge status={shownAs} />
         </Row>
-        <Row label="Priority">#{position} in the display order</Row>
+        <Row label={t('Priority')}>{t('#{position} in the display order', { position })}</Row>
       </dl>
     </div>
   );
@@ -105,6 +108,7 @@ function BannerScreen({ item, placement }: { item: PromoItem; placement: Placeme
 
 /** Popup over the dimmed app as it opens: the image alone (tapping it runs the click action), plus a close button. */
 function CoverScreen({ item, placement }: { item: PromoItem; placement: Placement }) {
+  const t = useT();
   return (
     <div className="relative mx-auto w-full max-w-[280px] aspect-[9/17] rounded-[28px] border border-[#E5E7EB] bg-[#F5F7FA] p-3 overflow-hidden">
       {/* The app underneath */}
@@ -130,7 +134,7 @@ function CoverScreen({ item, placement }: { item: PromoItem; placement: Placemen
             </div>
           )}
         </div>
-        <span className="w-8 h-8 rounded-full bg-white/90 text-[#374151] flex items-center justify-center shadow" title="Users can close the popup">
+        <span className="w-8 h-8 rounded-full bg-white/90 text-[#374151] flex items-center justify-center shadow" title={t('Users can close the popup')}>
           <Icon icon="solar:close-linear" width={16} height={16} />
         </span>
       </div>

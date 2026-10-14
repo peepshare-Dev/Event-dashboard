@@ -40,13 +40,13 @@ function template(id: string, kind: FormKind, name: string, description: string,
 
 export const formTemplatesSeed: FormTemplate[] = [
   // Registration
-  template('tpl-standard', 'registration', 'Standard Registration', 'Name and contact details for any event.', [['Full Name', 'short-text'], ['Email', 'email'], ['Phone Number', 'phone']], '2026-09-02T10:15'),
+  template('tpl-standard', 'registration', 'Standard Registration', 'Name and contact details for any event.', [['Full Name', 'short-text'], ['Email', 'short-text'], ['Phone Number', 'short-text']], '2026-09-02T10:15'),
   template(
     'tpl-concert',
     'registration',
     'Concert Ticket Registration',
     'For concerts and festivals with ticket zones.',
-    [['Full Name', 'short-text'], ['Email', 'email'], ['Phone Number', 'phone'], ['Ticket Zone', 'dropdown', true, ['GA', 'VIP', 'Backstage']]],
+    [['Full Name', 'short-text'], ['Email', 'short-text'], ['Phone Number', 'short-text'], ['Ticket Zone', 'dropdown', true, ['GA', 'VIP', 'Backstage']]],
     '2026-09-10T14:40',
     'Liam.R',
   ),
@@ -55,7 +55,7 @@ export const formTemplatesSeed: FormTemplate[] = [
     'registration',
     'Workshop Sign-up',
     'Seat booking with experience level.',
-    [['Full Name', 'short-text'], ['Email', 'email'], ['Experience Level', 'single-choice', true, ['Beginner', 'Intermediate', 'Advanced']], ['Anything we should know?', 'long-text', false]],
+    [['Full Name', 'short-text'], ['Email', 'short-text'], ['Experience Level', 'single-choice', true, ['Beginner', 'Intermediate', 'Advanced']], ['Anything we should know?', 'long-text', false]],
     '2026-09-12T09:05',
   ),
   template(
@@ -63,7 +63,7 @@ export const formTemplatesSeed: FormTemplate[] = [
     'registration',
     'Casting / Audition Application',
     'Applicants submit details and a portfolio for review.',
-    [['Full Name', 'short-text'], ['Age', 'number'], ['Phone Number', 'phone'], ['Portfolio', 'file', false]],
+    [['Full Name', 'short-text'], ['Age', 'short-text'], ['Phone Number', 'short-text'], ['Portfolio', 'short-text', false]],
     '2026-09-18T16:20',
     'Ava.M',
   ),
@@ -72,7 +72,7 @@ export const formTemplatesSeed: FormTemplate[] = [
     'registration',
     'Volunteer Application',
     '',
-    [['Full Name', 'short-text'], ['Phone Number', 'phone'], ['Available Days', 'multiple-choice', true, ['Day 1', 'Day 2']], ['Why do you want to join?', 'long-text', false]],
+    [['Full Name', 'short-text'], ['Phone Number', 'short-text'], ['Available Days', 'multiple-choice', true, ['Day 1', 'Day 2']], ['Why do you want to join?', 'long-text', false]],
     '2026-09-20T11:00',
   ),
   template(

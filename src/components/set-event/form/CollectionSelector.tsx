@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import Button from '../../ui/Button';
 import OptionPickerModal from '../OptionPickerModal';
 import { mockCollections } from '../../../views/Collections';
+import { useT } from '@/i18n';
 
 interface CollectionSelectorProps {
   value: number | null;
@@ -11,6 +12,7 @@ interface CollectionSelectorProps {
 
 // Shows the linked Collection as a highlighted card, or an empty state with Select Collection.
 export default function CollectionSelector({ value, onChange }: CollectionSelectorProps) {
+  const t = useT();
   const [picking, setPicking] = useState(false);
   const selected = mockCollections.find((c) => c.id === value);
 
@@ -22,18 +24,18 @@ export default function CollectionSelector({ value, onChange }: CollectionSelect
             <Icon icon="solar:folder-linear" width={22} height={22} className="text-white" />
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block text-xs text-[#6B7280]">Collection</span>
+            <span className="block text-xs text-[#6B7280]">{t('Collection')}</span>
             <span className="block text-sm font-semibold text-[#1A1A1A] truncate">{selected.name}</span>
             <span className="block text-xs text-[#6B7280] truncate">
-              {selected.files.toLocaleString()} files · {selected.storageGb} GB
+              {t('{count} files', { count: selected.files.toLocaleString() })} · {selected.storageGb} GB
             </span>
           </span>
           <div className="flex items-center gap-2 ml-auto">
             <Button variant="ghost" onClick={() => onChange(null)} className="h-9 text-[#6B7280]">
-              Remove
+              {t('Remove')}
             </Button>
             <Button variant="secondary" onClick={() => setPicking(true)} className="h-9">
-              Change
+              {t('Change')}
             </Button>
           </div>
         </div>
@@ -43,22 +45,22 @@ export default function CollectionSelector({ value, onChange }: CollectionSelect
             <Icon icon="solar:folder-linear" width={22} height={22} className="text-[#9CA3AF]" />
           </span>
           <span className="flex-1 min-w-0">
-            <span className="block text-sm font-semibold text-[#374151]">No collection selected</span>
-            <span className="block text-xs text-[#6B7280]">Photos and files for this event will be stored in the Collection you choose.</span>
+            <span className="block text-sm font-semibold text-[#374151]">{t('No collection selected')}</span>
+            <span className="block text-xs text-[#6B7280]">{t('Photos and files for this event will be stored in the Collection you choose.')}</span>
           </span>
           <Button icon="solar:add-linear" variant="secondary" onClick={() => setPicking(true)} className="sm:flex-shrink-0">
-            Select Collection
+            {t('Select Collection')}
           </Button>
         </div>
       )}
 
       {picking && (
         <OptionPickerModal
-          title="Select Collection"
+          title={t('Select Collection')}
           icon="solar:folder-linear"
-          options={mockCollections.map((c) => ({ value: c.id, label: c.name, description: `${c.files.toLocaleString()} files · ${c.linkedEvent}` }))}
+          options={mockCollections.map((c) => ({ value: c.id, label: c.name, description: `${t('{count} files', { count: c.files.toLocaleString() })} · ${c.linkedEvent}` }))}
           initialValue={value}
-          confirmLabel="Select Collection"
+          confirmLabel={t('Select Collection')}
           onConfirm={(id) => {
             onChange(id);
             setPicking(false);

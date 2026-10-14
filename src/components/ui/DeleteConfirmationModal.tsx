@@ -1,6 +1,7 @@
 import { Icon } from '@iconify/react';
 import Modal from './Modal';
 import Button from './Button';
+import { useT } from '@/i18n';
 
 interface DeleteConfirmationModalProps {
   title: string;
@@ -13,10 +14,11 @@ interface DeleteConfirmationModalProps {
 export default function DeleteConfirmationModal({
   title,
   message,
-  confirmLabel = 'Delete',
+  confirmLabel,
   onConfirm,
   onClose,
 }: DeleteConfirmationModalProps) {
+  const t = useT();
   return (
     <Modal
       title={title}
@@ -24,10 +26,10 @@ export default function DeleteConfirmationModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} autoFocus>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button variant="destructive" icon="solar:trash-bin-trash-linear" onClick={onConfirm}>
-            {confirmLabel}
+            {confirmLabel ?? t('Delete')}
           </Button>
         </>
       }

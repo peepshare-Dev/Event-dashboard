@@ -23,6 +23,7 @@ import {
   type BannerStatus,
   type PromoItem,
 } from '../../../data/appBanners';
+import { useT } from '@/i18n';
 
 const STATUS_OPTIONS = ['All', ...PROMO_STATUSES] as const;
 const ACTION_OPTIONS = ['All', ...CLICK_ACTIONS.map((c) => c.label)] as const;
@@ -52,7 +53,9 @@ export default function PromoList(props: PromoListProps) {
   const [action, setAction] = useState<(typeof ACTION_OPTIONS)[number]>('All');
   const [period, setPeriod] = useState({ start: '', end: '' });
   const [frequency, setFrequency] = useState<(typeof FREQUENCY_OPTIONS)[number]>('All');
-  const noun = placement.noun;
+  const t = useT();
+  const noun = t(placement.noun);
+  const lower = noun.toLowerCase();
   const isBanner = placement.shape === 'banner';
   const [deleting, setDeleting] = useState<PromoItem | null>(null);
   const [deactivating, setDeactivating] = useState<PromoItem | null>(null);
@@ -83,18 +86,18 @@ export default function PromoList(props: PromoListProps) {
   const menuItems = (b: PromoItem): ActionMenuItem[] => {
     const shown = displayStatus(b);
     return [
-      { label: 'Edit', icon: 'solar:pen-new-square-linear', onClick: () => onEdit(b) },
-      { label: 'Duplicate', icon: 'solar:copy-linear', onClick: () => onDuplicate(b) },
-      { label: 'Change Priority', icon: 'solar:sort-vertical-linear', onClick: () => onSort(b.id) },
+      { label: t('Edit'), icon: 'solar:pen-new-square-linear', onClick: () => onEdit(b) },
+      { label: t('Duplicate'), icon: 'solar:copy-linear', onClick: () => onDuplicate(b) },
+      { label: t('Change Priority'), icon: 'solar:sort-vertical-linear', onClick: () => onSort(b.id) },
       b.status === 'active'
         ? {
-            label: 'Deactivate',
+            label: t('Deactivate'),
             icon: 'solar:eye-closed-linear',
             // Ask first when it's on screen now, or about to be.
             onClick: () => (shown === 'Active' || shown === 'Scheduled' ? setDeactivating(b) : onSetStatus(b, 'inactive')),
           }
-        : { label: 'Activate', icon: 'solar:eye-linear', onClick: () => onSetStatus(b, 'active') },
-      { label: 'Delete', icon: 'solar:trash-bin-trash-linear', onClick: () => setDeleting(b), destructive: true },
+        : { label: t('Activate'), icon: 'solar:eye-linear', onClick: () => onSetStatus(b, 'active') },
+      { label: t('Delete'), icon: 'solar:trash-bin-trash-linear', onClick: () => setDeleting(b), destructive: true },
     ];
   };
 
@@ -102,9 +105,9 @@ export default function PromoList(props: PromoListProps) {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-[0_1px_2px_rgba(16,24,40,0.04)] px-4 sm:px-6 pt-6 lg:pt-8 pb-6">
         <PageHeader
-          title={placement.menuTitle}
+          title={t(placement.menuTitle)}
           icon={placement.icon}
-          description={placement.subtitle}
+          description={t(placement.subtitle)}
           actions={
             <>
               <Button
@@ -113,14 +116,14 @@ export default function PromoList(props: PromoListProps) {
                 icon="solar:sort-vertical-linear"
                 onClick={() => onSort()}
                 disabled={loadState !== 'ready' || banners.length < 2}
-                aria-label={`Sort ${noun}`}
+                aria-label={t('Sort {noun}', { noun })}
                 className="whitespace-nowrap"
               >
-                <span className="sm:hidden">Sort</span>
-                <span className="hidden sm:inline">Sort {noun}</span>
+                <span className="sm:hidden">{t('Sort')}</span>
+                <span className="hidden sm:inline">{t('Sort {noun}', { noun })}</span>
               </Button>
               <Button pill icon="solar:add-linear" onClick={onCreate} className="whitespace-nowrap flex-1 sm:flex-none">
-                Create {noun}
+                {t('Create {noun}', { noun })}
               </Button>
             </>
           }
@@ -128,24 +131,33 @@ export default function PromoList(props: PromoListProps) {
 
         {loadState === 'ready' && banners.length > 0 && (
           <p className="mt-4 text-sm text-[#6B7280]">
-            <span className="font-semibold text-[#1A1A1A]">{liveCount}</span> of {banners.length} {isBanner ? 'banners showing in the app' : 'cover pages showing to users'} now
+            {(() => {
+              const [before, after] = t(isBanner ? '{live} of {total} banners showing in the app now' : '{live} of {total} cover pages showing to users now', { total: banners.length }).split('{live}');
+              return (
+                <>
+                  {before}
+                  <span className="font-semibold text-[#1A1A1A]">{liveCount}</span>
+                  {after}
+                </>
+              );
+            })()}
           </p>
         )}
 
         {/* Search + filters */}
         <div className="mt-5 flex flex-col lg:flex-row lg:items-center gap-3">
-          <SearchInput value={search} onChange={setSearch} placeholder={`Search ${noun.toLowerCase()}`} className="w-full lg:w-64 flex-shrink-0" />
+          <SearchInput value={search} onChange={setSearch} placeholder={t('Search {noun}', { noun: lower })} className="w-full lg:w-64 flex-shrink-0" />
           <div className="flex flex-wrap items-center gap-2.5">
-            <FilterSelect label="Status" value={status} options={STATUS_OPTIONS} onChange={setStatus} />
-            <FilterSelect label="Click Action" value={action} options={ACTION_OPTIONS} onChange={setAction} />
-            {placement.frequency && <FilterSelect label="Show Frequency" value={frequency} options={FREQUENCY_OPTIONS} onChange={setFrequency} />}
+            <FilterSelect label={t('Status')} value={t(status)} options={STATUS_OPTIONS.map((o) => t(o))} onChange={(v) => setStatus(STATUS_OPTIONS.find((o) => t(o) === v) ?? 'All')} />
+            <FilterSelect label={t('Click Action')} value={t(action)} options={ACTION_OPTIONS.map((o) => t(o))} onChange={(v) => setAction(ACTION_OPTIONS.find((o) => t(o) === v) ?? 'All')} />
+            {placement.frequency && <FilterSelect label={t('Show Frequency')} value={t(frequency)} options={FREQUENCY_OPTIONS.map((o) => t(o))} onChange={(v) => setFrequency(FREQUENCY_OPTIONS.find((o) => t(o) === v) ?? 'All')} />}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#6B7280] whitespace-nowrap">Display period</span>
+              <span className="text-xs text-[#6B7280] whitespace-nowrap">{t('Display period')}</span>
               <DateRangePicker start={period.start} end={period.end} onChange={setPeriod} />
             </div>
             {filtered && (
               <button type="button" onClick={clearFilters} className="h-8 px-2 text-xs text-[#6B7280] underline underline-offset-2 hover:text-[#FF6115]">
-                Clear all
+                {t('Clear all')}
               </button>
             )}
           </div>
@@ -161,21 +173,21 @@ export default function PromoList(props: PromoListProps) {
         {loadState === 'loading' ? (
           <LoadingRows />
         ) : loadState === 'error' ? (
-          <StateBox icon="solar:cloud-cross-linear" title={`Couldn’t load ${noun.toLowerCase()}s`} text="Something went wrong while loading. Check your connection and try again.">
+          <StateBox icon="solar:cloud-cross-linear" title={t(isBanner ? 'Couldn’t load banners' : 'Couldn’t load cover pages')} text={t('Something went wrong while loading. Check your connection and try again.')}>
             <Button variant="secondary" icon="solar:refresh-linear" onClick={onRetry}>
-              Retry
+              {t('Retry')}
             </Button>
           </StateBox>
         ) : banners.length === 0 ? (
-          <StateBox icon={placement.icon} title={`No ${noun.toLowerCase()}s yet`} text={placement.emptyText}>
+          <StateBox icon={placement.icon} title={t(isBanner ? 'No banners yet' : 'No cover pages yet')} text={t(placement.emptyText)}>
             <Button icon="solar:add-linear" onClick={onCreate}>
-              Create {noun}
+              {t('Create {noun}', { noun })}
             </Button>
           </StateBox>
         ) : visible.length === 0 ? (
-          <StateBox icon="solar:magnifer-linear" title={`No ${noun.toLowerCase()}s match your filters`} text="Try a different search or clear the filters.">
+          <StateBox icon="solar:magnifer-linear" title={t(isBanner ? 'No banners match your filters' : 'No cover pages match your filters')} text={t('Try a different search or clear the filters.')}>
             <Button variant="secondary" onClick={clearFilters}>
-              Clear filters
+              {t('Clear filters')}
             </Button>
           </StateBox>
         ) : (
@@ -186,12 +198,12 @@ export default function PromoList(props: PromoListProps) {
                 <thead>
                   <tr className="border-y border-[#E5E7EB] text-left text-xs font-medium text-[#374151]">
                     <th scope="col" className={`h-11 pl-4 pr-4 ${isBanner ? 'w-[210px]' : 'w-[110px]'}`}>{noun}</th>
-                    <th scope="col" className="px-4">Name</th>
-                    <th scope="col" className="px-4">Click Action</th>
-                    <th scope="col" className="px-4">Display Period</th>
-                    {placement.frequency && <th scope="col" className="px-4">Show Frequency</th>}
-                    <th scope="col" className="px-4">Status</th>
-                    <th scope="col" className="w-16"><span className="sr-only">Actions</span></th>
+                    <th scope="col" className="px-4">{t('Name')}</th>
+                    <th scope="col" className="px-4">{t('Click Action')}</th>
+                    <th scope="col" className="px-4">{t('Display Period')}</th>
+                    {placement.frequency && <th scope="col" className="px-4">{t('Show Frequency')}</th>}
+                    <th scope="col" className="px-4">{t('Status')}</th>
+                    <th scope="col" className="w-16"><span className="sr-only">{t('Actions')}</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F0F0F0]">
@@ -201,7 +213,7 @@ export default function PromoList(props: PromoListProps) {
                         <div className="flex items-center gap-3">
                           <span
                             className="w-6 h-6 rounded-full bg-[#F3F4F6] text-[11px] font-semibold text-[#374151] flex items-center justify-center flex-shrink-0"
-                            title={`Display priority ${b.priority}`}
+                            title={t('Display priority {priority}', { priority: b.priority })}
                           >
                             {b.priority}
                           </span>
@@ -221,7 +233,7 @@ export default function PromoList(props: PromoListProps) {
                         <ClickSummary banner={b} />
                       </td>
                       <td className="px-4 text-[13px] text-[#374151] whitespace-nowrap">
-                        {describePeriod(b)}
+                        {describePeriod(b, t)}
                         {b.displayMode === 'schedule' && (
                           <span className="block text-xs text-[#9CA3AF]">
                             {b.startAt.slice(11, 16)} – {b.endAt.slice(11, 16)}
@@ -237,7 +249,7 @@ export default function PromoList(props: PromoListProps) {
                         <PromoStatusBadge status={displayStatus(b)} />
                       </td>
                       <td className="pr-3 text-right">
-                        <ActionMenu label={`Actions for ${b.name}`} items={menuItems(b)} />
+                        <ActionMenu label={t('Actions for {name}', { name: b.name })} items={menuItems(b)} />
                       </td>
                     </tr>
                   ))}
@@ -263,17 +275,17 @@ export default function PromoList(props: PromoListProps) {
                           <PromoStatusBadge status={displayStatus(b)} />
                         </div>
                       </div>
-                      <ActionMenu label={`Actions for ${b.name}`} items={menuItems(b)} />
+                      <ActionMenu label={t('Actions for {name}', { name: b.name })} items={menuItems(b)} />
                     </div>
                     <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs">
-                      <dt className="text-[#9CA3AF]">On click</dt>
-                      <dd className="text-[#374151] min-w-0 truncate">{describeClick(b)}</dd>
-                      <dt className="text-[#9CA3AF]">Period</dt>
-                      <dd className="text-[#374151]">{describePeriod(b)}</dd>
+                      <dt className="text-[#9CA3AF]">{t('On click')}</dt>
+                      <dd className="text-[#374151] min-w-0 truncate">{describeClick(b, t)}</dd>
+                      <dt className="text-[#9CA3AF]">{t('Period')}</dt>
+                      <dd className="text-[#374151]">{describePeriod(b, t)}</dd>
                       {placement.frequency && (
                         <>
-                          <dt className="text-[#9CA3AF]">Frequency</dt>
-                          <dd className="text-[#374151]">{showFrequencyLabel(b.showFrequency)}</dd>
+                          <dt className="text-[#9CA3AF]">{t('Frequency')}</dt>
+                          <dd className="text-[#374151]">{t(showFrequencyLabel(b.showFrequency))}</dd>
                         </>
                       )}
                     </dl>
@@ -287,11 +299,19 @@ export default function PromoList(props: PromoListProps) {
 
       {deleting && (
         <DeleteConfirmationModal
-          title={`Delete ${noun}?`}
+          title={t('Delete {noun}?', { noun })}
           message={
             <>
-              Are you sure you want to delete <span className="font-semibold text-[#1A1A1A]">‘{deleting.name}’</span>? It will be removed from the app and can’t be
-              restored.
+              {(() => {
+                const [before, after] = t('Are you sure you want to delete {name}? It will be removed from the app and can’t be restored.').split('{name}');
+                return (
+                  <>
+                    {before}
+                    <span className="font-semibold text-[#1A1A1A]">‘{deleting.name}’</span>
+                    {after}
+                  </>
+                );
+              })()}
             </>
           }
           onConfirm={() => {
@@ -304,12 +324,12 @@ export default function PromoList(props: PromoListProps) {
 
       {deactivating && (
         <Modal
-          title={`Deactivate ${noun}?`}
+          title={t('Deactivate {noun}?', { noun })}
           onClose={() => setDeactivating(null)}
           footer={
             <>
               <Button variant="secondary" onClick={() => setDeactivating(null)} autoFocus>
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 onClick={() => {
@@ -317,13 +337,13 @@ export default function PromoList(props: PromoListProps) {
                   setDeactivating(null);
                 }}
               >
-                Deactivate
+                {t('Deactivate')}
               </Button>
             </>
           }
         >
           <p className="text-sm text-[#4B5563]">
-            <span className="font-semibold text-[#1A1A1A]">{deactivating.name}</span> {placement.deactivateText} You can activate it again later.
+            <span className="font-semibold text-[#1A1A1A]">{deactivating.name}</span> {t(placement.deactivateText)} {t('You can activate it again later.')}
           </p>
         </Modal>
       )}
@@ -332,24 +352,26 @@ export default function PromoList(props: PromoListProps) {
 }
 
 function FrequencyLabel({ item }: { item: PromoItem }) {
+  const t = useT();
   const f = SHOW_FREQUENCIES.find((x) => x.value === item.showFrequency);
   if (!f) return <span className="text-[#9CA3AF]">—</span>;
   return (
     <span className="inline-flex items-center gap-1.5">
       <Icon icon={f.icon} width={15} height={15} className="text-[#9CA3AF]" />
-      {f.label}
+      {t(f.label)}
     </span>
   );
 }
 
 function ClickSummary({ banner }: { banner: PromoItem }) {
+  const t = useT();
   const action = CLICK_ACTIONS.find((c) => c.value === banner.clickAction)!;
-  const target = describeClick(banner).split(' → ')[1];
+  const target = describeClick(banner, t).split(' → ')[1];
   return (
     <div className="flex items-start gap-2 min-w-0 max-w-[240px]">
       <Icon icon={action.icon} width={16} height={16} className="mt-0.5 text-[#FF6115] flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-[13px] font-medium text-[#1A1A1A]">{action.label}</p>
+        <p className="text-[13px] font-medium text-[#1A1A1A]">{t(action.label)}</p>
         {target && <p className="text-xs text-[#6B7280] truncate" title={target}>{target}</p>}
       </div>
     </div>
@@ -357,8 +379,9 @@ function ClickSummary({ banner }: { banner: PromoItem }) {
 }
 
 function LoadingRows() {
+  const t = useT();
   return (
-    <div role="status" aria-label="Loading banners" className="mt-4 space-y-3">
+    <div role="status" aria-label={t('Loading banners')} className="mt-4 space-y-3">
       {Array.from({ length: 4 }, (_, i) => (
         <div key={i} className="flex items-center gap-4 rounded-xl border border-[#F0F0F0] p-3 animate-pulse">
           <div className="w-[176px] max-w-[40%] aspect-[1432/480] rounded-lg bg-[#F3F4F6]" />

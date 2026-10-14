@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { useT } from '@/i18n';
 
 interface SegmentedControlProps<T extends string> {
   label: string;
@@ -9,6 +10,7 @@ interface SegmentedControlProps<T extends string> {
 
 // Compact two/three-way switch (Yes / No, Unlimited / Limited…), built on native radios.
 export default function SegmentedControl<T extends string>({ label, value, options, onChange }: SegmentedControlProps<T>) {
+  const t = useT();
   const name = useId();
   return (
     <div role="radiogroup" aria-label={label} className="inline-flex p-1 gap-1 rounded-[10px] bg-[#F3F4F6] max-w-full">
@@ -22,7 +24,7 @@ export default function SegmentedControl<T extends string>({ label, value, optio
             }`}
           >
             <input type="radio" name={name} value={o.value} checked={checked} onChange={() => onChange(o.value)} className="sr-only" />
-            {o.label}
+            {t(o.label)}
           </label>
         );
       })}

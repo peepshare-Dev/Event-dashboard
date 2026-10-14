@@ -114,31 +114,35 @@ export function displayStatus(b: Pick<AppBanner, 'status' | 'displayMode' | 'sta
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** Optional translator (`t` from `useT()`); without it, English text with placeholders filled. */
+export type Translate = (text: string, vars?: Record<string, string | number>) => string;
+const fill: Translate = (text, vars) => (vars ? text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m)) : text);
+
 /** `2026-10-08` → `08 Oct 2026` */
-export function formatDay(value: string) {
+export function formatDay(value: string, t: Translate = fill) {
   if (!value) return '—';
   const [y, m, d] = value.slice(0, 10).split('-');
-  return `${d} ${MONTHS[Number(m) - 1]} ${y}`;
+  return `${d} ${t(MONTHS[Number(m) - 1])} ${y}`;
 }
 
-export function describePeriod(b: Pick<AppBanner, 'displayMode' | 'startAt' | 'endAt'>) {
-  if (b.displayMode === 'always') return 'Always';
-  return `${formatDay(b.startAt)} - ${formatDay(b.endAt)}`;
+export function describePeriod(b: Pick<AppBanner, 'displayMode' | 'startAt' | 'endAt'>, t: Translate = fill) {
+  if (b.displayMode === 'always') return t('Always');
+  return `${formatDay(b.startAt, t)} - ${formatDay(b.endAt, t)}`;
 }
 
 /** Plain-language click behaviour, e.g. "Content · Event → Watch Party 2026". */
-export function describeClick(b: Pick<AppBanner, 'clickAction' | 'destinationType' | 'destinationLabel' | 'destinationUrl'>) {
+export function describeClick(b: Pick<AppBanner, 'clickAction' | 'destinationType' | 'destinationLabel' | 'destinationUrl'>, t: Translate = fill) {
   switch (b.clickAction) {
     case 'url':
-      return b.destinationUrl ? `External URL → ${b.destinationUrl}` : 'External URL';
+      return b.destinationUrl ? `${t('External URL')} → ${b.destinationUrl}` : t('External URL');
     case 'app_page':
-      return b.destinationType ? `App Page → ${appPageLabel(b.destinationType)}` : 'App Page';
+      return b.destinationType ? `${t('App Page')} → ${t(appPageLabel(b.destinationType))}` : t('App Page');
     case 'content':
-      return `${b.destinationType ? contentTypeLabel(b.destinationType) : 'Content'}${b.destinationLabel ? ` → ${b.destinationLabel}` : ''}`;
+      return `${t(b.destinationType ? contentTypeLabel(b.destinationType) : 'Content')}${b.destinationLabel ? ` → ${b.destinationLabel}` : ''}`;
     case 'coupon':
-      return `Coupon${b.destinationLabel ? ` → ${b.destinationLabel}` : ''}`;
+      return `${t('Coupon')}${b.destinationLabel ? ` → ${b.destinationLabel}` : ''}`;
     default:
-      return 'No Action';
+      return t('No Action');
   }
 }
 

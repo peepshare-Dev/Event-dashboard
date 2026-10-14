@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface SearchInputProps {
   value: string;
@@ -7,7 +8,9 @@ interface SearchInputProps {
   className?: string;
 }
 
-export default function SearchInput({ value, onChange, placeholder = 'Search', className = '' }: SearchInputProps) {
+export default function SearchInput({ value, onChange, placeholder: placeholderProp, className = '' }: SearchInputProps) {
+  const t = useT();
+  const placeholder = placeholderProp ?? t('Search');
   return (
     <div className={`relative ${className}`}>
       <Icon
@@ -28,7 +31,7 @@ export default function SearchInput({ value, onChange, placeholder = 'Search', c
         <button
           type="button"
           onClick={() => onChange('')}
-          aria-label="Clear search"
+          aria-label={t('Clear search')}
           className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-[#9CA3AF] hover:text-[#6B7280]"
         >
           <Icon icon="solar:close-linear" width={14} height={14} />

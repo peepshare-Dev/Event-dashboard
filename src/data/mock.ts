@@ -17,25 +17,25 @@ export const services: ServiceConfig[] = [
     icon: 'solar:calendar-linear',
   },
   {
+    id: 'set-event',
+    name: 'Set Event',
+    description: 'Configure and manage event settings, information, and event structure.',
+    environment: 'Production',
+    icon: 'solar:settings-linear',
+  },
+  {
+    id: 'media-ads',
+    name: 'Media Ads',
+    description: 'Manage in-app banners and cover pages shown in the Peep Share app.',
+    environment: 'Production',
+    icon: 'solar:gallery-wide-linear',
+  },
+  {
     id: 'peep-sync',
     name: 'PEEP SYNC',
     description: 'Photographer workspace to view assigned events and upload, sync, and manage event photos in the cloud.',
     environment: 'Production',
     icon: 'solar:camera-linear',
-  },
-  {
-    id: 'peep-oa',
-    name: 'PEEP OA',
-    description: 'Manage Official Account conversations, broadcasts, rich menus, and customer engagement.',
-    environment: 'Production',
-    icon: 'solar:chat-round-line-linear',
-  },
-  {
-    id: 'peeps-oa-staging',
-    name: 'PEEPS OA Official Staging',
-    description: 'Access the PEEPS OA staging environment for testing and development.',
-    environment: 'Staging',
-    icon: 'solar:chat-round-line-linear',
   },
   {
     id: 'coupon',
@@ -45,11 +45,11 @@ export const services: ServiceConfig[] = [
     icon: 'solar:ticket-sale-linear',
   },
   {
-    id: 'set-event',
-    name: 'Set Event',
-    description: 'Configure and manage event settings, information, and event structure.',
+    id: 'peep-oa',
+    name: 'PEEP OA',
+    description: 'Manage Official Account conversations, broadcasts, rich menus, and customer engagement.',
     environment: 'Production',
-    icon: 'solar:settings-linear',
+    icon: 'solar:chat-round-line-linear',
   },
 ];
 

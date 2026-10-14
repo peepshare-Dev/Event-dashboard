@@ -8,7 +8,9 @@ import {
   splitVariables,
   triggerDef,
   type Automation,
+  type MessageContent,
 } from '../../../data/automations';
+import { useT } from '@/i18n';
 
 interface AutomationCardProps {
   automation: Automation;
@@ -20,7 +22,8 @@ interface AutomationCardProps {
 
 // One rule, read left to right: WHEN → WAIT → THEN, then the message it sends.
 export default function AutomationCard({ automation, onEdit, onDuplicate, onDelete, onToggle }: AutomationCardProps) {
-  const { name, enabled, trigger, channel, content } = automation;
+  const { name, enabled, trigger, channel, messages } = automation;
+  const t = useT();
   const def = triggerDef(trigger.type);
 
   return (
@@ -33,29 +36,38 @@ export default function AutomationCard({ automation, onEdit, onDuplicate, onDele
           }`}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-[#22C55E]' : 'border border-[#9CA3AF]'}`} aria-hidden="true" />
-          {enabled ? 'Active' : 'Inactive'}
+          {enabled ? t('Active') : t('Inactive')}
         </span>
       </div>
 
       <div className={`mt-4 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-2 ${enabled ? '' : 'opacity-60'}`}>
-        <RulePart label="Trigger" step="WHEN" icon={def.icon} value={def.label} />
+        <RulePart label={t('Trigger')} step={t('WHEN')} icon={def.icon} value={t(def.label)} />
         <Arrow />
-        <RulePart label="Timing" step="WAIT" icon="solar:clock-circle-linear" value={describeTiming(trigger)} />
+        <RulePart label={t('Timing')} step={t('WAIT')} icon="solar:clock-circle-linear" value={describeTiming(trigger, t)} />
         <Arrow />
-        <RulePart label="Channel" step="THEN" icon="solar:chat-round-dots-linear" value={`${channelLabel(channel)} · ${messageTypeLabel(content.type)}`} />
+        <RulePart label={t('Channel')} step={t('THEN')} icon="solar:chat-round-dots-linear" value={`${t(channelLabel(channel))} · ${messages.length === 1 ? t(messageTypeLabel(messages[0].type)) : t('{count} messages', { count: messages.length })}`} />
       </div>
 
-      <div className={`mt-3 rounded-lg bg-[#F9FAFB] border border-[#F0F0F0] px-3.5 py-3 text-sm text-[#374151] ${enabled ? '' : 'opacity-60'}`}>
-        <ContentSummary content={content} />
+      <div className={`mt-3 rounded-lg bg-[#F9FAFB] border border-[#F0F0F0] divide-y divide-[#F0F0F0] text-sm text-[#374151] ${enabled ? '' : 'opacity-60'}`}>
+        {messages.map((content, i) => (
+          <div key={i} className="px-3.5 py-3">
+            {messages.length > 1 && (
+              <p className="mb-1.5 text-[10px] font-bold tracking-wider text-[#9CA3AF] uppercase">
+                {t('Message {number}', { number: i + 1 })} · {t(messageTypeLabel(content.type))}
+              </p>
+            )}
+            <ContentSummary content={content} />
+          </div>
+        ))}
       </div>
 
       <div className="mt-3 pt-3 border-t border-[#F0F0F0] flex items-center justify-between gap-3">
         <div className="flex items-center -ml-2">
-          <CardAction icon="solar:pen-new-square-linear" label="Edit" onClick={onEdit} />
-          <CardAction icon="solar:copy-linear" label="Duplicate" onClick={onDuplicate} />
-          <CardAction icon="solar:trash-bin-trash-linear" label="Delete" onClick={onDelete} destructive />
+          <CardAction icon="solar:pen-new-square-linear" label={t('Edit')} onClick={onEdit} />
+          <CardAction icon="solar:copy-linear" label={t('Duplicate')} onClick={onDuplicate} />
+          <CardAction icon="solar:trash-bin-trash-linear" label={t('Delete')} onClick={onDelete} destructive />
         </div>
-        <Toggle checked={enabled} onChange={onToggle} label={enabled ? 'On' : 'Off'} />
+        <Toggle checked={enabled} onChange={onToggle} label={enabled ? t('On') : t('Off')} />
       </div>
     </article>
   );
@@ -85,7 +97,8 @@ function Arrow() {
 }
 
 /** Readable message preview: variables appear as labelled chips instead of `{{raw_keys}}`. */
-function ContentSummary({ content }: { content: Automation['content'] }) {
+function ContentSummary({ content }: { content: MessageContent }) {
+  const t = useT();
   if (content.type === 'image') {
     return content.image ? (
       <div className="flex items-center gap-3">
@@ -93,18 +106,20 @@ function ContentSummary({ content }: { content: Automation['content'] }) {
         <span className="truncate">{content.image.name}</span>
       </div>
     ) : (
-      <span className="text-[#9CA3AF]">No image</span>
+      <span className="text-[#9CA3AF]">{t('No image')}</span>
     );
   }
-  if (content.type === 'rich' && content.rich) {
-    const { title, description, button } = content.rich;
+  if (content.type === 'claim' && content.claim) {
+    const { image, url, claimedText } = content.claim;
     return (
-      <div className="space-y-1">
-        <p className="font-semibold text-[#1A1A1A]"><WithVariables text={title} /></p>
-        {description && <p className="line-clamp-2"><WithVariables text={description} /></p>}
-        {button.label && (
-          <span className="inline-flex items-center h-7 mt-1 px-3 rounded-full border border-[#FFD9C4] bg-white text-xs font-medium text-[#E5540F]">{button.label}</span>
-        )}
+      <div className="flex items-start gap-3">
+        {image && <img src={image.url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />}
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-xs text-[#6B7280] truncate">{t('Tap → {url}', { url })}</p>
+          <p className="line-clamp-2">
+            <WithVariables text={claimedText} />
+          </p>
+        </div>
       </div>
     );
   }
@@ -116,12 +131,13 @@ function ContentSummary({ content }: { content: Automation['content'] }) {
 }
 
 function WithVariables({ text }: { text: string }) {
+  const t = useT();
   return (
     <>
       {splitVariables(text).map((part, i) =>
         'variable' in part ? (
           <span key={i} className="inline-block px-1 rounded bg-[#FFF0E8] text-[#E5540F] text-[0.92em] font-medium">
-            {MESSAGE_VARIABLES.find((v) => v.key === part.variable)?.label ?? part.variable}
+            {t(MESSAGE_VARIABLES.find((v) => v.key === part.variable)?.label ?? part.variable)}
           </span>
         ) : (
           <span key={i}>{part.text}</span>

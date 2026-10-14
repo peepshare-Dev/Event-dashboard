@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import PickerInput from '../../ui/PickerInput';
+import { useT } from '@/i18n';
 
 export interface DateTimeValue {
   date: string;
@@ -19,10 +20,11 @@ interface DateTimeInputProps {
 
 /** A date box and a time box side by side. */
 export function DateTimeInput({ value, onChange, datePlaceholder = 'DD-MM-YYYY', timePlaceholder = 'Time', min, max, invalid, className = '' }: DateTimeInputProps) {
+  const t = useT();
   return (
     <div className={`flex items-center gap-2 sm:gap-3 min-w-0 ${className}`}>
-      <PickerInput size="md" type="date" placeholder={datePlaceholder} value={value.date} min={min} max={max} invalid={invalid} onChange={(date) => onChange({ date })} className="flex-1 min-w-0" />
-      <PickerInput size="md" type="time" placeholder={timePlaceholder} value={value.time} invalid={invalid} onChange={(time) => onChange({ time })} className="w-[7.5rem] sm:w-32 flex-shrink-0" />
+      <PickerInput size="md" type="date" placeholder={t(datePlaceholder)} value={value.date} min={min} max={max} invalid={invalid} onChange={(date) => onChange({ date })} className="flex-1 min-w-0" />
+      <PickerInput size="md" type="time" placeholder={t(timePlaceholder)} value={value.time} invalid={invalid} onChange={(time) => onChange({ time })} className="w-[7.5rem] sm:w-32 flex-shrink-0" />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface PaginationProps {
   page: number;
@@ -19,11 +20,14 @@ const navButtonClass =
   'inline-flex items-center gap-2 h-9 px-3.5 text-sm font-semibold text-[#1A1A1A] bg-white border border-[#D1D5DB] rounded-lg hover:bg-[#F9FAFB] disabled:text-[#9CA3AF] disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40';
 
 export default function Pagination({ page, totalPages, onChange }: PaginationProps) {
+  const t = useT();
+  // Keeps the current page number bold inside the translated sentence.
+  const [pageBefore, pageAfter = ''] = t('Page {page} of {total}', { total: totalPages }).split('{page}');
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-between gap-3 px-4 sm:px-6 py-6">
-      <button onClick={() => onChange(page - 1)} disabled={page <= 1} className={navButtonClass}>
+    <nav aria-label={t('Pagination')} className="flex items-center justify-between gap-3 px-4 sm:px-6 py-6">
+      <button onClick={() => onChange(page - 1)} disabled={page <= 1} aria-label={t('Previous page')} className={navButtonClass}>
         <Icon icon="solar:arrow-left-linear" width={18} height={18} />
-        <span className="hidden sm:inline">Previous</span>
+        <span className="hidden sm:inline">{t('Previous')}</span>
       </button>
 
       <div className="hidden sm:flex items-center gap-1">
@@ -47,11 +51,11 @@ export default function Pagination({ page, totalPages, onChange }: PaginationPro
         )}
       </div>
       <span className="sm:hidden text-sm text-[#6B7280]">
-        Page <span className="font-medium text-[#1A1A1A]">{page}</span> of {totalPages}
+        {pageBefore}<span className="font-medium text-[#1A1A1A]">{page}</span>{pageAfter}
       </span>
 
-      <button onClick={() => onChange(page + 1)} disabled={page >= totalPages} className={navButtonClass}>
-        <span className="hidden sm:inline">Next</span>
+      <button onClick={() => onChange(page + 1)} disabled={page >= totalPages} aria-label={t('Next page')} className={navButtonClass}>
+        <span className="hidden sm:inline">{t('Next')}</span>
         <Icon icon="solar:arrow-right-linear" width={18} height={18} />
       </button>
     </nav>

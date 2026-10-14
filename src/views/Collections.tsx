@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { events, users } from '../data/mock';
 import { Icon } from '@iconify/react';
+import SearchInput from '../components/ui/SearchInput';
+import FilterButton from '../components/ui/FilterButton';
+import FilterSelect from '../components/ui/FilterSelect';
+import Pagination from '../components/ui/Pagination';
+import Modal from '../components/ui/Modal';
+import ActionMenu from '../components/ui/ActionMenu';
+import DeleteConfirmationModal from '../components/ui/DeleteConfirmationModal';
+import { downloadQrPng } from '../components/set-event/qr';
+import { useT } from '@/i18n';
 
 export type SharingType = 'Public Link' | 'Private' | 'Restricted' | 'Expired';
 
@@ -12,10 +21,19 @@ export interface Collection {
   linkedEvent: string;
   files: number;
   storageGb: number;
+  /** Display label, e.g. "Today", "2 days ago". */
   lastUpdated: string;
+  /** Local date-time of the last change, `YYYY-MM-DDTHH:mm` — what the list sorts by. */
+  updatedAt: string;
   sharing: SharingType;
   status: 'Active' | 'Archived';
   description: string;
+}
+
+function nowLocal() {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export const SHARING_COLORS: Record<SharingType, string> = {
@@ -25,36 +43,112 @@ export const SHARING_COLORS: Record<SharingType, string> = {
   'Expired': 'bg-red-50 text-red-600',
 };
 
-const FILE_TABS = ['All Files', 'Photos', 'Videos', 'Documents', 'Audio', 'Other'] as const;
-type FileTab = typeof FILE_TABS[number];
+const FILE_TYPES = ['Photos', 'Videos', 'Documents', 'Audio', 'Other'] as const;
+type FileType = typeof FILE_TYPES[number];
+const FILE_TYPE_OPTIONS = ['All', ...FILE_TYPES] as const;
+const FILE_STATUSES = ['Uploaded', 'Processing', 'Failed'] as const;
+type FileStatus = typeof FILE_STATUSES[number];
+const FILE_STATUS_OPTIONS = ['All', ...FILE_STATUSES] as const;
+const FILES_PER_PAGE = 24;
 
 export const mockCollections: Collection[] = [
-  { id: 1, name: 'MONOMAX Event Photos', owner: 'Aom Siriporn', ownerAvatar: 'AS', linkedEvent: 'MONOMAX Event', files: 8520, storageGb: 18.2, lastUpdated: 'Today', sharing: 'Public Link', status: 'Active', description: 'All photos from MONOMAX Event 5-6 Sep 2026' },
-  { id: 2, name: 'Pattaya Countdown Photos', owner: 'Beam Natthawut', ownerAvatar: 'BN', linkedEvent: 'Pattaya Countdown 2027', files: 12820, storageGb: 24.5, lastUpdated: 'Yesterday', sharing: 'Private', status: 'Active', description: 'Photos for Pattaya Countdown event' },
-  { id: 3, name: 'PEEP Sport Day Album', owner: 'Mint Wanida', ownerAvatar: 'MW', linkedEvent: 'PEEP Sport Day', files: 3240, storageGb: 8.4, lastUpdated: '2 days ago', sharing: 'Restricted', status: 'Active', description: 'Sport Day photos and videos' },
-  { id: 4, name: 'Event Documents', owner: 'Admin', ownerAvatar: 'ST', linkedEvent: 'MONOMAX Event', files: 42, storageGb: 0.85, lastUpdated: '3 days ago', sharing: 'Restricted', status: 'Active', description: 'Contracts, schedules and documents' },
-  { id: 5, name: 'Songkran Walk Photos', owner: 'Beam Natthawut', ownerAvatar: 'BN', linkedEvent: 'Songkran Photo Walk', files: 5100, storageGb: 10.2, lastUpdated: '5 days ago', sharing: 'Expired', status: 'Archived', description: 'Songkran 2026 walk event photos' },
-  { id: 6, name: 'Behind the Scenes', owner: 'Aom Siriporn', ownerAvatar: 'AS', linkedEvent: 'MONOMAX Event', files: 240, storageGb: 1.4, lastUpdated: 'Today', sharing: 'Private', status: 'Active', description: 'BTS footage and candid shots' },
+  { id: 1, name: 'MONOMAX Event Photos', owner: 'Aom Siriporn', ownerAvatar: 'AS', linkedEvent: 'MONOMAX Event', files: 8520, storageGb: 18.2, lastUpdated: 'Today', updatedAt: '2026-10-13T09:30', sharing: 'Public Link', status: 'Active', description: 'All photos from MONOMAX Event 5-6 Sep 2026' },
+  { id: 2, name: 'Pattaya Countdown Photos', owner: 'Beam Natthawut', ownerAvatar: 'BN', linkedEvent: 'Pattaya Countdown 2027', files: 12820, storageGb: 24.5, lastUpdated: 'Yesterday', updatedAt: '2026-10-12T16:40', sharing: 'Private', status: 'Active', description: 'Photos for Pattaya Countdown event' },
+  { id: 3, name: 'PEEP Sport Day Album', owner: 'Mint Wanida', ownerAvatar: 'MW', linkedEvent: 'PEEP Sport Day', files: 3240, storageGb: 8.4, lastUpdated: '2 days ago', updatedAt: '2026-10-11T11:05', sharing: 'Restricted', status: 'Active', description: 'Sport Day photos and videos' },
+  { id: 4, name: 'Event Documents', owner: 'Admin', ownerAvatar: 'ST', linkedEvent: 'MONOMAX Event', files: 42, storageGb: 0.85, lastUpdated: '3 days ago', updatedAt: '2026-10-10T14:20', sharing: 'Restricted', status: 'Active', description: 'Contracts, schedules and documents' },
+  { id: 5, name: 'Songkran Walk Photos', owner: 'Beam Natthawut', ownerAvatar: 'BN', linkedEvent: 'Songkran Photo Walk', files: 5100, storageGb: 10.2, lastUpdated: '5 days ago', updatedAt: '2026-10-08T10:00', sharing: 'Expired', status: 'Archived', description: 'Songkran 2026 walk event photos' },
+  { id: 6, name: 'Behind the Scenes', owner: 'Aom Siriporn', ownerAvatar: 'AS', linkedEvent: 'MONOMAX Event', files: 240, storageGb: 1.4, lastUpdated: 'Today', updatedAt: '2026-10-13T08:15', sharing: 'Private', status: 'Active', description: 'BTS footage and candid shots' },
 ];
 
-const mockPhotos = Array.from({ length: 12 }, (_, i) => ({
-  id: i + 1,
-  name: `DSC_${String(1000 + i).padStart(4, '0')}.jpg`,
-  size: `${(2.1 + Math.random() * 5).toFixed(1)} MB`,
-  date: '5 Sep 2026',
-  uploader: i % 3 === 0 ? 'Mint Wanida' : 'Beam Natthawut',
-  color: ['#FFE4D6', '#D6E8FF', '#D6FFE8', '#EDD6FF', '#FFF9D6', '#FFD6D6', '#D6FFF9', '#FFD6F9'][i % 8],
-}));
+interface CollectionFile {
+  id: number;
+  name: string;
+  type: FileType;
+  sizeMb: number;
+  date: string;
+  uploader: string;
+  status: FileStatus;
+  color: string;
+}
+
+const FILE_COLORS = ['#FFE4D6', '#D6E8FF', '#D6FFE8', '#EDD6FF', '#FFF9D6', '#FFD6D6', '#D6FFF9', '#FFD6F9'];
+const FILE_EXT: Record<FileType, string> = { Photos: 'jpg', Videos: 'mp4', Documents: 'pdf', Audio: 'mp3', Other: 'zip' };
+const FILE_ICON: Record<FileType, string> = {
+  Photos: '📷',
+  Videos: '🎬',
+  Documents: '📄',
+  Audio: '🎵',
+  Other: '📦',
+};
+
+/** Mock files for a collection: mostly photos, a few other types; same result every time. */
+function mockFiles(collection: Collection): CollectionFile[] {
+  return Array.from({ length: collection.files }, (_, i) => {
+    const type: FileType = i % 131 === 130 ? 'Other' : i % 97 === 96 ? 'Audio' : i % 50 === 49 ? 'Documents' : i % 20 === 19 ? 'Videos' : 'Photos';
+    const seed = (i * 7919 + collection.id * 104729) % 1000;
+    return {
+      id: i + 1,
+      name: `DSC_${String(1000 + i).padStart(4, '0')}.${FILE_EXT[type]}`,
+      type,
+      sizeMb: Math.round((type === 'Videos' ? 40 + seed / 10 : 2 + (seed / 1000) * 5) * 10) / 10,
+      date: '5 Sep 2026',
+      uploader: i % 3 === 0 ? 'Mint Wanida' : 'Beam Natthawut',
+      status: i % 53 === 52 ? 'Failed' : i % 37 === 36 ? 'Processing' : 'Uploaded',
+      color: FILE_COLORS[i % FILE_COLORS.length],
+    };
+  });
+}
+
+const STATUS_STYLE: Record<FileStatus, string> = {
+  Uploaded: 'bg-green-50 text-green-700',
+  Processing: 'bg-amber-50 text-amber-700',
+  Failed: 'bg-red-50 text-red-600',
+};
+
 
 export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void }) {
+  const t = useT();
   const [collections, setCollections] = useState(mockCollections);
   const [search, setSearch] = useState('');
   const [sharingFilter, setSharingFilter] = useState<SharingType | 'All'>('All');
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [shareCollection, setShareCollection] = useState<Collection | null>(null);
+  const [deletingCollection, setDeletingCollection] = useState<Collection | null>(null);
+  const [accessCollection, setAccessCollection] = useState<Collection | null>(null);
+  // People each collection is shared with (besides its owner), by collection id.
+  const [accessById, setAccessById] = useState<Record<number, AccessEntry[]>>(() =>
+    Object.fromEntries(mockCollections.map((c) => [c.id, sampleAccess(c)])),
+  );
+  const accessOf = (c: Collection) => accessById[c.id] ?? [];
 
-  const filtered = collections.filter(c => {
+  const updateCollection = (id: number, patch: Partial<Collection>) => {
+    const apply = (c: Collection) => (c.id === id ? { ...c, ...patch, lastUpdated: 'Just now', updatedAt: nowLocal() } : c);
+    setCollections((list) => list.map(apply));
+    setSelectedCollection((c) => (c ? apply(c) : c));
+  };
+
+  // Sharing changes the collection's Sharing badge, adds the chosen people, and counts as an update.
+  const saveSharing = (sharing: SharingType, people: AccessEntry[]) => {
+    if (!shareCollection) return;
+    const id = shareCollection.id;
+    setAccessById((all) => {
+      const current = all[id] ?? [];
+      const added = people.filter((p) => !current.some((x) => x.id === p.id) && p.name !== shareCollection.owner);
+      return { ...all, [id]: [...current.map((x) => people.find((p) => p.id === x.id) ?? x), ...added] };
+    });
+    updateCollection(id, { sharing });
+    setShareCollection(null);
+  };
+
+  const saveAccess = (collection: Collection, people: AccessEntry[]) => {
+    setAccessById((all) => ({ ...all, [collection.id]: people }));
+    // With nobody left, a restricted collection is just private.
+    if (people.length === 0 && collection.sharing === 'Restricted') updateCollection(collection.id, { sharing: 'Private' });
+  };
+
+  // Most recently updated first; equal times keep their list order (new collections are added at the top).
+  const filtered = [...collections].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')).filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.linkedEvent.toLowerCase().includes(search.toLowerCase()) ||
       c.owner.toLowerCase().includes(search.toLowerCase());
@@ -64,12 +158,44 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
 
   if (selectedCollection) {
     return (
-      <CollectionDetail
-        collection={selectedCollection}
-        onBack={() => setSelectedCollection(null)}
-        onShare={() => setShareCollection(selectedCollection)}
-        onPhotoSync={onPhotoSync}
-      />
+      <>
+        <CollectionDetail
+          collection={selectedCollection}
+          onBack={() => setSelectedCollection(null)}
+          onShare={() => setShareCollection(selectedCollection)}
+          onDelete={() => setDeletingCollection(selectedCollection)}
+          onPeopleWithAccess={() => setAccessCollection(selectedCollection)}
+          onPhotoSync={onPhotoSync}
+        />
+        {accessCollection && (
+          <PeopleAccessModal
+            collection={accessCollection}
+            people={accessOf(accessCollection)}
+            onChange={(people) => saveAccess(accessCollection, people)}
+            onClose={() => setAccessCollection(null)}
+          />
+        )}
+        {deletingCollection && (
+          <DeleteConfirmationModal
+            title={t('Delete this collection?')}
+            confirmLabel={t('Delete Collection')}
+            message={
+              <>
+                <span className="font-semibold text-[#1A1A1A]">{deletingCollection.name}</span>{' '}
+                {t('and its {count} files will be deleted. This cannot be undone.', { count: deletingCollection.files.toLocaleString() })}
+              </>
+            }
+            onConfirm={() => {
+              setCollections((list) => list.filter((c) => c.id !== deletingCollection.id));
+              setSelectedCollection(null);
+              setDeletingCollection(null);
+            }}
+            onClose={() => setDeletingCollection(null)}
+          />
+        )}
+        {/* The detail view returns early, so it needs its own Share modal. */}
+        {shareCollection && <ShareModal collection={shareCollection} onClose={() => setShareCollection(null)} onShare={saveSharing} />}
+      </>
     );
   }
 
@@ -77,15 +203,15 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-[#1A1A1A]">Collections</h2>
-          <p className="text-sm text-[#6B7280] mt-0.5">Manage and organize files stored in your PEEP SHARE Cloud</p>
+          <h2 className="text-xl font-semibold text-[#1A1A1A]">{t('Collections')}</h2>
+          <p className="text-sm text-[#6B7280] mt-0.5">{t('Manage and organize files stored in your PEEP SHARE Cloud')}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center justify-center gap-2 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium px-4 py-2.5 sm:py-2 rounded-lg transition-colors"
         >
           <Icon icon="solar:add-linear" width={14} height={14} />
-          Create Collection
+          {t('Create Collection')}
         </button>
       </div>
 
@@ -95,7 +221,7 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
           <Icon icon="solar:magnifer-linear" width={15} height={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
           <input
             type="text"
-            placeholder="Search collections..."
+            placeholder={t('Search collections...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
@@ -108,7 +234,7 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
               onClick={() => setSharingFilter(s)}
               className={`text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${sharingFilter === s ? 'bg-[#FF6115] border-[#FF6115] text-white' : 'border-[#E5E7EB] text-[#6B7280] hover:border-[#FF6115] hover:text-[#FF6115]'}`}
             >
-              {s}
+              {t(s)}
             </button>
           ))}
         </div>
@@ -121,7 +247,7 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                 {['Collection Name', 'Owner', 'Linked Event', 'Files', 'Storage', 'Last Updated', 'Sharing', 'Status', 'Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{t(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -131,7 +257,7 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
                   <td colSpan={9} className="text-center py-16 text-[#9CA3AF] text-sm">
                     <div className="flex flex-col items-center gap-2">
                       <Icon icon="solar:folder-linear" width={32} height={32} color="#D1D5DB" />
-                      <span>No collections found</span>
+                      <span>{t('No collections found')}</span>
                     </div>
                   </td>
                 </tr>
@@ -161,20 +287,20 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
                   <td className="px-4 py-3.5 text-sm text-[#6B7280]">{c.linkedEvent}</td>
                   <td className="px-4 py-3.5 text-sm text-[#4B5563]">{c.files.toLocaleString()}</td>
                   <td className="px-4 py-3.5 text-sm text-[#4B5563]">{c.storageGb >= 1 ? `${c.storageGb} GB` : `${Math.round(c.storageGb * 1000)} MB`}</td>
-                  <td className="px-4 py-3.5 text-sm text-[#9CA3AF]">{c.lastUpdated}</td>
+                  <td className="px-4 py-3.5 text-sm text-[#9CA3AF]">{t(c.lastUpdated)}</td>
                   <td className="px-4 py-3.5">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${SHARING_COLORS[c.sharing]}`}>{c.sharing}</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${SHARING_COLORS[c.sharing]}`}>{t(c.sharing)}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${c.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {c.status}
+                      {t(c.status)}
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => setSelectedCollection(c)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">View</button>
-                      <button onClick={() => setShareCollection(c)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Share</button>
-                      <button className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">Delete</button>
+                      <button onClick={() => setSelectedCollection(c)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('View')}</button>
+                      <button onClick={() => setShareCollection(c)} className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Share')}</button>
+                      <button className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">{t('Delete')}</button>
                     </div>
                   </td>
                 </tr>
@@ -190,7 +316,7 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
           <div className="bg-white rounded-xl border border-[#E5E7EB] text-center py-12 text-[#9CA3AF] text-sm">
             <div className="flex flex-col items-center gap-2">
               <Icon icon="solar:folder-linear" width={28} height={28} color="#D1D5DB" />
-              <span>No collections found</span>
+              <span>{t('No collections found')}</span>
             </div>
           </div>
         ) : filtered.map(c => (
@@ -208,25 +334,25 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
                 </button>
                 <div className="text-xs text-[#9CA3AF]">{c.linkedEvent}</div>
               </div>
-              <span className={`inline-flex flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${SHARING_COLORS[c.sharing]}`}>{c.sharing}</span>
+              <span className={`inline-flex flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${SHARING_COLORS[c.sharing]}`}>{t(c.sharing)}</span>
             </div>
 
             <div className="flex items-center gap-4 mt-3 text-sm text-[#4B5563]">
-              <span>{c.files.toLocaleString()} files</span>
+              <span>{t('{count} files', { count: c.files.toLocaleString() })}</span>
               <span>{c.storageGb >= 1 ? `${c.storageGb} GB` : `${Math.round(c.storageGb * 1000)} MB`}</span>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${c.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                {c.status}
+                {t(c.status)}
               </span>
             </div>
 
-            <div className="text-xs text-[#9CA3AF] mt-2">Updated {c.lastUpdated}</div>
+            <div className="text-xs text-[#9CA3AF] mt-2">{t('Updated {date}', { date: t(c.lastUpdated) })}</div>
 
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#F3F4F6]">
               <div className="flex items-center gap-1">
-                <button onClick={() => setSelectedCollection(c)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">View</button>
-                <button onClick={() => setShareCollection(c)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Share</button>
+                <button onClick={() => setSelectedCollection(c)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('View')}</button>
+                <button onClick={() => setShareCollection(c)} className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Share')}</button>
               </div>
-              <button className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">Delete</button>
+              <button className="min-h-[44px] px-3 text-xs text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">{t('Delete')}</button>
             </div>
           </div>
         ))}
@@ -236,28 +362,59 @@ export default function Collections({ onPhotoSync }: { onPhotoSync?: () => void 
         <CreateCollectionModal
           onClose={() => setShowCreate(false)}
           onCreate={(c) => {
-            setCollections(prev => [...prev, c]);
+            setCollections(prev => [c, ...prev]);
             setShowCreate(false);
           }}
         />
       )}
 
       {shareCollection && (
-        <ShareModal collection={shareCollection} onClose={() => setShareCollection(null)} />
+        <ShareModal collection={shareCollection} onClose={() => setShareCollection(null)} onShare={saveSharing} />
       )}
     </div>
   );
 }
 
-function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
+function CollectionDetail({ collection, onBack, onShare, onDelete, onPeopleWithAccess, onPhotoSync }: {
   collection: Collection;
   onBack: () => void;
   onShare: () => void;
+  onDelete: () => void;
+  onPeopleWithAccess: () => void;
   onPhotoSync?: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<FileTab>('Photos');
+  const t = useT();
+  const [view, setView] = useState<'list' | 'gallery'>('gallery');
+  const [search, setSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [fileType, setFileType] = useState<(typeof FILE_TYPE_OPTIONS)[number]>('All');
+  const [fileStatus, setFileStatus] = useState<(typeof FILE_STATUS_OPTIONS)[number]>('All');
+  const [page, setPage] = useState(1);
   const [selectedFiles, setSelectedFiles] = useState<number[]>([]);
+  const allFiles = useMemo(() => mockFiles(collection), [collection]);
+
+  const term = search.trim().toLowerCase();
+  const files = allFiles.filter(
+    (f) => (fileType === 'All' || f.type === fileType) && (fileStatus === 'All' || f.status === fileStatus) && (!term || f.name.toLowerCase().includes(term)),
+  );
+  const totalPages = Math.max(1, Math.ceil(files.length / FILES_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const pageFiles = files.slice((currentPage - 1) * FILES_PER_PAGE, currentPage * FILES_PER_PAGE);
+  const activeFilterCount = (fileType !== 'All' ? 1 : 0) + (fileStatus !== 'All' ? 1 : 0);
+  const hasQuery = activeFilterCount > 0 || term !== '';
+  // Any change to what's shown goes back to page 1.
+  const resetPage = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    setPage(1);
+  };
+  const clearAll = () => {
+    setSearch('');
+    setFileType('All');
+    setFileStatus('All');
+    setPage(1);
+  };
   const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [showPhotoSync, setShowPhotoSync] = useState(false);
   const uploadMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -279,6 +436,14 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
     };
   }, [showUploadMenu]);
 
+  // Header checkbox (List) and "Select all" (Gallery) select / clear this page.
+  const pageIds = pageFiles.map((f) => f.id);
+  const pageSelected = pageIds.filter((id) => selectedFiles.includes(id)).length;
+  const pageState: CheckState = pageSelected === 0 ? 'off' : pageSelected === pageIds.length ? 'on' : 'mixed';
+  const togglePage = () =>
+    setSelectedFiles((list) => (pageState === 'on' ? list.filter((id) => !pageIds.includes(id)) : [...new Set([...list, ...pageIds])]));
+  const unselectAll = () => setSelectedFiles([]);
+
   const toggleFile = (id: number) => {
     setSelectedFiles(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
   };
@@ -286,7 +451,7 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-        <button onClick={onBack} className="hover:text-[#FF6115] transition-colors">Collections</button>
+        <button onClick={onBack} className="hover:text-[#FF6115] transition-colors">{t('Collections')}</button>
         <span>/</span>
         <span className="text-[#1A1A1A] font-medium truncate">{collection.name}</span>
       </div>
@@ -303,28 +468,28 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] px-3 text-sm text-[#667085] transition-colors hover:bg-[#F9FAFB] sm:flex-none">
-            <Icon icon="solar:download-linear" width={16} height={16} />
-            Download
-          </button>
-          <button
-            onClick={onShare}
-            className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-[#FF6115] px-3 text-sm text-[#FF6115] transition-colors hover:bg-[#FFF0E8] sm:flex-none"
-          >
-            <Icon icon="solar:share-linear" width={16} height={16} />
-            Share
-          </button>
           <div ref={uploadMenuRef} className="relative flex-1 sm:flex-none">
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={showUploadMenu}
-              onClick={() => setShowUploadMenu(open => !open)}
-              className="flex h-9 w-full min-w-[91px] items-center justify-center gap-2 rounded-lg bg-[#FF6115] px-3 text-sm font-medium text-white transition-colors hover:bg-[#E5540F]"
-            >
-              Upload
-              <Icon icon="solar:alt-arrow-down-linear" width={16} height={16} />
-            </button>
+            {/* Split button: Upload opens the file picker; the arrow offers the other ways to upload. */}
+            <div className="flex h-9 rounded-lg bg-[#FF6115] text-white">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-1 items-center justify-center gap-1.5 pl-3 pr-3 text-sm font-medium rounded-l-lg transition-colors hover:bg-[#E5540F]"
+              >
+                <Icon icon="solar:add-linear" width={16} height={16} />
+                {t('Upload')}
+              </button>
+              <button
+                type="button"
+                aria-label={t('More upload options')}
+                aria-haspopup="menu"
+                aria-expanded={showUploadMenu}
+                onClick={() => setShowUploadMenu(open => !open)}
+                className="flex w-9 items-center justify-center border-l border-white/30 rounded-r-lg transition-colors hover:bg-[#E5540F]"
+              >
+                <Icon icon="solar:alt-arrow-down-linear" width={16} height={16} />
+              </button>
+            </div>
 
             {showUploadMenu && (
               <div
@@ -332,10 +497,10 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
                 className="absolute right-0 top-[calc(100%+12px)] z-30 w-[calc(100vw-32px)] max-w-[320px] overflow-hidden rounded-2xl border border-[#EEF0F3] bg-white shadow-[0_10px_24px_rgba(17,24,39,0.14)]"
               >
                 <div className="flex h-14 items-center justify-between border-b border-[#E5E7EB] px-5">
-                  <span className="text-base font-semibold text-[#1A1A1A]">เลือก Upload</span>
+                  <span className="text-base font-semibold text-[#1A1A1A]">{t('Choose upload method')}</span>
                   <button
                     type="button"
-                    aria-label="ปิดเมนู Upload"
+                    aria-label={t('Close upload menu')}
                     onClick={() => setShowUploadMenu(false)}
                     className="flex h-8 w-8 items-center justify-center text-[#98A2B3] transition-colors hover:text-[#4B5563]"
                   >
@@ -355,14 +520,14 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FF6115] text-white">
                       <Icon icon="solar:calendar-linear" width={14} height={14} />
                     </span>
-                    Upload รูปภาพด้วยตนเอง
+                    {t('Upload photos manually')}
                   </button>
                   <button
                     type="button"
                     role="menuitem"
                     onClick={() => {
                       setShowUploadMenu(false);
-                      onPhotoSync?.();
+                      setShowPhotoSync(true);
                     }}
                     className="flex h-14 w-full items-center gap-3 rounded-lg px-2 text-left text-base text-[#667085] transition-colors hover:bg-[#FFF7F2] hover:text-[#1A1A1A]"
                   >
@@ -388,7 +553,7 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
           { label: 'Storage', value: `${collection.storageGb} GB` },
         ].map(m => (
           <div key={m.label} className="bg-white rounded-xl border border-[#E5E7EB] p-4">
-            <div className="text-xs text-[#9CA3AF] mb-0.5">{m.label}</div>
+            <div className="text-xs text-[#9CA3AF] mb-0.5">{t(m.label)}</div>
             <div className="text-sm font-semibold text-[#1A1A1A] truncate">{m.value}</div>
           </div>
         ))}
@@ -396,74 +561,192 @@ function CollectionDetail({ collection, onBack, onShare, onPhotoSync }: {
 
       {/* File browser */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        {/* Tab bar */}
-        <div className="border-b border-[#E5E7EB] px-4 flex gap-1 overflow-x-auto">
-          {FILE_TABS.map(t => (
+        <div className="px-4 sm:px-5 py-3 border-b border-[#E5E7EB] flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-[#1A1A1A]">{t('Uploads')}</h3>
+          <div className="flex items-center gap-2">
             <button
-              key={t}
-              onClick={() => setActiveTab(t)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === t ? 'border-[#FF6115] text-[#FF6115]' : 'border-transparent text-[#6B7280] hover:text-[#1A1A1A]'}`}
+              type="button"
+              onClick={onShare}
+              className="inline-flex items-center gap-1.5 h-9 px-3 text-sm text-[#6B7280] rounded-lg hover:bg-[#F9FAFB] hover:text-[#1A1A1A] transition-colors"
             >
-              {t}
+              <Icon icon="solar:share-linear" width={16} height={16} />
+              {t('Share')}
             </button>
-          ))}
+            <div role="group" aria-label={t('View')} className="inline-flex rounded-lg border border-[#E5E7EB] overflow-hidden">
+              {([
+                { value: 'gallery', label: 'Gallery', icon: 'solar:widget-4-linear' },
+                { value: 'list', label: 'List', icon: 'solar:list-linear' },
+              ] as const).map((v) => (
+                <button
+                  key={v.value}
+                  type="button"
+                  onClick={() => setView(v.value)}
+                  aria-pressed={view === v.value}
+                  aria-label={t(v.label)}
+                  title={t(v.label)}
+                  className={`w-10 h-9 flex items-center justify-center transition-colors ${view === v.value ? 'bg-[#FF6115] text-white' : 'text-[#6B7280] hover:bg-[#F9FAFB]'}`}
+                >
+                  <Icon icon={v.icon} width={18} height={18} />
+                </button>
+              ))}
+            </div>
+            <ActionMenu
+              label={t('More actions for {name}', { name: collection.name })}
+              vertical
+              items={[
+                { label: t('People with access'), icon: 'solar:users-group-rounded-linear', onClick: onPeopleWithAccess },
+                { label: t('Download Collection'), icon: 'solar:download-linear', onClick: () => {} },
+                { label: t('Delete Collection'), icon: 'solar:trash-bin-trash-linear', onClick: onDelete, destructive: true },
+              ]}
+            />
+          </div>
         </div>
 
-        {/* File toolbar */}
-        <div className="px-4 py-3 border-b border-[#F3F4F6] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            {selectedFiles.length > 0 && (
+        {/* Search + filters */}
+        <div className="px-4 sm:px-5 py-4 flex flex-col lg:flex-row lg:items-center gap-3">
+          <SearchInput value={search} onChange={resetPage(setSearch)} placeholder={t('Search file name...')} className="w-full lg:w-64 flex-shrink-0" />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <FilterButton expanded={filtersOpen} activeCount={activeFilterCount} onClick={() => setFiltersOpen(!filtersOpen)} />
+            {filtersOpen && (
               <>
-                <span className="text-xs text-[#6B7280]">{selectedFiles.length} selected</span>
-                <button className="text-xs text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors">Delete</button>
-                <button className="text-xs text-[#6B7280] hover:bg-[#F9FAFB] px-2 py-1 rounded transition-colors">Download</button>
+                <FilterSelect label={t('File type')} value={fileType} options={FILE_TYPE_OPTIONS} onChange={resetPage(setFileType)} />
+                <FilterSelect label={t('Status')} value={fileStatus} options={FILE_STATUS_OPTIONS} onChange={resetPage(setFileStatus)} />
               </>
             )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#9CA3AF]">{collection.files.toLocaleString()} total files</span>
+            <button
+              onClick={clearAll}
+              disabled={!hasQuery}
+              className="h-8 px-1 text-xs text-[#FF6115] hover:text-[#E5540F] disabled:cursor-default disabled:hover:text-[#FF6115] transition-colors"
+            >
+              {t('Clear')}
+            </button>
           </div>
         </div>
 
-        {/* Photo grid */}
-        {(activeTab === 'Photos' || activeTab === 'All Files') && (
-          <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {mockPhotos.map(photo => {
-              const selected = selectedFiles.includes(photo.id);
-              return (
-                <div
-                  key={photo.id}
-                  className={`group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${selected ? 'border-[#FF6115]' : 'border-transparent hover:border-[#E5E7EB]'}`}
-                  onClick={() => toggleFile(photo.id)}
-                >
-                  <div className="aspect-square flex items-center justify-center" style={{ background: photo.color }}>
-                    <Icon icon="solar:gallery-linear" width={28} height={28} color="#9CA3AF" />
-                  </div>
-                  {selected && (
-                    <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#FF6115] rounded-full flex items-center justify-center">
-                      <Icon icon="solar:check-linear" width={10} height={10} color="white" />
-                    </div>
-                  )}
-                  <div className="p-2 bg-white">
-                    <div className="text-[10px] font-medium text-[#1A1A1A] truncate">{photo.name}</div>
-                    <div className="text-[9px] text-[#9CA3AF]">{photo.size}</div>
-                  </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
-                </div>
-              );
-            })}
+        {/* Shown once something is selected (pick files with the card / row checkboxes). */}
+        {selectedFiles.length > 0 && pageFiles.length > 0 && (
+          <div className="mx-4 sm:mx-5 mb-3 px-3 min-h-11 py-1.5 rounded-lg bg-[#FFF5EF] flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-sm text-[#374151]">{t('{count} selected', { count: selectedFiles.length.toLocaleString() })}</span>
+            <button type="button" onClick={unselectAll} className="text-sm text-[#6B7280] hover:text-[#1A1A1A]">
+              {t('Unselect all')}
+            </button>
+            <span className="flex items-center gap-1 sm:ml-auto">
+              <button className="text-xs text-[#6B7280] hover:bg-white px-2 py-1.5 rounded transition-colors">{t('Download')}</button>
+              <button className="text-xs text-red-600 hover:bg-red-50 px-2 py-1.5 rounded transition-colors">{t('Delete')}</button>
+            </span>
           </div>
         )}
 
-        {activeTab !== 'Photos' && activeTab !== 'All Files' && (
+        {pageFiles.length === 0 ? (
           <div className="py-16 text-center text-[#9CA3AF] text-sm">
             <div className="flex flex-col items-center gap-2">
               <Icon icon="solar:document-linear" width={32} height={32} color="#D1D5DB" />
-              <span>No {activeTab.toLowerCase()} in this collection</span>
+              <span>{hasQuery ? t('No files match your search') : t('No files in this collection yet')}</span>
             </div>
+          </div>
+        ) : view === 'gallery' ? (
+          <>
+          {/* Gallery's counterpart to the List header checkbox: selects / clears this page. */}
+          <div className="px-4 sm:px-5 pb-3">
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <Checkbox state={pageState} onChange={togglePage} label={t('Select all files on this page')} />
+              <span className="text-sm text-[#374151]">{t('Select all')}</span>
+            </label>
+          </div>
+          <div className="px-4 sm:px-5 pb-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {pageFiles.map((file) => {
+              const selected = selectedFiles.includes(file.id);
+              return (
+                <button
+                  key={file.id}
+                  type="button"
+                  onClick={() => toggleFile(file.id)}
+                  aria-pressed={selected}
+                  className={`group relative text-left rounded-lg overflow-hidden border-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40 ${selected ? 'border-[#FF6115]' : 'border-transparent'}`}
+                >
+                  <div className="aspect-square flex items-center justify-center text-4xl" style={{ background: file.color }}>
+                    <span aria-hidden="true">{FILE_ICON[file.type]}</span>
+                  </div>
+                  <span className={`absolute top-2 right-2 transition-opacity ${selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} aria-hidden="true">
+                    <CheckBoxVisual state={selected ? 'on' : 'off'} />
+                  </span>
+                  {file.status !== 'Uploaded' && (
+                    <span className={`absolute top-2 left-2 text-[10px] font-medium px-1.5 py-0.5 rounded ${STATUS_STYLE[file.status]}`}>{t(file.status)}</span>
+                  )}
+                  <div className="px-2.5 py-2.5 bg-white">
+                    <div className="text-sm text-[#1A1A1A] truncate">{file.name}</div>
+                    <div className="text-xs text-[#9CA3AF] mt-0.5">{file.sizeMb} MB</div>
+                  </div>
+                  <span className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
+                </button>
+              );
+            })}
+          </div>
+          </>
+        ) : (
+          <div className="overflow-x-auto border-t border-[#F0F0F0]">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB] text-left text-xs font-semibold text-[#6B7280]">
+                  <th className="w-10 pl-4 sm:pl-5 py-3">
+                    <Checkbox state={pageState} onChange={togglePage} label={t('Select all files on this page')} />
+                  </th>
+                  <th className="px-4 py-3">{t('File name')}</th>
+                  <th className="px-4 py-3">{t('Type')}</th>
+                  <th className="px-4 py-3">{t('Size')}</th>
+                  <th className="px-4 py-3">{t('Uploaded by')}</th>
+                  <th className="px-4 py-3">{t('Date')}</th>
+                  <th className="px-4 sm:pr-5 py-3">{t('Status')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F3F4F6]">
+                {pageFiles.map((file) => {
+                  const selected = selectedFiles.includes(file.id);
+                  return (
+                    <tr key={file.id} className={selected ? 'bg-[#FFF5EF]' : 'hover:bg-[#FAFAFA]'}>
+                      <td className="pl-4 sm:pl-5 py-3">
+                        <Checkbox state={selected ? 'on' : 'off'} onChange={() => toggleFile(file.id)} label={t('Select {name}', { name: file.name })} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-3">
+                          <span className="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 text-lg" style={{ background: file.color }} aria-hidden="true">
+                            {FILE_ICON[file.type]}
+                          </span>
+                          <span className="text-[#1A1A1A] truncate">{file.name}</span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[#6B7280]">{t(file.type)}</td>
+                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{file.sizeMb} MB</td>
+                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{file.uploader}</td>
+                      <td className="px-4 py-3 text-[#6B7280] whitespace-nowrap">{file.date}</td>
+                      <td className="px-4 sm:pr-5 py-3">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_STYLE[file.status]}`}>{t(file.status)}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-2 border-t border-[#E5E7EB]">
+            <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
           </div>
         )}
       </div>
+
+      {showPhotoSync && (
+        <PhotoSyncModal
+          collection={collection}
+          onClose={() => setShowPhotoSync(false)}
+          onContinue={() => {
+            setShowPhotoSync(false);
+            onPhotoSync?.();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -472,6 +755,7 @@ function CreateCollectionModal({ onClose, onCreate }: {
   onClose: () => void;
   onCreate: (c: Collection) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [owner, setOwner] = useState('');
@@ -489,6 +773,7 @@ function CreateCollectionModal({ onClose, onCreate }: {
       files: 0,
       storageGb: 0,
       lastUpdated: 'Just now',
+      updatedAt: nowLocal(),
       sharing: 'Private',
       status: 'Active',
       description: description || 'No description provided',
@@ -499,27 +784,27 @@ function CreateCollectionModal({ onClose, onCreate }: {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] flex-shrink-0">
-          <h3 className="text-base font-semibold text-[#1A1A1A]">Create Collection</h3>
+          <h3 className="text-base font-semibold text-[#1A1A1A]">{t('Create Collection')}</h3>
           <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280]">
             <Icon icon="solar:close-linear" width={18} height={18} />
           </button>
         </div>
         <div className="p-6 space-y-4 overflow-y-auto">
           <Field label="Collection Name">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. MONOMAX Event Photos" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]" />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t('e.g. MONOMAX Event Photos')} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]" />
           </Field>
           <Field label="Description">
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Describe this collection..." className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] resize-none" />
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder={t('Describe this collection...')} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] resize-none" />
           </Field>
           <Field label="Owner">
             <select value={owner} onChange={e => setOwner(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 bg-white text-[#4B5563]">
-              <option value="">Select user</option>
+              <option value="">{t('Select user')}</option>
               {users.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
             </select>
           </Field>
           <Field label="Link to Event">
             <select value={linkedEvent} onChange={e => setLinkedEvent(e.target.value)} className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 bg-white text-[#4B5563]">
-              <option value="">Select event (optional)</option>
+              <option value="">{t('Select event (optional)')}</option>
               {events.map(e => <option key={e.id}>{e.name}</option>)}
             </select>
           </Field>
@@ -531,13 +816,13 @@ function CreateCollectionModal({ onClose, onCreate }: {
           </Field>
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E5E7EB] flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">{t('Cancel')}</button>
           <button
             onClick={handleCreate}
             disabled={!name.trim()}
             className="px-4 py-2 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Create Collection
+            {t('Create Collection')}
           </button>
         </div>
       </div>
@@ -545,142 +830,566 @@ function CreateCollectionModal({ onClose, onCreate }: {
   );
 }
 
-function ShareModal({ collection, onClose }: { collection: Collection; onClose: () => void }) {
-  const [access, setAccess] = useState<'anyone' | 'peepshare' | 'restricted'>('anyone');
-  const [allowDownload, setAllowDownload] = useState(true);
-  const [expiration, setExpiration] = useState<'never' | 'date'>('never');
-  const [password, setPassword] = useState<'none' | 'require'>('none');
-  const [copied, setCopied] = useState(false);
+type CheckState = 'on' | 'off' | 'mixed';
 
-  const shareUrl = `https://peepshare.com/c/${collection.name.toLowerCase().replace(/\s+/g, '-')}`;
+/** Orange rounded checkbox; 'mixed' shows a dash (some of the page selected). */
+function CheckBoxVisual({ state }: { state: CheckState }) {
+  return (
+    <span
+      className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
+        state === 'on' ? 'bg-[#FF6115] border border-[#FF6115]' : state === 'mixed' ? 'bg-white border-2 border-[#FF6115]' : 'bg-white border border-[#D1D5DB]'
+      }`}
+    >
+      {state === 'on' && <Icon icon="solar:check-linear" width={13} height={13} className="text-white" />}
+      {state === 'mixed' && <span className="w-2.5 h-0.5 rounded-full bg-[#FF6115]" />}
+    </span>
+  );
+}
 
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+function Checkbox({ state, onChange, label }: { state: CheckState; onChange: () => void; label: string }) {
+  return (
+    <span className="relative inline-flex">
+      <input
+        type="checkbox"
+        checked={state === 'on'}
+        ref={(el) => {
+          if (el) el.indeterminate = state === 'mixed';
+        }}
+        onChange={onChange}
+        aria-label={label}
+        className="peer absolute inset-0 opacity-0 cursor-pointer"
+      />
+      <span className="rounded-md peer-focus-visible:ring-2 peer-focus-visible:ring-[#FF6115]/40">
+        <CheckBoxVisual state={state} />
+      </span>
+    </span>
+  );
+}
+
+type DirectoryPicker = () => Promise<{ name: string }>;
+
+// Upload → Photo Sync: pick a folder on this computer; its photos and files sync into this collection.
+function PhotoSyncModal({ collection, onClose, onContinue }: { collection: Collection; onClose: () => void; onContinue: (folder: string) => void }) {
+  const t = useT();
+  const [folder, setFolder] = useState<{ name: string; files?: number } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Folder picking needs a non-standard attribute React doesn't type.
+  useEffect(() => {
+    inputRef.current?.setAttribute('webkitdirectory', '');
+  }, []);
+
+  const pick = async () => {
+    const picker = (window as unknown as { showDirectoryPicker?: DirectoryPicker }).showDirectoryPicker;
+    if (picker) {
+      try {
+        const dir = await picker();
+        setFolder({ name: dir.name });
+      } catch {
+        // Picker closed without choosing.
+      }
+      return;
+    }
+    inputRef.current?.click();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB]">
-          <div>
-            <h3 className="text-base font-semibold text-[#1A1A1A]">Share Collection</h3>
-            <p className="text-xs text-[#9CA3AF]">{collection.name}</p>
-          </div>
-          <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#6B7280]">
-            <Icon icon="solar:close-linear" width={18} height={18} />
+    <Modal
+      title={t('Connect data')}
+      onClose={onClose}
+      maxWidth="sm:max-w-5xl"
+      footer={
+        folder && (
+          <button
+            type="button"
+            onClick={() => onContinue(folder.name)}
+            className="h-10 px-5 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors"
+          >
+            {t('Continue')}
           </button>
+        )
+      }
+    >
+      {/* The source side is wider: it holds the folder name, description and button. */}
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.25fr)_auto_minmax(0,1fr)] items-stretch gap-4">
+        {/* Source folder */}
+        <div className="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+          <span className="w-10 h-10 rounded-lg bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+            <Icon icon="solar:folder-linear" width={20} height={20} className="text-[#6B7280]" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#1A1A1A] truncate" title={folder?.name}>
+              {folder ? folder.name : t('No folder selected')}
+            </p>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              {folder?.files != null && `${t('{count} files', { count: folder.files.toLocaleString() })} · `}
+              {t("Photos and files in the selected folder will automatically sync to this event's collection.")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={pick}
+            className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-medium text-[#374151] bg-white border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex-shrink-0 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
+          >
+            {folder ? (
+              t('Change')
+            ) : (
+              <>
+                <Icon icon="solar:add-linear" width={14} height={14} />
+                {t('Select Folder')}
+              </>
+            )}
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files?.length) setFolder({ name: files[0].webkitRelativePath.split('/')[0] || files[0].name, files: files.length });
+              e.target.value = '';
+            }}
+          />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Share URL */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#374151]">Share URL</label>
-            <div className="flex gap-2">
-              <div className="flex-1 px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg text-xs text-[#6B7280] truncate font-mono">
-                {shareUrl}
-              </div>
-              <button
-                onClick={handleCopy}
-                className={`inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${copied ? 'bg-green-50 border-green-200 text-green-700' : 'border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]'}`}
-              >
-                {copied && <Icon icon="solar:check-circle-bold" width={13} height={13} />}
-                {copied ? 'Copied' : 'Copy Link'}
-              </button>
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#374151]">QR Code</label>
-            <div className="border border-[#E5E7EB] rounded-xl p-4 flex flex-col items-center gap-3">
-              {/* Placeholder QR pattern */}
-              <div className="w-32 h-32 bg-white border border-[#E5E7EB] rounded-lg p-2 grid grid-cols-7 gap-0.5">
-                {Array.from({ length: 49 }, (_, i) => (
-                  <div
-                    key={i}
-                    className={`aspect-square rounded-sm ${Math.random() > 0.5 ? 'bg-[#1A1A1A]' : 'bg-transparent'}`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] transition-colors">Download QR Code</button>
-                <button onClick={handleCopy} className="px-3 py-1.5 text-xs border border-[#FF6115] text-[#FF6115] rounded-lg hover:bg-[#FFF0E8] transition-colors">Copy Link</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Access Settings */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#374151]">Who can access?</label>
-            {[
-              { value: 'anyone' as const, label: 'Anyone with the link' },
-              { value: 'peepshare' as const, label: 'PEEP SHARE users only' },
-              { value: 'restricted' as const, label: 'Restricted users' },
-            ].map(opt => (
-              <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                <input type="radio" name="access" value={opt.value} checked={access === opt.value} onChange={() => setAccess(opt.value)} className="accent-[#FF6115]" />
-                <span className="text-sm text-[#4B5563]">{opt.label}</span>
-              </label>
-            ))}
-          </div>
-
-          {/* Download */}
-          <label className="flex items-center justify-between cursor-pointer">
-            <div>
-              <div className="text-sm text-[#4B5563]">Allow downloading files</div>
-            </div>
-            <input type="checkbox" checked={allowDownload} onChange={e => setAllowDownload(e.target.checked)} className="w-4 h-4 accent-[#FF6115]" />
-          </label>
-
-          {/* Expiration */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#374151]">Expiration</label>
-            {[
-              { value: 'never' as const, label: 'Never' },
-              { value: 'date' as const, label: 'Set expiration date' },
-            ].map(opt => (
-              <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                <input type="radio" name="expiration" value={opt.value} checked={expiration === opt.value} onChange={() => setExpiration(opt.value)} className="accent-[#FF6115]" />
-                <span className="text-sm text-[#4B5563]">{opt.label}</span>
-              </label>
-            ))}
-            {expiration === 'date' && (
-              <input type="date" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 mt-1" />
-            )}
-          </div>
-
-          {/* Password */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#374151]">Password protection</label>
-            {[
-              { value: 'none' as const, label: 'No password' },
-              { value: 'require' as const, label: 'Require password' },
-            ].map(opt => (
-              <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                <input type="radio" name="password" value={opt.value} checked={password === opt.value} onChange={() => setPassword(opt.value)} className="accent-[#FF6115]" />
-                <span className="text-sm text-[#4B5563]">{opt.label}</span>
-              </label>
-            ))}
-            {password === 'require' && (
-              <input type="password" placeholder="Enter password" className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 mt-1" />
-            )}
-          </div>
+        {/* Arrow */}
+        <div className="flex md:flex-col items-center justify-center gap-1 text-[#9CA3AF]">
+          <Icon icon="solar:arrow-right-linear" width={20} height={20} className="rotate-90 md:rotate-0" />
+          <span className="text-[10px]">{t('Sync to')}</span>
         </div>
 
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E5E7EB]">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors">Cancel</button>
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors">Save Sharing Settings</button>
+        {/* Destination collection */}
+        <div className="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+          <span className="w-10 h-10 rounded-lg bg-white border border-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+            <Icon icon="solar:folder-linear" width={20} height={20} className="text-[#FF6115]" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#1A1A1A] truncate">{collection.name}</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">{t('Photos and files for this event will be stored in the Collection you choose.')}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
+  );
+}
+
+/** Public link to a collection (mock domain). */
+const collectionUrl = (c: Collection) => `https://peepshare.com/c/${c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+
+/** Someone a collection is shared with, and what they can do. */
+interface AccessEntry {
+  id: string;
+  name: string;
+  avatar: string;
+  role: ShareRole;
+}
+
+const ROLE_LABEL: Record<ShareRole, string> = { viewer: 'Viewer', editor: 'Edit' };
+
+/** Mock: two teammates (not the owner) already have access. */
+function sampleAccess(c: Collection): AccessEntry[] {
+  return users
+    .filter((u) => u.name !== c.owner)
+    .slice(c.id % 2, (c.id % 2) + 2)
+    .map((u, i) => ({ id: u.id, name: u.name, avatar: u.avatar, role: i === 0 ? 'viewer' : 'editor' }));
+}
+
+// ⋮ → People with access: the owner, then everyone it's shared with. Open a person to change their role or remove them.
+function PeopleAccessModal({ collection, people, onChange, onClose }: {
+  collection: Collection;
+  people: AccessEntry[];
+  onChange: (people: AccessEntry[]) => void;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  return (
+    <Modal title={t('People with access')} onClose={onClose}>
+      <ul className="-my-2">
+        <li className="flex items-center gap-3 py-2.5">
+          <span className="relative">
+            <Avatar initials={collection.ownerAvatar} />
+            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#FF6115] border-2 border-white flex items-center justify-center">
+              <Icon icon="solar:crown-minimalistic-bold" width={8} height={8} className="text-white" />
+            </span>
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-[#1A1A1A] truncate">{collection.owner}</span>
+            <span className="block text-xs text-[#9CA3AF]">{t('Owner')}</span>
+          </span>
+        </li>
+
+        {people.map((p) => {
+          const open = openId === p.id;
+          return (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => setOpenId(open ? null : p.id)}
+                aria-expanded={open}
+                className="w-full flex items-center gap-3 py-2.5 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
+              >
+                <Avatar initials={p.avatar} />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-[#1A1A1A] truncate">{p.name}</span>
+                  <span className="block text-xs text-[#9CA3AF]">{t(ROLE_LABEL[p.role])}</span>
+                </span>
+                <Icon icon={open ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-right-linear'} width={18} height={18} className="text-[#9CA3AF]" />
+              </button>
+              {open && (
+                <div className="mb-2 rounded-xl bg-[#F9FAFB] px-4 py-1" role="radiogroup" aria-label={t('Access for {name}', { name: p.name })}>
+                  {SHARE_ROLES.map((r) => {
+                    const on = p.role === r.value;
+                    return (
+                      <label key={r.value} className="flex items-center gap-3 py-3 cursor-pointer">
+                        <Icon icon={r.icon} width={18} height={18} className={on ? 'text-[#FF6115]' : 'text-[#6B7280]'} />
+                        <span className={`flex-1 text-sm ${on ? 'font-medium text-[#FF6115]' : 'text-[#6B7280]'}`}>{t(ROLE_LABEL[r.value])}</span>
+                        <input
+                          type="radio"
+                          name={`access-${p.id}`}
+                          checked={on}
+                          onChange={() => onChange(people.map((x) => (x.id === p.id ? { ...x, role: r.value } : x)))}
+                          className="sr-only"
+                        />
+                        <RadioDot on={on} />
+                      </label>
+                    );
+                  })}
+                  <div className="border-t border-[#E5E7EB]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChange(people.filter((x) => x.id !== p.id));
+                        setOpenId(null);
+                      }}
+                      className="flex items-center gap-3 py-3 text-sm text-[#DC2626] hover:text-[#B91C1C]"
+                    >
+                      <Icon icon="solar:trash-bin-trash-bold" width={18} height={18} />
+                      {t('Remove')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+
+        {people.length === 0 && <li className="py-4 text-sm text-[#9CA3AF]">{t('Not shared with anyone yet.')}</li>}
+      </ul>
+    </Modal>
+  );
+}
+
+type ShareAccess = 'private' | 'link';
+type ShareRole = 'viewer' | 'editor';
+
+const SHARE_ROLES: { value: ShareRole; label: string; description: string; icon: string }[] = [
+  { value: 'viewer', label: 'Viewer', description: 'Can view only', icon: 'solar:eye-bold' },
+  { value: 'editor', label: 'Editor', description: 'Can edit and manage content', icon: 'solar:pen-bold' },
+];
+
+interface SharePerson {
+  id: string;
+  name: string;
+  meta: string;
+  avatar: string;
+  /** Group size, shown as "{count} members". */
+  count?: number;
+}
+
+// Mock groups; friends come from the user list.
+const SHARE_GROUPS: SharePerson[] = [
+  { id: 'g-photo', name: 'Photographers', meta: '5 members', avatar: 'PH', count: 5 },
+  { id: 'g-monomax', name: 'MONOMAX Team', meta: '8 members', avatar: 'MT', count: 8 },
+  { id: 'g-staff', name: 'Event Staff', meta: '12 members', avatar: 'ES', count: 12 },
+];
+const SHARE_FRIENDS: SharePerson[] = users.map((u) => ({ id: u.id, name: u.name, meta: u.role, avatar: u.avatar }));
+
+// Share: who can open the collection, who it's shared with, plus Copy Link and Download QR Code.
+function ShareModal({ collection, onClose, onShare }: {
+  collection: Collection;
+  onClose: () => void;
+  onShare: (sharing: SharingType, people: AccessEntry[]) => void;
+}) {
+  const t = useT();
+  const url = collectionUrl(collection);
+  const [access, setAccess] = useState<ShareAccess>(collection.sharing === 'Public Link' ? 'link' : 'private');
+  const [linkRole, setLinkRole] = useState<ShareRole>('viewer');
+  const [peopleRole, setPeopleRole] = useState<ShareRole>('editor');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const term = search.trim().toLowerCase();
+  const match = (p: SharePerson) => !term || `${p.name} ${p.meta}`.toLowerCase().includes(term);
+  const groups = SHARE_GROUPS.filter(match);
+  const friends = SHARE_FRIENDS.filter(match);
+  const everyone = [...SHARE_GROUPS, ...SHARE_FRIENDS];
+  const chosen = selected.map((id) => everyone.find((p) => p.id === id)!).filter(Boolean);
+  const toggle = (id: string) => setSelected((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard can be blocked (e.g. inside an iframe).
+    }
+    setCopied(true);
+  };
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadQrPng(url, collection.name);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const share = () =>
+    onShare(
+      access === 'link' ? 'Public Link' : selected.length ? 'Restricted' : 'Private',
+      chosen.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar, role: peopleRole })),
+    );
+
+  const personRow = (p: SharePerson) => {
+    const on = selected.includes(p.id);
+    return (
+      <li key={p.id}>
+        <label className="flex items-center gap-3 py-2 cursor-pointer">
+          <Avatar initials={p.avatar} />
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-medium text-[#1A1A1A] truncate">{p.name}</span>
+            <span className="block text-xs text-[#9CA3AF] truncate">{p.count != null ? t('{count} members', { count: p.count }) : t(p.meta)}</span>
+          </span>
+          <input type="checkbox" checked={on} onChange={() => toggle(p.id)} className="sr-only" />
+          <RadioDot on={on} />
+        </label>
+      </li>
+    );
+  };
+
+  return (
+    <Modal
+      title={t('Share collection')}
+      onClose={onClose}
+      maxWidth="sm:max-w-4xl"
+      footer={
+        <div className="w-full flex flex-col-reverse sm:flex-row sm:items-center gap-3">
+          <div className="flex gap-2 sm:mr-auto">
+            <button
+              type="button"
+              onClick={copy}
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-medium rounded-full border transition-colors ${
+                copied ? 'border-green-200 bg-green-50 text-green-700' : 'border-[#FF6115] text-[#FF6115] hover:bg-[#FFF0E8]'
+              }`}
+            >
+              <Icon icon={copied ? 'solar:check-circle-bold' : 'solar:link-linear'} width={16} height={16} />
+              <span aria-live="polite">{copied ? t('Copied') : t('Copy Link')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={download}
+              disabled={downloading}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-medium rounded-full border border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB] transition-colors disabled:opacity-60"
+            >
+              <Icon icon="solar:qr-code-linear" width={16} height={16} />
+              {downloading ? t('Preparing…') : t('Download QR Code')}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={share}
+            className="h-10 px-10 text-sm font-semibold text-white rounded-full bg-gradient-to-r from-[#FF7A3D] to-[#FF6115] hover:from-[#FF6115] hover:to-[#E5540F] transition-colors"
+          >
+            {t('Share')}
+          </button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        {/* Who can access */}
+        <section className="space-y-3">
+          <h4 className="text-sm font-semibold text-[#1A1A1A]">{t('Who has access')}</h4>
+          <AccessOption
+            checked={access === 'private'}
+            onSelect={() => setAccess('private')}
+            icon="solar:lock-keyhole-minimalistic-bold"
+            title={t('Private access')}
+            description={t('Only people with access can open this link')}
+          />
+          <div className={`rounded-xl border transition-colors ${access === 'link' ? 'border-[#FF6115]' : 'border-transparent'}`}>
+            <AccessOption
+              checked={access === 'link'}
+              onSelect={() => setAccess('link')}
+              icon="solar:global-bold"
+              title={t('Anyone with the link')}
+              description={t('Anyone on the internet with the link can view')}
+              flat={access === 'link'}
+            />
+            {access === 'link' && (
+              <div className="px-4 pb-4 pt-1 border-t border-[#F0F0F0] mx-3">
+                <p className="text-sm font-semibold text-[#1A1A1A] mt-3 mb-2">{t('Collection access permission')}</p>
+                <div className="space-y-2" role="radiogroup" aria-label={t('Collection access permission')}>
+                  {SHARE_ROLES.map((r) => {
+                    const on = linkRole === r.value;
+                    return (
+                      <label
+                        key={r.value}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors ${
+                          on ? 'border-[#FF6115] bg-[#FFF5EF]' : 'border-transparent bg-[#F9FAFB] hover:bg-[#F3F4F6]'
+                        }`}
+                      >
+                        <Icon icon={r.icon} width={16} height={16} className={on ? 'text-[#FF6115]' : 'text-[#6B7280]'} />
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm font-medium text-[#1A1A1A]">{t(r.label)}</span>
+                          <span className="block text-xs text-[#9CA3AF]">{t(r.description)}</span>
+                        </span>
+                        <input type="radio" name="share-link-role" checked={on} onChange={() => setLinkRole(r.value)} className="sr-only" />
+                        <RadioDot on={on} />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Share with people */}
+        <section className="min-w-0 flex flex-col">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-semibold text-[#1A1A1A]">{t('Share with')}</h4>
+            <label className="relative inline-flex items-center">
+              <span className="sr-only">{t('Permission for people you share with')}</span>
+              <select
+                value={peopleRole}
+                onChange={(e) => setPeopleRole(e.target.value as ShareRole)}
+                className="appearance-none bg-transparent pr-5 text-xs font-medium text-[#374151] focus:outline-none cursor-pointer"
+              >
+                {SHARE_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {t(r.label)}
+                  </option>
+                ))}
+              </select>
+              <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} className="absolute right-0 pointer-events-none text-[#6B7280]" />
+            </label>
+          </div>
+
+          {chosen.length > 0 && (
+            <ul className="mt-3 flex gap-3 overflow-x-auto pb-1" aria-label={t('Selected')}>
+              {chosen.map((p) => (
+                <li key={p.id} className="relative flex flex-col items-center w-14 flex-shrink-0">
+                  <Avatar initials={p.avatar} size="lg" />
+                  <button
+                    type="button"
+                    onClick={() => toggle(p.id)}
+                    aria-label={t('Remove {name}', { name: p.name })}
+                    className="absolute -top-1 right-1 w-4 h-4 rounded-full bg-[#9CA3AF] hover:bg-[#6B7280] text-white flex items-center justify-center"
+                  >
+                    <Icon icon="solar:close-linear" width={10} height={10} />
+                  </button>
+                  <span className="mt-1 text-[10px] text-[#4B5563] truncate w-full text-center">{p.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="relative mt-3">
+            <Icon icon="solar:magnifer-linear" width={16} height={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#FF6115] pointer-events-none" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('Search ...')}
+              aria-label={t('Search people or groups')}
+              className="w-full h-10 pl-9 pr-3 text-sm bg-[#F9FAFB] border border-transparent rounded-lg focus:outline-none focus:border-[#FF6115] focus:bg-white"
+            />
+          </div>
+
+          <div className="mt-3 md:max-h-[340px] md:overflow-y-auto pr-1">
+            {groups.length > 0 && (
+              <>
+                <p className="text-sm font-semibold text-[#1A1A1A] mt-1">{t('Groups ({count})', { count: groups.length })}</p>
+                <ul>{groups.map(personRow)}</ul>
+              </>
+            )}
+            {friends.length > 0 && (
+              <>
+                <p className="text-sm font-semibold text-[#1A1A1A] mt-3">{t('Friends ({count})', { count: friends.length })}</p>
+                <ul>{friends.map(personRow)}</ul>
+              </>
+            )}
+            {groups.length + friends.length === 0 && <p className="py-8 text-center text-sm text-[#9CA3AF]">{t('No matching people found')}</p>}
+          </div>
+        </section>
+      </div>
+    </Modal>
+  );
+}
+
+function AccessOption({ checked, onSelect, icon, title, description, flat }: {
+  checked: boolean;
+  onSelect: () => void;
+  icon: string;
+  title: string;
+  description: string;
+  /** Inside the highlighted "anyone with the link" box, which already draws the border. */
+  flat?: boolean;
+}) {
+  return (
+    <label
+      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+        flat ? '' : checked ? 'border border-[#FF6115] bg-white' : 'border border-transparent bg-[#F9FAFB] hover:bg-[#F3F4F6]'
+      }`}
+    >
+      <span className="w-9 h-9 rounded-full bg-[#FF6115] text-white flex items-center justify-center flex-shrink-0">
+        <Icon icon={icon} width={18} height={18} />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-medium text-[#1A1A1A]">{title}</span>
+        <span className="block text-xs text-[#9CA3AF]">{description}</span>
+      </span>
+      <input type="radio" name="share-access" checked={checked} onChange={onSelect} className="sr-only" />
+      <RadioDot on={checked} />
+    </label>
+  );
+}
+
+function RadioDot({ on }: { on: boolean }) {
+  return (
+    <span aria-hidden="true" className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${on ? 'border-[#FF6115]' : 'border-[#D1D5DB]'}`}>
+      {on && <span className="w-2.5 h-2.5 rounded-full bg-[#FF6115]" />}
+    </span>
+  );
+}
+
+function Avatar({ initials, size = 'md' }: { initials: string; size?: 'md' | 'lg' }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`rounded-full bg-[#FFF0E8] text-[#E5540F] font-bold flex items-center justify-center flex-shrink-0 ${size === 'lg' ? 'w-12 h-12 text-sm' : 'w-10 h-10 text-xs'}`}
+    >
+      {initials}
+    </span>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const t = useT();
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-[#374151]">{label}</label>
+      <label className="text-xs font-medium text-[#374151]">{t(label)}</label>
       {children}
     </div>
   );

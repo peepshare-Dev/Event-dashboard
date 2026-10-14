@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
+import { LANGUAGES, useLanguage, useT } from '@/i18n';
 
 type LoginMethod = 'username' | 'qr';
 
@@ -9,9 +10,11 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [method, setMethod] = useState<LoginMethod>('username');
+  const t = useT();
 
   return (
-    <div className="min-h-screen w-full bg-[#F5F7FA] flex items-center justify-center p-4 sm:p-6">
+    <div className="relative min-h-screen w-full bg-[#F5F7FA] flex items-center justify-center p-4 sm:p-6">
+      <LanguageSwitch />
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center gap-2 mb-6">
           <div className="w-12 h-12 rounded-xl bg-[#FF6115] flex items-center justify-center">
@@ -19,17 +22,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
           <div className="text-center">
             <div className="font-bold text-lg text-[#1A1A1A] leading-tight">PEEP SHARE</div>
-            <div className="text-xs text-[#6B7280]">Event Dashboard</div>
+            <div className="text-xs text-[#6B7280]">{t('Event Dashboard')}</div>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
           <div className="border-b border-[#E5E7EB] px-2 flex">
             <MethodTab active={method === 'username'} onClick={() => setMethod('username')}>
-              Username Login
+              {t('Username Login')}
             </MethodTab>
             <MethodTab active={method === 'qr'} onClick={() => setMethod('qr')}>
-              QR Code Login
+              {t('QR Code Login')}
             </MethodTab>
           </div>
 
@@ -38,6 +41,35 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LanguageSwitch() {
+  const { lang, setLang } = useLanguage();
+  const t = useT();
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t('Language')}
+      className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-0.5 bg-white border border-[#E5E7EB] rounded-lg p-0.5"
+    >
+      <Icon icon="solar:globe-linear" width={14} height={14} className="text-[#9CA3AF] mx-1.5" />
+      {LANGUAGES.map((l) => (
+        <button
+          key={l.value}
+          type="button"
+          role="radio"
+          aria-checked={l.value === lang}
+          title={l.label}
+          onClick={() => setLang(l.value)}
+          className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+            l.value === lang ? 'bg-[#FFF0E8] text-[#FF6115]' : 'text-[#6B7280] hover:text-[#1A1A1A]'
+          }`}
+        >
+          {l.short}
+        </button>
+      ))}
     </div>
   );
 }
@@ -62,6 +94,7 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const t = useT();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -71,20 +104,20 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-[#1A1A1A]">Welcome</h1>
-        <p className="text-sm text-[#6B7280] mt-1">Please enter your phone number &amp; password to log in.</p>
+        <h1 className="text-xl font-semibold text-[#1A1A1A]">{t('Welcome')}</h1>
+        <p className="text-sm text-[#6B7280] mt-1">{t('Please enter your phone number & password to log in.')}</p>
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="phone" className="text-xs font-medium text-[#374151]">
-          Phone number
+          {t('Phone number')}
         </label>
         <div className="flex gap-2">
           <div className="relative flex-shrink-0">
             <select
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
-              aria-label="Country code"
+              aria-label={t('Country code')}
               className="h-[42px] pl-3 pr-7 text-sm border border-[#E5E7EB] rounded-lg bg-white text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] appearance-none"
             >
               <option value="+66">🇹🇭 +66</option>
@@ -120,7 +153,7 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
 
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-xs font-medium text-[#374151]">
-          Password
+          {t('Password')}
         </label>
         <div className="relative">
           <Icon
@@ -136,13 +169,13 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            placeholder={t('Enter your password')}
             className="w-full h-[42px] pl-9 pr-10 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
           />
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? t('Hide password') : t('Show password')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
           >
             <Icon icon={showPassword ? 'solar:eye-closed-linear' : 'solar:eye-linear'} width={16} height={16} />
@@ -158,10 +191,10 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
             onChange={(e) => setRememberMe(e.target.checked)}
             className="w-4 h-4 rounded border-[#E5E7EB] text-[#FF6115] focus:ring-[#FF6115]/30"
           />
-          Remember me
+          {t('Remember me')}
         </label>
         <button type="button" className="text-[#FF6115] hover:text-[#E5540F] font-medium transition-colors">
-          Forgot Password?
+          {t('Forgot Password?')}
         </button>
       </div>
 
@@ -169,7 +202,7 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
         type="submit"
         className="w-full h-11 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium rounded-lg transition-colors"
       >
-        Log In
+        {t('Log In')}
       </button>
     </form>
   );
@@ -177,12 +210,13 @@ function UsernameLoginForm({ onLogin }: { onLogin: () => void }) {
 
 function QRLogin({ onLogin }: { onLogin: () => void }) {
   const [showVerification, setShowVerification] = useState(false);
+  const t = useT();
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-[#1A1A1A]">Scan QR Code</h1>
-        <p className="text-sm text-[#6B7280] mt-1">Open PEEP SHARE on your smartphone and scan to continue.</p>
+        <h1 className="text-xl font-semibold text-[#1A1A1A]">{t('Scan QR Code')}</h1>
+        <p className="text-sm text-[#6B7280] mt-1">{t('Open PEEP SHARE on your smartphone and scan to continue.')}</p>
       </div>
 
       <div className="flex justify-center">
@@ -192,8 +226,7 @@ function QRLogin({ onLogin }: { onLogin: () => void }) {
       </div>
 
       <p className="text-xs text-[#6B7280] text-center leading-relaxed">
-        Scan this QR code by opening PEEP SHARE on your smartphone, then tap the QR code scanner icon in the search
-        bar to proceed.
+        {t('Scan this QR code by opening PEEP SHARE on your smartphone, then tap the QR code scanner icon in the search bar to proceed.')}
       </p>
 
       <button
@@ -201,7 +234,7 @@ function QRLogin({ onLogin }: { onLogin: () => void }) {
         onClick={() => setShowVerification(true)}
         className="w-full h-11 border border-[#E5E7EB] hover:bg-[#F9FAFB] text-[#374151] text-sm font-medium rounded-lg transition-colors"
       >
-        Simulate Scan
+        {t('Simulate Scan')}
       </button>
 
       {showVerification && (
@@ -218,6 +251,7 @@ function QRLogin({ onLogin }: { onLogin: () => void }) {
 }
 
 function VerificationModal({ onCancel, onVerify }: { onCancel: () => void; onVerify: () => void }) {
+  const t = useT();
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
@@ -244,10 +278,10 @@ function VerificationModal({ onCancel, onVerify }: { onCancel: () => void; onVer
           </div>
           <div>
             <h2 id="verification-title" className="text-base font-semibold text-[#1A1A1A]">
-              Verification Required
+              {t('Verification Required')}
             </h2>
             <p className="text-sm text-[#6B7280] mt-1">
-              Enter this code on your mobile device to sign in to PEEP SHARE Desktop.
+              {t('Enter this code on your mobile device to sign in to PEEP SHARE Desktop.')}
             </p>
           </div>
           <div className="text-3xl font-bold tracking-[0.3em] text-[#1A1A1A] py-2">831106</div>
@@ -258,14 +292,14 @@ function VerificationModal({ onCancel, onVerify }: { onCancel: () => void; onVer
             onClick={onCancel}
             className="flex-1 h-11 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] transition-colors font-medium"
           >
-            Cancel
+            {t('Cancel')}
           </button>
           <button
             type="button"
             onClick={onVerify}
             className="flex-1 h-11 text-sm font-medium bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors"
           >
-            Verify &amp; Continue
+            {t('Verify & Continue')}
           </button>
         </div>
       </div>

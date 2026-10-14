@@ -2,20 +2,16 @@ import { useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import PageHeader from '../../components/ui/PageHeader';
 import SearchInput from '../../components/ui/SearchInput';
-import StatusTabs from '../../components/ui/StatusTabs';
 import Button from '../../components/ui/Button';
 import Drawer from '../../components/ui/Drawer';
 import Pagination from '../../components/ui/Pagination';
-import Toggle from '../../components/ui/Toggle';
 import DeleteConfirmationModal from '../../components/ui/DeleteConfirmationModal';
-import SegmentedControl from '../../components/set-event/form/SegmentedControl';
-import FormField from '../../components/set-event/form/FormField';
-import { DateTimeInput } from '../../components/set-event/form/DateTimeRange';
-import EventFormBuilder, { FIELD_TYPES } from '../../components/set-event/form/EventFormBuilder';
+import EventFormBuilder, { RATING_STARS, fieldTypeOption, isQuestion } from '../../components/set-event/form/EventFormBuilder';
 import { templatesToPresets } from '../../components/set-event/form/TemplatePicker';
 import { formConfig, validateFields, type Errors } from './event-form/formModel';
-import { CURRENT_AUTHOR, formatEventDateTime, type EventFormConfig, type EventFormField, type SetEvent, type SetEventDetails } from '../../data/setEvents';
+import { CURRENT_AUTHOR, formatEventDateTime, type EventFormConfig, type EventFormField, type SetEvent } from '../../data/setEvents';
 import { cloneFields, newTemplateId, type FormKind, type FormTemplate } from '../../data/formTemplates';
+import { useT } from '@/i18n';
 
 export type { FormKind };
 
@@ -27,28 +23,34 @@ const KIND = {
     icon: 'solar:document-add-linear',
     noun: 'registration form',
     section: 'Event Form',
+    // Full sentences per kind, so each can be translated as a whole.
+    pageDescription: 'Master registration forms you can reuse as templates in any event.',
+    emptyTitle: 'No registration form templates yet',
+    emptyText: 'Create a template once and reuse it in the Event Form of any event.',
+    viewDescription: 'Regis Form template',
+    createTitle: 'Create Regis Form Template',
+    notUsed: 'Not used yet. Choose it with {action} in an event’s Event Form.',
   },
   survey: {
     title: 'Survey Form',
     icon: 'solar:chat-square-like-linear',
     noun: 'survey form',
     section: 'Survey Form',
+    pageDescription: 'Master survey forms you can reuse as templates in any event.',
+    emptyTitle: 'No survey form templates yet',
+    emptyText: 'Create a template once and reuse it in the Survey Form of any event.',
+    viewDescription: 'Survey Form template',
+    createTitle: 'Create Survey Form Template',
+    notUsed: 'Not used yet. Choose it with {action} in an event’s Survey Form.',
   },
 } as const;
-
-const TABS = ['Templates', 'Used in Events'] as const;
-type Tab = (typeof TABS)[number];
 
 interface EventRow {
   event: SetEvent;
   form: EventFormConfig;
-  /** Survey only */
-  sendAt: string;
 }
 
-type Panel =
-  | { type: 'template'; id: string | null; mode: 'view' | 'edit' }
-  | { type: 'event'; eventId: number; mode: 'view' | 'edit' };
+type Panel = { type: 'template'; id: string | null; mode: 'view' | 'edit' };
 
 interface FormLibraryProps {
   kind: FormKind;
@@ -56,7 +58,6 @@ interface FormLibraryProps {
   /** Every master template (both kinds). */
   templates: FormTemplate[];
   onTemplatesChange: (templates: FormTemplate[], message: string) => void;
-  onUpdate: (eventId: number, patch: Partial<SetEventDetails>, message: string) => void;
   onOpenEvent: (event: SetEvent) => void;
 }
 
@@ -66,12 +67,11 @@ function nowLocal() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// Regis / Survey Form menu: master templates (create, edit, duplicate, delete) and the forms events use.
-export default function FormLibrary({ kind, events, templates, onTemplatesChange, onUpdate, onOpenEvent }: FormLibraryProps) {
+// Regis / Survey Form menu: master templates (create, edit, duplicate, delete).
+export default function FormLibrary({ kind, events, templates, onTemplatesChange, onOpenEvent }: FormLibraryProps) {
+  const t = useT();
   const meta = KIND[kind];
-  const [tab, setTab] = useState<Tab>('Templates');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | 'active' | 'off'>('all');
   const [page, setPage] = useState(1);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
@@ -82,7 +82,7 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
       events.flatMap((event) => {
         const form = kind === 'registration' ? event.details?.eventForm : event.details?.surveyForm;
         if (event.status === 'Trash' || !form || (!form.name && form.fields.length === 0)) return [];
-        return [{ event, form, sendAt: event.details?.surveySendTime ?? '' }];
+        return [{ event, form }];
       }),
     [events, kind],
   );
@@ -90,41 +90,21 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
 
   // --- Template actions ---
   const saveTemplate = (draft: FormTemplate) => {
-    const exists = templates.some((t) => t.id === draft.id);
+    const exists = templates.some((tpl) => tpl.id === draft.id);
     const saved = { ...draft, updatedAt: nowLocal(), updatedBy: CURRENT_AUTHOR };
-    onTemplatesChange(exists ? templates.map((t) => (t.id === saved.id ? saved : t)) : [...templates, saved], exists ? `“${saved.name}” saved` : `“${saved.name}” created`);
+    onTemplatesChange(exists ? templates.map((tpl) => (tpl.id === saved.id ? saved : tpl)) : [...templates, saved], exists ? t('“{name}” saved', { name: saved.name }) : t('“{name}” created', { name: saved.name }));
     setPanel({ type: 'template', id: saved.id, mode: 'view' });
   };
   const duplicateTemplate = (source: FormTemplate) => {
     const copy: FormTemplate = { ...source, id: newTemplateId(), name: `${source.name} (Copy)`, fields: cloneFields(source.fields), updatedAt: nowLocal(), updatedBy: CURRENT_AUTHOR };
-    const index = templates.findIndex((t) => t.id === source.id);
-    onTemplatesChange([...templates.slice(0, index + 1), copy, ...templates.slice(index + 1)], `“${copy.name}” created`);
-    setTab('Templates');
+    const index = templates.findIndex((tpl) => tpl.id === source.id);
+    onTemplatesChange([...templates.slice(0, index + 1), copy, ...templates.slice(index + 1)], t('“{name}” created', { name: copy.name }));
     setPanel({ type: 'template', id: copy.id, mode: 'edit' });
   };
-  const saveEventFormAsTemplate = (row: EventRow) => {
-    const created: FormTemplate = {
-      id: newTemplateId(),
-      kind,
-      name: row.form.name || 'Untitled template',
-      description: row.form.description,
-      fields: cloneFields(row.form.fields),
-      updatedAt: nowLocal(),
-      updatedBy: CURRENT_AUTHOR,
-    };
-    onTemplatesChange([...templates, created], `“${created.name}” saved as a template`);
-    setTab('Templates');
-    setPanel({ type: 'template', id: created.id, mode: 'view' });
-  };
-
   // --- Lists ---
   const term = search.trim().toLowerCase();
   const visibleTemplates = ownTemplates.filter((t) => !term || `${t.name} ${t.description}`.toLowerCase().includes(term));
-  const visibleRows = eventRows.filter(
-    (r) => (status === 'all' || (status === 'active') === r.form.enabled) && (!term || `${r.form.name} ${r.event.name} ${r.event.id}`.toLowerCase().includes(term)),
-  );
-  const activeCount = eventRows.filter((r) => r.form.enabled).length;
-  const total = tab === 'Templates' ? visibleTemplates.length : visibleRows.length;
+  const total = visibleTemplates.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageSlice = <T,>(list: T[]) => list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -134,57 +114,35 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
   };
 
   const openTemplate = panel?.type === 'template' ? (panel.id ? ownTemplates.find((t) => t.id === panel.id) : undefined) : undefined;
-  const openRow = panel?.type === 'event' ? eventRows.find((r) => r.event.id === panel.eventId) : undefined;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-[0_1px_2px_rgba(16,24,40,0.04)] px-4 sm:px-6 pt-6 lg:pt-8 pb-6">
         <PageHeader
-          title={meta.title}
+          title={t(meta.title)}
           icon={meta.icon}
-          description={`Master ${meta.noun}s you can reuse as templates in any event.`}
+          description={t(meta.pageDescription)}
           actions={
             <Button pill icon="solar:add-linear" onClick={() => setPanel({ type: 'template', id: null, mode: 'edit' })}>
-              Create Template
+              {t('Create Template')}
             </Button>
           }
         />
 
-        <StatusTabs
-          tabs={TABS}
-          active={tab}
-          counts={{ Templates: ownTemplates.length, 'Used in Events': eventRows.length }}
-          onChange={resetPage(setTab)}
-          className="mt-6"
-        />
-
-        <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <SearchInput
             value={search}
             onChange={resetPage(setSearch)}
-            placeholder={tab === 'Templates' ? 'Search templates' : 'Search form or event'}
+            placeholder={t('Search templates')}
             className="sm:max-w-xs"
           />
-          {tab === 'Used in Events' && (
-            <SegmentedControl
-              label="Status"
-              value={status}
-              options={[
-                { value: 'all', label: `All (${eventRows.length})` },
-                { value: 'active', label: `Active (${activeCount})` },
-                { value: 'off', label: `Off (${eventRows.length - activeCount})` },
-              ]}
-              onChange={resetPage(setStatus)}
-            />
-          )}
         </div>
 
-        {tab === 'Templates' ? (
-          visibleTemplates.length === 0 ? (
+        {visibleTemplates.length === 0 ? (
             <EmptyList
               icon={meta.icon}
-              title={ownTemplates.length ? 'No templates match your search.' : `No ${meta.noun} templates yet`}
-              text={ownTemplates.length ? undefined : `Create a template once and reuse it in the ${meta.section} of any event.`}
+              title={ownTemplates.length ? t('No templates match your search.') : t(meta.emptyTitle)}
+              text={ownTemplates.length ? undefined : t(meta.emptyText)}
             />
           ) : (
             <>
@@ -192,44 +150,44 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
                 <table className="w-full min-w-[820px]">
                   <thead>
                     <tr className="border-y border-[#E5E7EB] text-left text-xs font-medium text-[#374151]">
-                      <th scope="col" className="h-11 pl-4 pr-5">Template</th>
-                      <th scope="col" className="px-5">Fields</th>
-                      <th scope="col" className="px-5">Used in</th>
-                      <th scope="col" className="px-5">Last updated</th>
-                      <th scope="col" className="w-44"><span className="sr-only">Actions</span></th>
+                      <th scope="col" className="h-11 pl-4 pr-5">{t('Template')}</th>
+                      <th scope="col" className="px-5">{t('Fields')}</th>
+                      <th scope="col" className="px-5">{t('Used in')}</th>
+                      <th scope="col" className="px-5">{t('Last updated')}</th>
+                      <th scope="col" className="w-44"><span className="sr-only">{t('Actions')}</span></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#F0F0F0]">
-                    {pageSlice(visibleTemplates).map((t) => {
-                      const used = usage(t.id).length;
+                    {pageSlice(visibleTemplates).map((tpl) => {
+                      const used = usage(tpl.id).length;
                       return (
-                        <tr key={t.id} className="h-[68px] hover:bg-[#FAFAFA] transition-colors">
+                        <tr key={tpl.id} className="h-[68px] hover:bg-[#FAFAFA] transition-colors">
                           <td className="pl-4 pr-5">
                             <button
                               type="button"
-                              onClick={() => setPanel({ type: 'template', id: t.id, mode: 'view' })}
+                              onClick={() => setPanel({ type: 'template', id: tpl.id, mode: 'view' })}
                               className="text-left text-sm font-medium text-[#1A1A1A] hover:text-[#FF6115] focus:outline-none focus-visible:underline"
                             >
-                              {t.name}
+                              {t(tpl.name)}
                             </button>
-                            {t.description && <p className="text-xs text-[#6B7280] truncate max-w-[320px]">{t.description}</p>}
+                            {tpl.description && <p className="text-xs text-[#6B7280] truncate max-w-[320px]">{t(tpl.description)}</p>}
                           </td>
                           <td className="px-5 text-[13px] text-[#374151] whitespace-nowrap">
-                            {t.fields.length} <span className="text-[#9CA3AF]">· {t.fields.filter((f) => f.required).length} required</span>
+                            {tpl.fields.filter(isQuestion).length} <span className="text-[#9CA3AF]">· {t('{count} required', { count: tpl.fields.filter((f) => f.required).length })}</span>
                           </td>
                           <td className="px-5 text-[13px] whitespace-nowrap">
-                            {used ? <span className="text-[#374151]">{used} {used === 1 ? 'event' : 'events'}</span> : <span className="text-[#9CA3AF]">Not used yet</span>}
+                            {used ? <span className="text-[#374151]">{t(used === 1 ? '{count} event' : '{count} events', { count: used })}</span> : <span className="text-[#9CA3AF]">{t('Not used yet')}</span>}
                           </td>
                           <td className="px-5 text-[13px] text-[#374151] whitespace-nowrap">
-                            {formatEventDateTime(t.updatedAt)} <span className="text-[#9CA3AF]">· {t.updatedBy}</span>
+                            {formatEventDateTime(tpl.updatedAt)} <span className="text-[#9CA3AF]">· {tpl.updatedBy}</span>
                           </td>
                           <td className="pr-3">
                             <TemplateActions
-                              name={t.name}
-                              onView={() => setPanel({ type: 'template', id: t.id, mode: 'view' })}
-                              onEdit={() => setPanel({ type: 'template', id: t.id, mode: 'edit' })}
-                              onDuplicate={() => duplicateTemplate(t)}
-                              onDelete={() => setDeleting(t)}
+                              name={t(tpl.name)}
+                              onView={() => setPanel({ type: 'template', id: tpl.id, mode: 'view' })}
+                              onEdit={() => setPanel({ type: 'template', id: tpl.id, mode: 'edit' })}
+                              onDuplicate={() => duplicateTemplate(tpl)}
+                              onDelete={() => setDeleting(tpl)}
                             />
                           </td>
                         </tr>
@@ -240,24 +198,25 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
               </div>
 
               <ul className="md:hidden mt-4 space-y-3">
-                {pageSlice(visibleTemplates).map((t) => {
-                  const used = usage(t.id).length;
+                {pageSlice(visibleTemplates).map((tpl) => {
+                  const used = usage(tpl.id).length;
+                  const questions = tpl.fields.filter(isQuestion).length;
                   return (
-                    <li key={t.id} className="rounded-xl border border-[#E5E7EB] p-4">
-                      <p className="text-sm font-semibold text-[#1A1A1A]">{t.name}</p>
-                      {t.description && <p className="text-xs text-[#6B7280] mt-0.5">{t.description}</p>}
+                    <li key={tpl.id} className="rounded-xl border border-[#E5E7EB] p-4">
+                      <p className="text-sm font-semibold text-[#1A1A1A]">{t(tpl.name)}</p>
+                      {tpl.description && <p className="text-xs text-[#6B7280] mt-0.5">{t(tpl.description)}</p>}
                       <p className="mt-2 text-xs text-[#6B7280]">
-                        {t.fields.length} {t.fields.length === 1 ? 'field' : 'fields'} · {used ? `Used in ${used} ${used === 1 ? 'event' : 'events'}` : 'Not used yet'}
+                        {t(questions === 1 ? '{count} field' : '{count} fields', { count: questions })} · {used ? t(used === 1 ? 'Used in {count} event' : 'Used in {count} events', { count: used }) : t('Not used yet')}
                       </p>
                       <div className="mt-3 flex items-center justify-between gap-2">
-                        <Button variant="secondary" icon="solar:eye-linear" onClick={() => setPanel({ type: 'template', id: t.id, mode: 'view' })} className="h-11 flex-1">
-                          View
+                        <Button variant="secondary" icon="solar:eye-linear" onClick={() => setPanel({ type: 'template', id: tpl.id, mode: 'view' })} className="h-11 flex-1">
+                          {t('View')}
                         </Button>
                         <TemplateActions
-                          name={t.name}
-                          onEdit={() => setPanel({ type: 'template', id: t.id, mode: 'edit' })}
-                          onDuplicate={() => duplicateTemplate(t)}
-                          onDelete={() => setDeleting(t)}
+                          name={t(tpl.name)}
+                          onEdit={() => setPanel({ type: 'template', id: tpl.id, mode: 'edit' })}
+                          onDuplicate={() => duplicateTemplate(tpl)}
+                          onDelete={() => setDeleting(tpl)}
                         />
                       </div>
                     </li>
@@ -265,83 +224,7 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
                 })}
               </ul>
             </>
-          )
-        ) : visibleRows.length === 0 ? (
-          <EmptyList
-            icon={meta.icon}
-            title={eventRows.length ? 'No forms match your search.' : `No events use a ${meta.noun} yet`}
-            text={eventRows.length ? undefined : `Forms turned on in ${meta.section} when creating or editing an event appear here.`}
-          />
-        ) : (
-          <>
-            <div className="hidden md:block mt-4 overflow-x-auto border-b border-[#E5E7EB]">
-              <table className="w-full min-w-[820px]">
-                <thead>
-                  <tr className="border-y border-[#E5E7EB] text-left text-xs font-medium text-[#374151]">
-                    <th scope="col" className="h-11 pl-4 pr-5">Form</th>
-                    <th scope="col" className="px-5">Event</th>
-                    <th scope="col" className="px-5">Fields</th>
-                    {kind === 'survey' && <th scope="col" className="px-5">Send time</th>}
-                    <th scope="col" className="px-5">Status</th>
-                    <th scope="col" className="w-24"><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F0F0F0]">
-                  {pageSlice(visibleRows).map((r) => (
-                    <tr key={r.event.id} className="h-[68px] hover:bg-[#FAFAFA] transition-colors">
-                      <td className="pl-4 pr-5">
-                        <button
-                          type="button"
-                          onClick={() => setPanel({ type: 'event', eventId: r.event.id, mode: 'view' })}
-                          className="text-left text-sm font-medium text-[#1A1A1A] hover:text-[#FF6115] focus:outline-none focus-visible:underline"
-                        >
-                          {r.form.name || 'Untitled form'}
-                        </button>
-                        <TemplateSource templates={ownTemplates} templateId={r.form.templateId} />
-                      </td>
-                      <td className="px-5 text-[13px] text-[#374151]">
-                        <span className="text-[#9CA3AF]">#{r.event.id}</span> {r.event.name || 'Untitled'}
-                      </td>
-                      <td className="px-5 text-[13px] text-[#374151] whitespace-nowrap">
-                        {r.form.fields.length} <span className="text-[#9CA3AF]">· {r.form.fields.filter((f) => f.required).length} required</span>
-                      </td>
-                      {kind === 'survey' && <td className="px-5 text-[13px] text-[#374151] whitespace-nowrap">{formatEventDateTime(r.sendAt)}</td>}
-                      <td className="px-5"><StatusPill enabled={r.form.enabled} /></td>
-                      <td className="pr-3">
-                        <div className="flex justify-end gap-1">
-                          <RowAction icon="solar:eye-linear" label={`View ${r.form.name}`} onClick={() => setPanel({ type: 'event', eventId: r.event.id, mode: 'view' })} />
-                          <RowAction icon="solar:pen-new-square-linear" label={`Edit ${r.form.name}`} onClick={() => setPanel({ type: 'event', eventId: r.event.id, mode: 'edit' })} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <ul className="md:hidden mt-4 space-y-3">
-              {pageSlice(visibleRows).map((r) => (
-                <li key={r.event.id} className="rounded-xl border border-[#E5E7EB] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#1A1A1A] truncate">{r.form.name || 'Untitled form'}</p>
-                      <p className="text-xs text-[#6B7280] truncate">#{r.event.id} {r.event.name || 'Untitled'}</p>
-                    </div>
-                    <StatusPill enabled={r.form.enabled} />
-                  </div>
-                  <p className="mt-2 text-xs text-[#6B7280]">
-                    {r.form.fields.length} {r.form.fields.length === 1 ? 'field' : 'fields'} · {r.form.fields.filter((f) => f.required).length} required
-                    {kind === 'survey' && ` · ${formatEventDateTime(r.sendAt)}`}
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <Button variant="secondary" icon="solar:eye-linear" onClick={() => setPanel({ type: 'event', eventId: r.event.id, mode: 'view' })} className="h-11">View</Button>
-                    <Button variant="secondary" icon="solar:pen-new-square-linear" onClick={() => setPanel({ type: 'event', eventId: r.event.id, mode: 'edit' })} className="h-11">Edit</Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+          )}
 
         {totalPages > 1 && (
           <div className="-mx-4 sm:-mx-6 -mb-6">
@@ -357,7 +240,7 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
           template={openTemplate}
           mode={panel.mode}
           usedIn={openTemplate ? usage(openTemplate.id).map((r) => r.event) : []}
-          otherTemplates={ownTemplates.filter((t) => t.id !== panel.id)}
+          otherTemplates={ownTemplates.filter((tpl) => tpl.id !== panel.id)}
           onModeChange={(mode) => setPanel({ ...panel, mode })}
           onSave={saveTemplate}
           onDuplicate={() => openTemplate && duplicateTemplate(openTemplate)}
@@ -366,37 +249,19 @@ export default function FormLibrary({ kind, events, templates, onTemplatesChange
         />
       )}
 
-      {panel?.type === 'event' && openRow && (
-        <EventFormDrawer
-          key={`${openRow.event.id}-${panel.mode}`}
-          kind={kind}
-          row={openRow}
-          mode={panel.mode}
-          templates={ownTemplates}
-          onModeChange={(mode) => setPanel({ ...panel, mode })}
-          onOpenEvent={() => onOpenEvent(openRow.event)}
-          onSaveAsTemplate={() => saveEventFormAsTemplate(openRow)}
-          onSave={(patch) => {
-            onUpdate(openRow.event.id, patch, `“${(kind === 'registration' ? patch.eventForm : patch.surveyForm)?.name}” saved`);
-            setPanel({ ...panel, mode: 'view' });
-          }}
-          onClose={() => setPanel(null)}
-        />
-      )}
-
       {deleting && (
         <DeleteConfirmationModal
-          title="Delete this template?"
+          title={t('Delete this template?')}
           message={
             <>
-              <span className="font-semibold text-[#1A1A1A]">{deleting.name}</span> will be removed from the master list. Events that already use it keep
-              their own copy.
+              <span className="font-semibold text-[#1A1A1A]">{t(deleting.name)}</span>{' '}
+              {t('will be removed from the master list. Events that already use it keep their own copy.')}
             </>
           }
           onConfirm={() => {
             onTemplatesChange(
-              templates.filter((t) => t.id !== deleting.id),
-              `“${deleting.name}” deleted`,
+              templates.filter((tpl) => tpl.id !== deleting.id),
+              t('“{name}” deleted', { name: deleting.name }),
             );
             if (panel?.type === 'template' && panel.id === deleting.id) setPanel(null);
             setDeleting(null);
@@ -423,6 +288,7 @@ function TemplateDrawer({ kind, template, mode, usedIn, otherTemplates, onModeCh
   onOpenEvent: (event: SetEvent) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const isSurvey = kind === 'survey';
   const creating = !template;
   const [draft, setDraft] = useState({ name: template?.name ?? '', description: template?.description ?? '', fields: template?.fields ?? [] });
@@ -432,7 +298,7 @@ function TemplateDrawer({ kind, template, mode, usedIn, otherTemplates, onModeCh
   const validate = (d: typeof draft) => {
     const e: Errors = {};
     if (!d.name.trim()) e.name = 'Enter a template name.';
-    if (d.fields.length === 0) e.fields = 'Add at least one field.';
+    if (!d.fields.some(isQuestion)) e.fields = 'Add at least one field.';
     validateFields(d.fields, e);
     return Object.fromEntries(Object.entries(e).filter(([, v]) => v));
   };
@@ -461,40 +327,42 @@ function TemplateDrawer({ kind, template, mode, usedIn, otherTemplates, onModeCh
   if (mode === 'view' && template) {
     return (
       <Drawer
-        title={template.name}
-        description={`${KIND[kind].title} template`}
+        title={t(template.name)}
+        description={t(KIND[kind].viewDescription)}
         onClose={onClose}
         maxWidth="sm:max-w-[720px]"
         footer={
           <>
             <Button variant="secondary" icon="solar:copy-linear" onClick={onDuplicate} className="h-11 sm:h-10">
-              Duplicate
+              {t('Duplicate')}
             </Button>
             <Button icon="solar:pen-new-square-linear" onClick={() => onModeChange('edit')} className="h-11 sm:h-10 sm:px-5">
-              Edit Template
+              {t('Edit Template')}
             </Button>
           </>
         }
       >
         <div className="px-4 sm:px-6 py-6 space-y-6">
           <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat label="Fields" value={String(template.fields.length)} />
-            <Stat label="Required" value={String(template.fields.filter((f) => f.required).length)} />
-            <Stat label="Used in" value={`${usedIn.length} ${usedIn.length === 1 ? 'event' : 'events'}`} />
-            <Stat label="Last updated" value={template.updatedAt.slice(0, 10).split('-').reverse().join('-')} />
+            <Stat label={t('Fields')} value={String(template.fields.filter(isQuestion).length)} />
+            <Stat label={t('Required')} value={String(template.fields.filter((f) => f.required).length)} />
+            <Stat label={t('Used in')} value={t(usedIn.length === 1 ? '{count} event' : '{count} events', { count: usedIn.length })} />
+            <Stat label={t('Last updated')} value={template.updatedAt.slice(0, 10).split('-').reverse().join('-')} />
           </dl>
           {template.description && (
             <div>
-              <p className="text-xs font-medium text-[#6B7280]">Description</p>
-              <p className="mt-1 text-sm text-[#374151] whitespace-pre-line">{template.description}</p>
+              <p className="text-xs font-medium text-[#6B7280]">{t('Description')}</p>
+              <p className="mt-1 text-sm text-[#374151] whitespace-pre-line">{t(template.description)}</p>
             </div>
           )}
-          <FieldList fields={template.fields} title={isSurvey ? 'Questions' : 'Fields'} />
+          <FieldList fields={template.fields} title={isSurvey ? t('Questions') : t('Fields')} />
           <div>
-            <p className="text-sm font-semibold text-[#1A1A1A] mb-2">Used in events</p>
+            <p className="text-sm font-semibold text-[#1A1A1A] mb-2">{t('Used in events')}</p>
             {usedIn.length === 0 ? (
               <p className="text-sm text-[#9CA3AF]">
-                Not used yet. Choose it with <span className="font-medium text-[#6B7280]">Use Template</span> in an event’s {KIND[kind].section}.
+                {t(KIND[kind].notUsed).split('{action}')[0]}
+                <span className="font-medium text-[#6B7280]">{t('Use Template')}</span>
+                {t(KIND[kind].notUsed).split('{action}')[1]}
               </p>
             ) : (
               <ul className="flex flex-wrap gap-2">
@@ -505,7 +373,7 @@ function TemplateDrawer({ kind, template, mode, usedIn, otherTemplates, onModeCh
                       onClick={() => onOpenEvent(ev)}
                       className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#E5E7EB] text-xs text-[#374151] hover:border-[#FFB38F] hover:text-[#E5540F] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
                     >
-                      <span className="text-[#9CA3AF]">#{ev.id}</span> {ev.name || 'Untitled'}
+                      <span className="text-[#9CA3AF]">#{ev.id}</span> {ev.name || t('Untitled')}
                     </button>
                   </li>
                 ))}
@@ -519,23 +387,23 @@ function TemplateDrawer({ kind, template, mode, usedIn, otherTemplates, onModeCh
 
   return (
     <Drawer
-      title={creating ? `Create ${KIND[kind].title} Template` : 'Edit Template'}
+      title={creating ? t(KIND[kind].createTitle) : t('Edit Template')}
       description={
         creating
-          ? 'Build it once, then reuse it in any event.'
+          ? t('Build it once, then reuse it in any event.')
           : usedIn.length
-            ? `Changes apply to events that use it from now on. The ${usedIn.length} ${usedIn.length === 1 ? 'event' : 'events'} already using it keep their copy.`
-            : 'Changes apply to events that use it from now on.'
+            ? t(usedIn.length === 1 ? 'Changes apply to events that use it from now on. The {count} event already using it keeps its copy.' : 'Changes apply to events that use it from now on. The {count} events already using it keep their copy.', { count: usedIn.length })
+            : t('Changes apply to events that use it from now on.')
       }
       onClose={onClose}
       maxWidth="sm:max-w-[720px]"
       footer={
         <>
           <Button variant="secondary" onClick={() => (creating ? onClose() : onModeChange('view'))} className="h-11 sm:h-10">
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button onClick={save} className="h-11 sm:h-10 sm:px-5">
-            {creating ? 'Create Template' : 'Save Template'}
+            {creating ? t('Create Template') : t('Save Template')}
           </Button>
         </>
       }
@@ -563,177 +431,54 @@ function TemplateDrawer({ kind, template, mode, usedIn, otherTemplates, onModeCh
   );
 }
 
-// --- Event form drawer: one event's copy ---
-
-function EventFormDrawer({ kind, row, mode, templates, onModeChange, onOpenEvent, onSaveAsTemplate, onSave, onClose }: {
-  kind: FormKind;
-  row: EventRow;
-  mode: 'view' | 'edit';
-  templates: FormTemplate[];
-  onModeChange: (mode: 'view' | 'edit') => void;
-  onOpenEvent: () => void;
-  onSaveAsTemplate: () => void;
-  onSave: (patch: Partial<SetEventDetails>) => void;
-  onClose: () => void;
-}) {
-  const isSurvey = kind === 'survey';
-  const [draft, setDraft] = useState({ ...row.form, sendDate: row.sendAt.slice(0, 10), sendTime: row.sendAt.slice(11, 16) });
-  const [errors, setErrors] = useState<Errors>({});
-  const [submitted, setSubmitted] = useState(false);
-
-  const validate = (d: typeof draft) => {
-    const e: Errors = {};
-    if (!d.name.trim()) e.name = 'Enter a form name.';
-    if (d.fields.length === 0) e.fields = 'Add at least one field.';
-    validateFields(d.fields, e);
-    if (isSurvey && d.enabled && (!d.sendDate || !d.sendTime)) e.send = 'Set when the survey is sent.';
-    return Object.fromEntries(Object.entries(e).filter(([, v]) => v));
-  };
-  const update = (patch: Partial<typeof draft>) => {
-    const next = { ...draft, ...patch };
-    setDraft(next);
-    if (submitted) setErrors(validate(next));
-  };
-  const save = () => {
-    const e = validate(draft);
-    setErrors(e);
-    setSubmitted(true);
-    if (Object.keys(e).length) return;
-    const form = formConfig(draft.enabled, draft.name, draft.description, draft.fields, draft.templateId);
-    onSave(
-      isSurvey
-        ? { surveyForm: form, surveySendTime: draft.enabled && draft.sendDate && draft.sendTime ? `${draft.sendDate}T${draft.sendTime}` : '' }
-        : { eventForm: form },
-    );
-  };
-
-  const form = row.form;
-  const source = templates.find((t) => t.id === form.templateId);
-
-  return (
-    <Drawer
-      title={mode === 'edit' ? `Edit ${KIND[kind].title}` : form.name || 'Untitled form'}
-      description={`#${row.event.id} ${row.event.name || 'Untitled'}`}
-      onClose={onClose}
-      maxWidth="sm:max-w-[720px]"
-      footer={
-        mode === 'view' ? (
-          <>
-            <Button variant="ghost" icon="solar:square-arrow-right-up-linear" onClick={onOpenEvent} className="h-11 sm:h-10 sm:mr-auto">
-              Open Event
-            </Button>
-            <Button variant="secondary" icon="solar:copy-linear" onClick={onSaveAsTemplate} className="h-11 sm:h-10">
-              Save as Template
-            </Button>
-            <Button icon="solar:pen-new-square-linear" onClick={() => onModeChange('edit')} className="h-11 sm:h-10 sm:px-5">
-              Edit Form
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={() => onModeChange('view')} className="h-11 sm:h-10">
-              Cancel
-            </Button>
-            <Button onClick={save} className="h-11 sm:h-10 sm:px-5">
-              Save Changes
-            </Button>
-          </>
-        )
-      }
-    >
-      {mode === 'view' ? (
-        <div className="px-4 sm:px-6 py-6 space-y-6">
-          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat label="Status" value={<StatusPill enabled={form.enabled} />} />
-            <Stat label="Fields" value={String(form.fields.length)} />
-            <Stat label="Required" value={String(form.fields.filter((f) => f.required).length)} />
-            {isSurvey ? <Stat label="Send time" value={formatEventDateTime(row.sendAt)} /> : <Stat label="Template" value={source?.name ?? '—'} />}
-          </dl>
-          {isSurvey && source && (
-            <p className="flex items-center gap-2 text-sm text-[#6B7280]">
-              <Icon icon="solar:copy-linear" width={16} height={16} />
-              Based on template <span className="font-medium text-[#1A1A1A]">{source.name}</span>
-            </p>
-          )}
-          {form.description && (
-            <div>
-              <p className="text-xs font-medium text-[#6B7280]">Description</p>
-              <p className="mt-1 text-sm text-[#374151] whitespace-pre-line">{form.description}</p>
-            </div>
-          )}
-          <FieldList fields={form.fields} title={isSurvey ? 'Questions' : 'Fields'} />
-        </div>
-      ) : (
-        <div className="px-4 sm:px-6 py-6 space-y-6">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] px-4 py-3">
-            <div>
-              <p className="text-sm font-medium text-[#1A1A1A]">{isSurvey ? 'Send this survey' : 'Require this form'}</p>
-              <p className="text-xs text-[#6B7280] mt-0.5">
-                {isSurvey ? 'Turn off to stop sending it without losing the questions.' : 'Turn off to stop asking attendees without losing the fields.'}
-              </p>
-            </div>
-            <Toggle checked={draft.enabled} onChange={(enabled) => update({ enabled })} label={draft.enabled ? 'Active' : 'Off'} />
-          </div>
-
-          {isSurvey && (
-            <FormField label="Send Survey" required={draft.enabled} hint="Attendees receive the survey link at this time." error={errors.send} asGroup>
-              {() => (
-                <DateTimeInput
-                  value={{ date: draft.sendDate, time: draft.sendTime }}
-                  invalid={Boolean(errors.send)}
-                  onChange={(p) => update({ sendDate: p.date ?? draft.sendDate, sendTime: p.time ?? draft.sendTime })}
-                  className="sm:max-w-sm"
-                />
-              )}
-            </FormField>
-          )}
-
-          <EventFormBuilder
-            name={draft.name}
-            description={draft.description}
-            fields={draft.fields}
-            onChange={(p) => update(p)}
-            errors={errors}
-            nameError={errors.name}
-            fieldsError={errors.fields}
-            presets={templatesToPresets(templates)}
-            {...(isSurvey && {
-              nameLabel: 'Survey Name',
-              namePlaceholder: 'e.g. Post-event Feedback',
-              descriptionLabel: 'Survey Description',
-              fieldsLabel: 'Survey Questions',
-              addLabel: 'Add Question',
-            })}
-          />
-        </div>
-      )}
-    </Drawer>
-  );
-}
-
 // --- Shared pieces ---
 
 function FieldList({ fields, title }: { fields: EventFormField[]; title: string }) {
+  const t = useT();
   return (
     <div>
       <p className="text-sm font-semibold text-[#1A1A1A] mb-3">{title}</p>
       {fields.length === 0 ? (
-        <p className="text-sm text-[#9CA3AF]">No fields yet.</p>
+        <p className="text-sm text-[#9CA3AF]">{t('No fields yet.')}</p>
       ) : (
         <ol className="space-y-2">
           {fields.map((f, i) => {
-            const type = FIELD_TYPES.find((t) => t.value === f.type);
+            const type = fieldTypeOption(f.type);
+            // Questions are numbered 1, 2, 3… skipping section headings.
+            const number = fields.slice(0, i + 1).filter(isQuestion).length;
+            if (f.type === 'heading') {
+              return (
+                <li key={f.id} className="pt-2 first:pt-0">
+                  <div className="flex items-start gap-3 rounded-xl border-l-4 border-[#FF6115] bg-[#FFFAF7] px-4 py-3">
+                    <span className="mt-0.5 w-6 h-6 rounded-md bg-[#FF6115] text-white text-xs font-bold flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                      H
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#1A1A1A]">{f.label || t('Untitled section')}</p>
+                      {f.description && <p className="mt-0.5 text-xs text-[#6B7280]">{f.description}</p>}
+                    </div>
+                  </div>
+                </li>
+              );
+            }
             return (
               <li key={f.id} className="flex items-start gap-3 rounded-xl border border-[#E5E7EB] px-4 py-3">
-                <span className="mt-0.5 w-6 h-6 rounded-full bg-[#F3F4F6] text-xs font-medium text-[#6B7280] flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                <span className="mt-0.5 w-6 h-6 rounded-full bg-[#F3F4F6] text-xs font-medium text-[#6B7280] flex items-center justify-center flex-shrink-0">{number}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="text-sm font-medium text-[#1A1A1A]">{f.label || 'Untitled field'}</p>
+                    <p className="text-sm font-medium text-[#1A1A1A]">{f.label || t('Untitled field')}</p>
                     <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${f.required ? 'bg-[#FEF2F2] text-[#B91C1C]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
-                      {f.required ? 'Required' : 'Optional'}
+                      {f.required ? t('Required') : t('Optional')}
                     </span>
                   </div>
                   {f.description && <p className="mt-0.5 text-xs text-[#6B7280]">{f.description}</p>}
+                  {f.type === 'rating' && (
+                    <div className="mt-2 flex gap-1" aria-label={t('{count}-star rating', { count: RATING_STARS })}>
+                      {Array.from({ length: RATING_STARS }, (_, n) => (
+                        <Icon key={n} icon="solar:star-linear" width={16} height={16} className="text-[#F59E0B]" />
+                      ))}
+                    </div>
+                  )}
                   {f.options.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {f.options.map((o) => (
@@ -744,7 +489,7 @@ function FieldList({ fields, title }: { fields: EventFormField[]; title: string 
                 </div>
                 <span className="inline-flex items-center gap-1.5 text-xs text-[#6B7280] flex-shrink-0">
                   {type?.icon && <Icon icon={type.icon} width={14} height={14} />}
-                  {type?.label ?? f.type}
+                  {type?.label ? t(type.label) : f.type}
                 </span>
               </li>
             );
@@ -755,16 +500,6 @@ function FieldList({ fields, title }: { fields: EventFormField[]; title: string 
   );
 }
 
-function TemplateSource({ templates, templateId }: { templates: FormTemplate[]; templateId?: string }) {
-  const source = templates.find((t) => t.id === templateId);
-  return source ? (
-    <p className="flex items-center gap-1 text-xs text-[#6B7280] truncate max-w-[300px]">
-      <Icon icon="solar:copy-linear" width={12} height={12} className="flex-shrink-0" />
-      {source.name}
-    </p>
-  ) : null;
-}
-
 function TemplateActions({ name, onView, onEdit, onDuplicate, onDelete }: {
   name: string;
   onView?: () => void;
@@ -772,12 +507,13 @@ function TemplateActions({ name, onView, onEdit, onDuplicate, onDelete }: {
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex justify-end gap-1">
-      {onView && <RowAction icon="solar:eye-linear" label={`View ${name}`} onClick={onView} />}
-      <RowAction icon="solar:pen-new-square-linear" label={`Edit ${name}`} onClick={onEdit} />
-      <RowAction icon="solar:copy-linear" label={`Duplicate ${name}`} onClick={onDuplicate} />
-      <RowAction icon="solar:trash-bin-trash-linear" label={`Delete ${name}`} onClick={onDelete} destructive />
+      {onView && <RowAction icon="solar:eye-linear" label={t('View {name}', { name })} onClick={onView} />}
+      <RowAction icon="solar:pen-new-square-linear" label={t('Edit {name}', { name })} onClick={onEdit} />
+      <RowAction icon="solar:copy-linear" label={t('Duplicate {name}', { name })} onClick={onDuplicate} />
+      <RowAction icon="solar:trash-bin-trash-linear" label={t('Delete {name}', { name })} onClick={onDelete} destructive />
     </div>
   );
 }
@@ -800,15 +536,6 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
       <dt className="text-xs text-[#6B7280]">{label}</dt>
       <dd className="mt-1 text-sm font-semibold text-[#1A1A1A] truncate">{value}</dd>
     </div>
-  );
-}
-
-function StatusPill({ enabled }: { enabled: boolean }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-xs font-medium whitespace-nowrap ${enabled ? 'bg-[#F0FDF4] text-[#15803D]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-[#22C55E]' : 'border border-[#9CA3AF]'}`} aria-hidden="true" />
-      {enabled ? 'Active' : 'Off'}
-    </span>
   );
 }
 

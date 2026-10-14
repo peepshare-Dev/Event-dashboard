@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { activityLog, events, users } from '../data/mock';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 export default function ActivityLog() {
+  const t = useT();
   const [eventFilter, setEventFilter] = useState('All');
   const [userFilter, setUserFilter] = useState('All');
   const [search, setSearch] = useState('');
@@ -19,8 +21,8 @@ export default function ActivityLog() {
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       <div>
-        <h2 className="text-xl font-semibold text-[#1A1A1A]">Activity Log</h2>
-        <p className="text-sm text-[#6B7280] mt-0.5">System-wide audit trail of all admin actions</p>
+        <h2 className="text-xl font-semibold text-[#1A1A1A]">{t('Activity Log')}</h2>
+        <p className="text-sm text-[#6B7280] mt-0.5">{t('System-wide audit trail of all admin actions')}</p>
       </div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -28,7 +30,7 @@ export default function ActivityLog() {
           <Icon icon="solar:magnifer-linear" width={15} height={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
           <input
             type="text"
-            placeholder="Search actions..."
+            placeholder={t('Search actions...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
@@ -40,7 +42,7 @@ export default function ActivityLog() {
             onChange={e => setEventFilter(e.target.value)}
             className="flex-1 sm:flex-none px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 bg-white text-[#4B5563]"
           >
-            <option value="All">All Events</option>
+            <option value="All">{t('All Events')}</option>
             {events.map(e => <option key={e.id}>{e.name}</option>)}
           </select>
           <select
@@ -48,7 +50,7 @@ export default function ActivityLog() {
             onChange={e => setUserFilter(e.target.value)}
             className="flex-1 sm:flex-none px-3 py-2 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 bg-white text-[#4B5563]"
           >
-            <option value="All">All Users</option>
+            <option value="All">{t('All Users')}</option>
             {users.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
           </select>
         </div>
@@ -56,8 +58,8 @@ export default function ActivityLog() {
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[#1A1A1A]">All Activity</h3>
-          <span className="text-xs text-[#9CA3AF]">{filtered.length} entries</span>
+          <h3 className="text-sm font-semibold text-[#1A1A1A]">{t('All Activity')}</h3>
+          <span className="text-xs text-[#9CA3AF]">{t('{count} entries', { count: filtered.length })}</span>
         </div>
 
         {/* Table (tablet & desktop) */}
@@ -66,14 +68,14 @@ export default function ActivityLog() {
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                 {['Timestamp', 'User', 'Action', 'Event', 'Details'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{t(h)}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F3F4F6]">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12 text-[#9CA3AF] text-sm">No activity found.</td>
+                  <td colSpan={5} className="text-center py-12 text-[#9CA3AF] text-sm">{t('No activity found.')}</td>
                 </tr>
               ) : filtered.map(entry => (
                 <tr key={entry.id} className="hover:bg-[#FAFAFA] transition-colors">
@@ -90,7 +92,7 @@ export default function ActivityLog() {
                   </td>
                   <td className="px-4 py-3.5">
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getActionColor(entry.action)}`}>
-                      {entry.action}
+                      {t(entry.action)}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-sm text-[#6B7280] whitespace-nowrap">{entry.event}</td>
@@ -104,13 +106,13 @@ export default function ActivityLog() {
         {/* Timeline (mobile) */}
         <div className="sm:hidden divide-y divide-[#F3F4F6]">
           {filtered.length === 0 ? (
-            <div className="text-center py-12 text-[#9CA3AF] text-sm">No activity found.</div>
+            <div className="text-center py-12 text-[#9CA3AF] text-sm">{t('No activity found.')}</div>
           ) : filtered.map(entry => (
             <div key={entry.id} className="px-4 py-3.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-[#9CA3AF]">{entry.timestamp}</span>
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getActionColor(entry.action)}`}>
-                  {entry.action}
+                  {t(entry.action)}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 export interface ActionMenuItem {
   label: string;
@@ -12,14 +13,17 @@ interface ActionMenuProps {
   /** Accessible name, e.g. "Actions for Zumba Fitness 2026". */
   label: string;
   items: ActionMenuItem[];
+  /** ⋮ instead of ⋯ for the trigger. */
+  vertical?: boolean;
 }
 
 // "⋯" row menu. The list is `fixed` (so table scroll containers can't clip it) and follows its button.
-export default function ActionMenu({ label, items }: ActionMenuProps) {
+export default function ActionMenu({ label, items, vertical = false }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number; up: boolean }>({ top: 0, right: 0, up: false });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   // Keeps the fixed menu attached to its button, including while the page scrolls.
   const place = useCallback(() => {
@@ -67,12 +71,12 @@ export default function ActionMenu({ label, items }: ActionMenuProps) {
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
-        title="More actions"
+        title={t('More actions')}
         className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40 ${
           open ? 'bg-[#F3F4F6] text-[#1A1A1A]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#1A1A1A]'
         }`}
       >
-        <Icon icon="solar:menu-dots-bold" width={20} height={20} />
+        <Icon icon="solar:menu-dots-bold" width={20} height={20} className={vertical ? 'rotate-90' : undefined} />
       </button>
       {open && (
         <>
@@ -84,9 +88,11 @@ export default function ActionMenu({ label, items }: ActionMenuProps) {
             style={{ right: pos.right, ...(pos.up ? { bottom: window.innerHeight - pos.top } : { top: pos.top }) }}
             className="fixed z-50 w-56 bg-white border border-[#E5E7EB] rounded-xl shadow-lg py-1.5"
           >
-            {items.map((item) => (
+            {items.map((item, i) => (
               <button
                 key={item.label}
+                // A line above the first destructive item sets it apart from the rest.
+                style={item.destructive && i > 0 && !items[i - 1].destructive ? { borderTop: '1px solid #F0F0F0', marginTop: 6 } : undefined}
                 type="button"
                 role="menuitem"
                 onClick={() => {

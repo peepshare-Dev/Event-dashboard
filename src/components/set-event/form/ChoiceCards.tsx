@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 export interface ChoiceOption<T extends string> {
   value: T;
@@ -21,6 +22,7 @@ interface ChoiceCardsProps<T extends string> {
 
 // Radio group drawn as selectable cards — for choices that change what the rest of the form asks.
 export default function ChoiceCards<T extends string>({ label, value, options, onChange, invalid, columns = 'sm:grid-cols-2' }: ChoiceCardsProps<T>) {
+  const t = useT();
   const name = useId();
   return (
     <div role="radiogroup" aria-label={label} aria-invalid={invalid || undefined} className={`grid grid-cols-1 ${columns} gap-3`}>
@@ -48,8 +50,8 @@ export default function ChoiceCards<T extends string>({ label, value, options, o
               </span>
             )}
             <span className="flex-1 min-w-0">
-              <span className={`block text-sm font-semibold ${checked ? 'text-[#E5540F]' : 'text-[#1A1A1A]'}`}>{o.label}</span>
-              {o.description && <span className="block mt-0.5 text-xs text-[#6B7280] leading-relaxed">{o.description}</span>}
+              <span className={`block text-sm font-semibold ${checked ? 'text-[#E5540F]' : 'text-[#1A1A1A]'}`}>{t(o.label)}</span>
+              {o.description && <span className="block mt-0.5 text-xs text-[#6B7280] leading-relaxed">{t(o.description)}</span>}
             </span>
             <span
               aria-hidden="true"

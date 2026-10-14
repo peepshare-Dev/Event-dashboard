@@ -1,4 +1,4 @@
-import { appBannerApi, coverPageApi, type PromoApi } from '../../../data/mock/promoApi';
+import { appBannerApi, communityBannerApi, coverPageApi, type PromoApi } from '../../../data/mock/promoApi';
 import { BANNER_IMAGE_SIZE, COVER_IMAGE_SIZE } from '../../../data/appBanners';
 
 /**
@@ -25,11 +25,12 @@ export interface Placement {
   api: PromoApi;
 }
 
+/** Banner on the app's Home page. */
 export const BANNER_PLACEMENT: Placement = {
   key: 'banner',
   noun: 'Banner',
-  menuTitle: 'Set Banner in App',
-  subtitle: 'Manage promotional banners displayed in Peep Share App.',
+  menuTitle: 'Set Banner in App – Home page',
+  subtitle: 'Manage promotional banners displayed on the Home page of Peep Share App.',
   icon: 'solar:gallery-wide-linear',
   imageSize: BANNER_IMAGE_SIZE,
   shape: 'banner',
@@ -40,6 +41,16 @@ export const BANNER_PLACEMENT: Placement = {
   deactivateText: 'will no longer be displayed in the app.',
   emptyText: 'Create a banner to promote events, coupons and campaigns inside the Peep Share app.',
   api: appBannerApi,
+};
+
+/** Banner on the app's Community page: same banner, its own list and order. */
+export const COMMUNITY_BANNER_PLACEMENT: Placement = {
+  ...BANNER_PLACEMENT,
+  menuTitle: 'Set Banner in App – Community page',
+  subtitle: 'Manage promotional banners displayed on the Community page of Peep Share App.',
+  previewDescription: 'How it appears on the Community page of the Peep Share app.',
+  emptyText: 'Create a banner to promote communities, posts and campaigns on the Community page of the Peep Share app.',
+  api: communityBannerApi,
 };
 
 export const COVER_PLACEMENT: Placement = {

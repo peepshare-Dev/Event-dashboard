@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import type { NavSection, EventSectionId } from '../../data/navigation';
 import { eventWorkspaceSections } from '../../data/navigation';
+import { useT } from '@/i18n';
 
 interface EventWorkspaceSidebarProps {
   /** Service-level nav (Event List, Banner image, …) shown as the icon rail. */
@@ -28,6 +29,7 @@ export default function EventWorkspaceSidebar({
   onMobileClose,
 }: EventWorkspaceSidebarProps) {
   const [panelOpen, setPanelOpen] = useState(true);
+  const t = useT();
   const railItems = serviceSections.flatMap((s) => s.items);
 
   const rail = (onToggle: () => void, toggleLabel: string, afterNavigate?: () => void) => (
@@ -35,12 +37,12 @@ export default function EventWorkspaceSidebar({
       <button
         type="button"
         onClick={onToggle}
-        aria-label={toggleLabel}
+        aria-label={t(toggleLabel)}
         className="w-10 h-10 mb-3 flex items-center justify-center rounded-lg text-[#374151] hover:bg-[#F9FAFB] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
       >
         <Icon icon={toggleLabel === 'Close menu' ? 'solar:close-linear' : 'solar:hamburger-menu-linear'} width={22} height={22} />
       </button>
-      <nav aria-label="Set Event" className="flex flex-col items-center gap-3">
+      <nav aria-label={t('Set Event')} className="flex flex-col items-center gap-3">
         {railItems.map((item) => {
           const active = item.id === activeServiceNav;
           return (
@@ -51,9 +53,9 @@ export default function EventWorkspaceSidebar({
                 onServiceNavigate(item.id);
                 afterNavigate?.();
               }}
-              aria-label={item.label}
+              aria-label={t(item.label)}
               aria-current={active ? 'page' : undefined}
-              title={item.label}
+              title={t(item.label)}
               className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40 ${
                 active ? 'bg-[#FF6115] text-white' : 'text-[#4B5563] hover:bg-[#F9FAFB] hover:text-[#1A1A1A]'
               }`}
@@ -74,7 +76,7 @@ export default function EventWorkspaceSidebar({
         </div>
         <div className="min-w-0">
           <div className="font-bold text-sm text-[#1A1A1A] leading-tight">PEEP SHARE</div>
-          <div className="text-xs text-[#6B7280]">Set Event</div>
+          <div className="text-xs text-[#6B7280]">{t('Set Event')}</div>
         </div>
       </div>
 
@@ -88,12 +90,12 @@ export default function EventWorkspaceSidebar({
           className="inline-flex items-center gap-1 h-8 text-xs font-medium text-[#1A1A1A] hover:text-[#FF6115] transition-colors"
         >
           <Icon icon="solar:alt-arrow-left-linear" width={14} height={14} />
-          Back
+          {t('Back')}
         </button>
-        <div className="mt-4 mb-2 text-xs text-[#6B7280]">Event management</div>
+        <div className="mt-4 mb-2 text-xs text-[#6B7280]">{t('Event management')}</div>
       </div>
 
-      <nav aria-label="Event management" className="flex-1 overflow-y-auto px-3 space-y-2 pb-4">
+      <nav aria-label={t('Event management')} className="flex-1 overflow-y-auto px-3 space-y-2 pb-4">
         {eventWorkspaceSections.map((item) => {
           const active = item.id === section;
           return (
@@ -110,7 +112,7 @@ export default function EventWorkspaceSidebar({
               }`}
             >
               <Icon icon={item.icon} width={22} height={22} className="flex-shrink-0" />
-              {item.label}
+              {t(item.label)}
             </button>
           );
         })}

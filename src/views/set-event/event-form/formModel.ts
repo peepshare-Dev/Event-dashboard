@@ -1,7 +1,7 @@
 // Create / Edit Event form: state shape, mapping to/from the stored event, and validation.
 
-import { hasOptions } from '../../../components/set-event/form/EventFormBuilder';
-import { defaultAutomations, type Automation } from '../../../data/automations';
+import { hasOptions, isQuestion } from '../../../components/set-event/form/EventFormBuilder';
+import { PEEP_OA_ID_PATTERN, defaultAutomations, normalizeOaId, type Automation } from '../../../data/automations';
 import {
   CURRENT_AUTHOR,
   type EventCategory,
@@ -62,6 +62,8 @@ export interface FormState {
   registrationForms: string[];
   // Communication
   communicationEnabled: boolean;
+  peepOaId: string;
+  communityId: string;
   automations: Automation[];
   // Survey Form
   requireSurvey: boolean;
@@ -146,6 +148,8 @@ export function toForm(event?: SetEvent): FormState {
     registrationForms: d?.registrationForms ?? [],
     // New events start with suggested automations, switched off until Communication is enabled.
     communicationEnabled: d?.communication?.enabled ?? false,
+    peepOaId: d?.communication?.peepOaId ?? '',
+    communityId: d?.communication?.communityId ?? '',
     automations: d?.communication?.automations ?? defaultAutomations(),
     // Events that already had a send time were sending a survey.
     requireSurvey: d?.surveyForm?.enabled ?? Boolean(d?.surveySendTime),
@@ -211,7 +215,7 @@ export function fromForm(form: FormState, base: SetEvent | undefined, id: number
       ticketPrice: type === 'Paid' ? toNumber(form.ticketPrice) : null,
       paymentMethods: type === 'Paid' ? form.paymentMethods : [],
       eventForm: formConfig(form.requireForm, form.formName, form.formDescription, form.formFields, form.formTemplateId),
-      communication: { enabled: form.communicationEnabled, automations: form.automations },
+      communication: { enabled: form.communicationEnabled, peepOaId: normalizeOaId(form.peepOaId), communityId: normalizeOaId(form.communityId), automations: form.automations },
       surveyForm: formConfig(form.requireSurvey, form.surveyName, form.surveyDescription, form.surveyFields, form.surveyTemplateId),
       registrationForms: form.registrationForms,
       collectionId: form.collectionId,
@@ -230,6 +234,8 @@ export function formConfig(enabled: boolean, name: string, description: string, 
     fields: fields.map((field) => ({
       ...field,
       label: field.label.trim(),
+      // Section headings are never answered.
+      required: isQuestion(field) && field.required,
       options: hasOptions(field.type) ? field.options.map((o) => o.trim()).filter(Boolean) : [],
     })),
   };
@@ -311,6 +317,12 @@ export function validate(form: FormState, complete: boolean): Errors {
   }
   if (online) errors.onlineUrl = validateUrl(form.onlineUrl);
 
+  // Communication
+  if (form.communicationEnabled && form.peepOaId.trim() && !PEEP_OA_ID_PATTERN.test(form.peepOaId.trim()))
+    errors.peepOaId = 'Use lowercase letters, numbers and hyphens, e.g. #oa-mono-max-official-account.';
+  if (form.communicationEnabled && form.communityId.trim() && !PEEP_OA_ID_PATTERN.test(form.communityId.trim()))
+    errors.communityId = 'Use lowercase letters, numbers and hyphens, e.g. #oa-mono-max-official-account.';
+
   // Registration
   if (type && form.capacityLimited) errors.maxParticipants = validateCount(form.maxParticipants);
   if (type === 'Paid' && form.ticketPrice.trim()) {
@@ -347,15 +359,16 @@ export function validate(form: FormState, complete: boolean): Errors {
 
     if (form.requireForm) {
       if (!form.formName.trim()) errors.formName = 'Enter a form name.';
-      if (form.formFields.length === 0) errors.formFields = 'Add at least one field.';
+      if (!form.formFields.some(isQuestion)) errors.formFields = 'Add at least one field.';
       validateFields(form.formFields, errors);
     }
     if (form.requireSurvey) {
       if (!form.surveyName.trim()) errors.surveyName = 'Enter a survey name.';
-      if (form.surveyFields.length === 0) errors.surveyFields = 'Add at least one question.';
+      if (!form.surveyFields.some(isQuestion)) errors.surveyFields = 'Add at least one question.';
       if (!form.surveyDate || !form.surveyTime) errors.surveySend = 'Set when the survey is sent.';
       validateFields(form.surveyFields, errors);
     }
+    if (form.communicationEnabled && !form.peepOaId.trim()) errors.peepOaId = 'Enter the PEEP OA ID that sends these messages.';
   }
 
   return Object.fromEntries(Object.entries(errors).filter(([, v]) => v));
@@ -364,7 +377,70 @@ export function validate(form: FormState, complete: boolean): Errors {
 /** Builder field errors are keyed by field id, so the Event and Survey forms can share one error map. */
 export function validateFields(fields: EventFormField[], errors: Errors) {
   for (const field of fields) {
-    if (!field.label.trim()) errors[`field:${field.id}`] = 'Enter a label for this field.';
+    if (!field.label.trim()) errors[`field:${field.id}`] = field.type === 'heading' ? 'Enter a section title.' : 'Enter a label for this field.';
     if (hasOptions(field.type) && !field.options.some((o) => o.trim())) errors[`field:${field.id}:options`] = 'Add at least one option.';
   }
+}
+
+// --- Section progress (section menu and Create Event steps) ---
+
+export type SectionId = 'information' | 'schedule' | 'location' | 'registration' | 'collection' | 'event-form' | 'communication' | 'survey-form';
+
+/** error = a shown error inside; todo = required fields still empty; done = complete; undefined = optional and switched off. */
+export type SectionStatus = 'error' | 'todo' | 'done' | undefined;
+
+const ERROR_SECTION: Record<string, SectionId> = {
+  name: 'information',
+  eventType: 'information',
+  category: 'information',
+  // Status & visibility opens from the Event Information header.
+  schedule: 'information',
+  password: 'information',
+  eventStart: 'schedule',
+  eventEnd: 'schedule',
+  regPeriod: 'schedule',
+  eventFormat: 'location',
+  venueName: 'location',
+  latitude: 'location',
+  longitude: 'location',
+  mapLink: 'location',
+  onlineUrl: 'location',
+  registrationType: 'registration',
+  maxParticipants: 'registration',
+  ticketPrice: 'registration',
+  paymentMethods: 'registration',
+  formName: 'event-form',
+  formFields: 'event-form',
+  surveyName: 'survey-form',
+  surveyFields: 'survey-form',
+  surveySend: 'survey-form',
+  peepOaId: 'communication',
+  communityId: 'communication',
+};
+
+/** Which section an error key belongs to. Builder errors (`field:<id>`) belong to whichever form holds that field. */
+export function errorSection(key: string, form: FormState): SectionId | undefined {
+  if (key.startsWith('field:')) {
+    const id = key.split(':')[1];
+    return form.formFields.some((f) => f.id === id) ? 'event-form' : 'survey-form';
+  }
+  return ERROR_SECTION[key];
+}
+
+export function sectionStatuses(form: FormState, shownErrors: Errors): Record<SectionId, SectionStatus> {
+  const sectionsOf = (errors: Errors) => new Set(Object.keys(errors).map((k) => errorSection(k, form)));
+  const shown = sectionsOf(shownErrors);
+  const missing = sectionsOf(validate(form, true));
+  const status = (id: SectionId, enabled = true): SectionStatus =>
+    shown.has(id) ? 'error' : !enabled ? undefined : missing.has(id) ? 'todo' : 'done';
+  return {
+    information: status('information'),
+    schedule: status('schedule'),
+    location: status('location'),
+    registration: status('registration'),
+    collection: status('collection', form.collectionId !== null),
+    'event-form': status('event-form', form.requireForm),
+    communication: status('communication', form.communicationEnabled),
+    'survey-form': status('survey-form', form.requireSurvey),
+  };
 }

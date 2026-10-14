@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { ServiceConfig } from '../data/mock';
+import { useT } from '@/i18n';
 
 interface ServiceLoadingProps {
   service: ServiceConfig;
@@ -7,6 +8,7 @@ interface ServiceLoadingProps {
 }
 
 export default function ServiceLoading({ service, onComplete }: ServiceLoadingProps) {
+  const t = useT();
   useEffect(() => {
     const timer = setTimeout(onComplete, 1200);
     return () => clearTimeout(timer);
@@ -21,7 +23,7 @@ export default function ServiceLoading({ service, onComplete }: ServiceLoadingPr
         <div className="w-8 h-8 border-[3px] border-[#FFD9C2] border-t-[#FF6115] rounded-full animate-spin" />
         <div>
           <div className="font-bold text-base text-[#1A1A1A]">PEEP SHARE</div>
-          <p className="text-sm text-[#6B7280] mt-1">Opening {service.name}...</p>
+          <p className="text-sm text-[#6B7280] mt-1">{t('Opening {name}...', { name: t(service.name) })}</p>
         </div>
       </div>
     </div>

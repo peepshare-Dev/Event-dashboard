@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { inputClass } from './FormField';
+import { useT } from '@/i18n';
 
 export interface SelectOption<T extends string> {
   value: T;
@@ -21,6 +22,7 @@ interface SelectFieldProps<T extends string> {
 
 // Single-select dropdown in the same box as the text inputs (Event Type, Category, field types…).
 export default function SelectField<T extends string>({ id, value, options, onChange, placeholder, icon, invalid }: SelectFieldProps<T>) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -78,7 +80,7 @@ export default function SelectField<T extends string>({ id, value, options, onCh
         className={`${inputClass(invalid)} flex items-center gap-2.5 text-left`}
       >
         {shownIcon && <Icon icon={shownIcon} width={18} height={18} className={`flex-shrink-0 ${selected ? 'text-[#FF6115]' : 'text-[#9CA3AF]'}`} />}
-        <span className={`flex-1 truncate ${selected ? 'text-[#1A1A1A]' : 'text-[#9CA3AF]'}`}>{selected?.label ?? placeholder}</span>
+        <span className={`flex-1 truncate ${selected ? 'text-[#1A1A1A]' : 'text-[#9CA3AF]'}`}>{selected ? t(selected.label) : placeholder}</span>
         <Icon icon="solar:alt-arrow-down-linear" width={16} height={16} className={`flex-shrink-0 text-[#9CA3AF] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
@@ -107,7 +109,7 @@ export default function SelectField<T extends string>({ id, value, options, onCh
                   }`}
                 >
                   {o.icon && <Icon icon={o.icon} width={16} height={16} className="flex-shrink-0" />}
-                  <span className="flex-1 truncate">{o.label}</span>
+                  <span className="flex-1 truncate">{t(o.label)}</span>
                   {isSelected && <Icon icon="solar:check-linear" width={14} height={14} />}
                 </button>
               );

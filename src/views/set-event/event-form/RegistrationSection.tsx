@@ -5,6 +5,7 @@ import SegmentedControl from '../../../components/set-event/form/SegmentedContro
 import Toggle from '../../../components/ui/Toggle';
 import { PAYMENT_METHODS, REGISTRATION_TYPE_LABELS, type RegistrationType } from '../../../data/setEvents';
 import type { SectionProps } from './formModel';
+import { useT } from '@/i18n';
 
 const TYPE_OPTIONS: { value: RegistrationType; label: string; description: string; icon: string }[] = [
   { value: 'Free', label: REGISTRATION_TYPE_LABELS.Free, description: 'Anyone can register at no cost.', icon: 'solar:ticket-linear' },
@@ -12,14 +13,15 @@ const TYPE_OPTIONS: { value: RegistrationType; label: string; description: strin
 ];
 
 export default function RegistrationSection({ form, patch, errors }: SectionProps) {
+  const t = useT();
   const type = form.registrationType;
   return (
-    <EventFormSection id="section-registration" icon="solar:user-check-linear" title="Registration" description="Configure how attendees can join your event.">
+    <EventFormSection id="section-registration" icon="solar:user-check-linear" title={t('Registration')} description={t('Configure how attendees can join your event.')}>
       <div className="space-y-6">
-        <FormField label="Registration Type" required error={errors.registrationType} asGroup>
+        <FormField label={t('Registration Type')} required error={errors.registrationType} asGroup>
           {() => (
             <ChoiceCards
-              label="Registration Type"
+              label={t('Registration Type')}
               value={type}
               options={TYPE_OPTIONS}
               onChange={(registrationType) => patch({ registrationType })}
@@ -36,8 +38,8 @@ export default function RegistrationSection({ form, patch, errors }: SectionProp
         )}
 
         <div className="pt-6 border-t border-[#F0F0F0]">
-          <FormField label="Allow join" hint="Turn off to pause new registrations without unpublishing the event." asGroup>
-            {() => <Toggle checked={form.allowJoin} onChange={(allowJoin) => patch({ allowJoin })} label={form.allowJoin ? 'Active join' : 'Closed'} />}
+          <FormField label={t('Allow join')} hint={t('Turn off to pause new registrations without unpublishing the event.')} asGroup>
+            {() => <Toggle checked={form.allowJoin} onChange={(allowJoin) => patch({ allowJoin })} label={form.allowJoin ? t('Active join') : t('Closed')} />}
           </FormField>
         </div>
       </div>
@@ -46,12 +48,13 @@ export default function RegistrationSection({ form, patch, errors }: SectionProp
 }
 
 function CapacityField({ form, patch, errors }: SectionProps) {
+  const t = useT();
   return (
-    <FormField label="Capacity" error={errors.maxParticipants} className="md:col-span-2" asGroup>
+    <FormField label={t('Capacity')} error={errors.maxParticipants} className="md:col-span-2" asGroup>
       {() => (
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <SegmentedControl
-            label="Capacity"
+            label={t('Capacity')}
             value={form.capacityLimited ? 'limited' : 'unlimited'}
             options={[
               { value: 'unlimited', label: 'Unlimited' },
@@ -61,10 +64,10 @@ function CapacityField({ form, patch, errors }: SectionProps) {
           />
           {form.capacityLimited && (
             <NumberInput
-              label="Maximum Participants"
+              label={t('Maximum Participants')}
               value={form.maxParticipants}
               onChange={(maxParticipants) => patch({ maxParticipants })}
-              suffix="people"
+              suffix={t('people')}
               invalid={Boolean(errors.maxParticipants)}
               className="sm:w-64"
             />
@@ -76,9 +79,10 @@ function CapacityField({ form, patch, errors }: SectionProps) {
 }
 
 function PaidFields({ form, patch, errors }: SectionProps) {
+  const t = useT();
   return (
     <>
-      <FormField label="Registration Fee" required error={errors.ticketPrice}>
+      <FormField label={t('Registration Fee')} required error={errors.ticketPrice}>
         {(id) => (
           <div
             className={`flex h-12 bg-white border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#FF6115]/30 focus-within:border-[#FF6115] ${
@@ -99,7 +103,7 @@ function PaidFields({ form, patch, errors }: SectionProps) {
         )}
       </FormField>
 
-      <FormField label="Payment Methods" required error={errors.paymentMethods} className="md:col-span-2" asGroup>
+      <FormField label={t('Payment Methods')} required error={errors.paymentMethods} className="md:col-span-2" asGroup>
         {() => (
           <div className="flex flex-wrap gap-2" data-invalid={Boolean(errors.paymentMethods) || undefined}>
             {PAYMENT_METHODS.map((method) => {
@@ -119,7 +123,7 @@ function PaidFields({ form, patch, errors }: SectionProps) {
                     }
                     className="w-4 h-4 accent-[#FF6115]"
                   />
-                  {method}
+                  {t(method)}
                 </label>
               );
             })}
@@ -138,6 +142,7 @@ function NumberInput({ label, value, onChange, suffix, invalid, className = '' }
   invalid?: boolean;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div
       className={`flex h-12 bg-white border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#FF6115]/30 focus-within:border-[#FF6115] ${
@@ -148,7 +153,7 @@ function NumberInput({ label, value, onChange, suffix, invalid, className = '' }
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ''))}
-        placeholder="e.g. 500"
+        placeholder={t('e.g. {value}', { value: '500' })}
         aria-label={label}
         aria-invalid={invalid || undefined}
         className="flex-1 min-w-0 px-3 text-sm text-[#1A1A1A] placeholder:text-[#9CA3AF] bg-transparent focus:outline-none"

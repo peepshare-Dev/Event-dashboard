@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface ModalProps {
   title: string;
@@ -11,6 +12,7 @@ interface ModalProps {
 
 // Same shell as the existing app modals; becomes a bottom sheet on mobile.
 export default function Modal({ title, onClose, children, footer, maxWidth = 'sm:max-w-md' }: ModalProps) {
+  const t = useT();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -30,7 +32,7 @@ export default function Modal({ title, onClose, children, footer, maxWidth = 'sm
           <h3 className="text-base font-semibold text-[#1A1A1A] truncate">{title}</h3>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="w-8 h-8 -mr-2 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#6B7280] hover:bg-[#F9FAFB] flex-shrink-0 ml-2"
           >
             <Icon icon="solar:close-linear" width={18} height={18} />

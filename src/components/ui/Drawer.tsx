@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 interface DrawerProps {
   title: string;
@@ -16,6 +17,7 @@ interface DrawerProps {
 export default function Drawer({ title, description, onClose, children, footer, maxWidth = 'sm:max-w-[640px]' }: DrawerProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -51,7 +53,7 @@ export default function Drawer({ title, description, onClose, children, footer, 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="w-9 h-9 -mr-2 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#6B7280] hover:bg-[#F9FAFB] flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
           >
             <Icon icon="solar:close-linear" width={20} height={20} />

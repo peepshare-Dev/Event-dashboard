@@ -6,12 +6,15 @@ import ServicePlaceholder from './views/ServicePlaceholder';
 import EventDashboardApp from './views/EventDashboardApp';
 import PeepSyncApp from './views/PeepSyncApp';
 import SetEventApp from './views/set-event/SetEventApp';
+import MediaAdsApp from './views/MediaAdsApp';
+import AccountAdminPage from './views/AccountAdminPage';
 import { services } from './data/mock';
 
 type Screen =
   | { name: 'services' }
   | { name: 'loading'; serviceId: string }
-  | { name: 'service'; serviceId: string };
+  | { name: 'service'; serviceId: string }
+  | { name: 'admin' };
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -34,6 +37,15 @@ export default function App() {
   // Unauthenticated users always see the login screen, regardless of screen state.
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  if (screen.name === 'admin') {
+    return (
+      <AccountAdminPage
+        onBack={handleSwitchService}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   if (screen.name === 'loading') {
@@ -60,6 +72,9 @@ export default function App() {
       if (service.id === 'set-event') {
         return <SetEventApp onSwitchService={handleSwitchService} onLogout={handleLogout} />;
       }
+      if (service.id === 'media-ads') {
+        return <MediaAdsApp onSwitchService={handleSwitchService} onLogout={handleLogout} />;
+      }
       return (
         <ServicePlaceholder service={service} onSwitchService={handleSwitchService} onLogout={handleLogout} />
       );
@@ -70,6 +85,7 @@ export default function App() {
     <ServiceSelection
       services={services}
       onOpenService={handleOpenService}
+      onOpenAdmin={() => setScreen({ name: 'admin' })}
       onSwitchService={handleSwitchService}
       onLogout={handleLogout}
     />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 import type { Event } from '../data/mock';
 import MembersAccess from './MembersAccess';
 import RegistrationData from './RegistrationData';
@@ -24,43 +25,48 @@ interface EventDetailProps {
 }
 
 export default function EventDetail({ event, onBack, visibleTabs = ALL_TABS }: EventDetailProps) {
+  const t = useT();
   const [tab, setTab] = useState<Tab>(visibleTabs[0]);
 
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       {/* Breadcrumb + header */}
       <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-        <button onClick={onBack} className="hover:text-[#FF6115] transition-colors">Event List</button>
+        <button onClick={onBack} className="hover:text-[#FF6115] transition-colors">{t('Event List')}</button>
         <span>/</span>
         <span className="text-[#1A1A1A] font-medium truncate">{event.name}</span>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-xl font-semibold text-[#1A1A1A]">{event.name}</h2>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[event.status]}`}>{event.status}</span>
-          </div>
-          <p className="text-sm text-[#6B7280] mt-1">{event.dates} · {event.location}</p>
+      <div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h2 className="text-xl font-semibold text-[#1A1A1A]">{event.name}</h2>
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[event.status]}`}>{t(event.status)}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex-1 lg:flex-none px-4 py-2 text-sm bg-[#FF6115] hover:bg-[#E5540F] text-white rounded-lg transition-colors font-medium">Export Report</button>
-        </div>
+        <p className="text-sm text-[#6B7280] mt-1">{event.dates} · {event.location}</p>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        {[
+        {([
           { label: 'Registered', value: event.registrants.toLocaleString(), icon: 'solar:users-group-rounded-linear', color: 'text-blue-600' },
-          { label: 'Checked-in', value: event.checkedIn.toLocaleString(), icon: 'solar:check-circle-linear', color: 'text-green-600' },
+          {
+            label: 'Checked-in',
+            value: event.checkedIn.toLocaleString(),
+            icon: 'solar:check-circle-linear',
+            color: 'text-green-600',
+            note: event.registrants > 0 ? t('{pct}% attendance', { pct: Math.round((event.checkedIn / event.registrants) * 100) }) : undefined,
+          },
           { label: 'Survey Responses', value: event.surveyResponses.toLocaleString(), icon: 'solar:chart-2-linear', color: 'text-purple-600' },
           { label: 'Photos', value: event.photos.toLocaleString(), icon: 'solar:gallery-linear', color: 'text-[#FF6115]' },
           { label: 'Members', value: event.members.toString(), icon: 'solar:user-id-linear', color: 'text-[#1A1A1A]' },
-        ].map(c => (
+        ] as { label: string; value: string; icon: string; color: string; note?: string }[]).map(c => (
           <div key={c.label} className="bg-white rounded-xl border border-[#E5E7EB] p-4">
             <Icon icon={c.icon} width={22} height={22} className={`mb-1 ${c.color}`} />
             <div className={`text-2xl font-bold ${c.color}`}>{c.value}</div>
-            <div className="text-xs text-[#6B7280] mt-0.5">{c.label}</div>
+            <div className="text-xs text-[#6B7280] mt-0.5">
+              {t(c.label)}
+              {c.note && <span className="text-[#9CA3AF]"> · {c.note}</span>}
+            </div>
           </div>
         ))}
       </div>
@@ -68,17 +74,17 @@ export default function EventDetail({ event, onBack, visibleTabs = ALL_TABS }: E
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="border-b border-[#E5E7EB] px-4 flex gap-1 overflow-x-auto">
-          {visibleTabs.map(t => (
+          {visibleTabs.map(name => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={name}
+              onClick={() => setTab(name)}
               className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                tab === t
+                tab === name
                   ? 'border-[#FF6115] text-[#FF6115]'
                   : 'border-transparent text-[#6B7280] hover:text-[#1A1A1A]'
               }`}
             >
-              {t}
+              {t(name)}
             </button>
           ))}
         </div>
@@ -95,6 +101,7 @@ export default function EventDetail({ event, onBack, visibleTabs = ALL_TABS }: E
 }
 
 function OverviewTab({ event }: { event: Event }) {
+  const t = useT();
   const attendanceRate = event.registrants > 0 ? Math.round((event.checkedIn / event.registrants) * 100) : 0;
   const surveyRate = event.checkedIn > 0 ? Math.round((event.surveyResponses / event.checkedIn) * 100) : 0;
 
@@ -102,34 +109,34 @@ function OverviewTab({ event }: { event: Event }) {
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Registration breakdown */}
-        <ReportSection title="Registration" subtitle={`${event.registrants.toLocaleString()} total registrants`}>
-          <ProgressRow label="General" value={Math.round(event.registrants * 0.72)} total={event.registrants} />
-          <ProgressRow label="VIP" value={Math.round(event.registrants * 0.28)} total={event.registrants} />
+        <ReportSection title={t('Registration')} subtitle={t('{count} total registrants', { count: event.registrants.toLocaleString() })}>
+          <ProgressRow label={t('General')} value={Math.round(event.registrants * 0.72)} total={event.registrants} />
+          <ProgressRow label={t('VIP')} value={Math.round(event.registrants * 0.28)} total={event.registrants} />
           <div className="pt-2 border-t border-[#F3F4F6] flex justify-between text-xs">
-            <span className="text-[#6B7280]">Attendance Rate</span>
+            <span className="text-[#6B7280]">{t('Attendance Rate')}</span>
             <span className="font-semibold text-[#FF6115]">{attendanceRate}%</span>
           </div>
         </ReportSection>
 
         {/* Survey breakdown */}
-        <ReportSection title="Survey" subtitle={`${event.surveyResponses.toLocaleString()} responses collected`}>
-          <ProgressRow label="Responded" value={event.surveyResponses} total={event.checkedIn || 1} />
-          <ProgressRow label="Did not respond" value={Math.max(0, event.checkedIn - event.surveyResponses)} total={event.checkedIn || 1} />
+        <ReportSection title={t('Survey')} subtitle={t('{count} responses collected', { count: event.surveyResponses.toLocaleString() })}>
+          <ProgressRow label={t('Responded')} value={event.surveyResponses} total={event.checkedIn || 1} />
+          <ProgressRow label={t('Did not respond')} value={Math.max(0, event.checkedIn - event.surveyResponses)} total={event.checkedIn || 1} />
           <div className="pt-2 border-t border-[#F3F4F6] flex justify-between text-xs">
-            <span className="text-[#6B7280]">Response Rate</span>
+            <span className="text-[#6B7280]">{t('Response Rate')}</span>
             <span className="font-semibold text-[#FF6115]">{surveyRate}%</span>
           </div>
         </ReportSection>
 
         {/* Photo Activity */}
-        <ReportSection title="Photo Activity" subtitle={`${event.photos.toLocaleString()} total photos`}>
-          <ProgressRow label="Completed" value={Math.round(event.photos * 0.99)} total={event.photos || 1} />
-          <ProgressRow label="Processing" value={Math.round(event.photos * 0.007)} total={event.photos || 1} />
-          <ProgressRow label="Failed" value={Math.max(0, event.photos - Math.round(event.photos * 0.99) - Math.round(event.photos * 0.007))} total={event.photos || 1} />
+        <ReportSection title={t('Photo Activity')} subtitle={t('{count} total photos', { count: event.photos.toLocaleString() })}>
+          <ProgressRow label={t('Completed')} value={Math.round(event.photos * 0.99)} total={event.photos || 1} />
+          <ProgressRow label={t('Processing')} value={Math.round(event.photos * 0.007)} total={event.photos || 1} />
+          <ProgressRow label={t('Failed')} value={Math.max(0, event.photos - Math.round(event.photos * 0.99) - Math.round(event.photos * 0.007))} total={event.photos || 1} />
         </ReportSection>
 
         {/* Members */}
-        <ReportSection title="Event Team" subtitle={`${event.members} members involved`}>
+        <ReportSection title={t('Event Team')} subtitle={t('{count} members involved', { count: event.members })}>
           {[
             { role: 'Event Admin', count: 2 },
             { role: 'Event Staff', count: 4 },
@@ -137,7 +144,7 @@ function OverviewTab({ event }: { event: Event }) {
             { role: 'Viewer', count: event.members - 10 > 0 ? event.members - 10 : 2 },
           ].map(m => (
             <div key={m.role} className="flex justify-between py-1.5 text-sm border-b border-[#F3F4F6] last:border-0">
-              <span className="text-[#6B7280]">{m.role}</span>
+              <span className="text-[#6B7280]">{t(m.role)}</span>
               <span className="font-medium text-[#1A1A1A]">{m.count}</span>
             </div>
           ))}
@@ -176,6 +183,7 @@ function CollectionsTab({ event }: { event: Event }) {
   const eventCollections = mockCollections.filter(c => c.linkedEvent === event.name);
   const totalFiles = eventCollections.reduce((sum, c) => sum + c.files, 0);
   const totalStorage = eventCollections.reduce((sum, c) => sum + c.storageGb, 0);
+  const t = useT();
 
   return (
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
@@ -187,7 +195,7 @@ function CollectionsTab({ event }: { event: Event }) {
         ].map(c => (
           <div key={c.label} className="border border-[#E5E7EB] rounded-xl p-4">
             <div className={`text-2xl font-bold ${c.color}`}>{c.value}</div>
-            <div className="text-xs text-[#6B7280] mt-0.5">{c.label}</div>
+            <div className="text-xs text-[#6B7280] mt-0.5">{t(c.label)}</div>
           </div>
         ))}
       </div>
@@ -195,7 +203,7 @@ function CollectionsTab({ event }: { event: Event }) {
       {eventCollections.length === 0 ? (
         <div className="border border-[#E5E7EB] rounded-xl p-10 text-center">
           <Icon icon="solar:folder-linear" width={32} height={32} className="mx-auto text-[#D1D5DB] mb-2" />
-          <p className="text-sm text-[#6B7280]">No collections linked to this event yet.</p>
+          <p className="text-sm text-[#6B7280]">{t('No collections linked to this event yet.')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -210,14 +218,14 @@ function CollectionsTab({ event }: { event: Event }) {
                   <div className="text-xs text-[#9CA3AF] truncate">{c.description}</div>
                 </div>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${SHARING_COLORS[c.sharing]}`}>
-                  {c.sharing}
+                  {t(c.sharing)}
                 </span>
               </div>
               <div className="flex items-center gap-4 mt-3 text-xs text-[#4B5563]">
-                <span>{c.files.toLocaleString()} files</span>
+                <span>{t('{count} files', { count: c.files.toLocaleString() })}</span>
                 <span>{c.storageGb >= 1 ? `${c.storageGb} GB` : `${Math.round(c.storageGb * 1000)} MB`}</span>
               </div>
-              <div className="text-xs text-[#9CA3AF] mt-1.5">Updated {c.lastUpdated}</div>
+              <div className="text-xs text-[#9CA3AF] mt-1.5">{t('Updated {date}', { date: t(c.lastUpdated) })}</div>
             </div>
           ))}
         </div>

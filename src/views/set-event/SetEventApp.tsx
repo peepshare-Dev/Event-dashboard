@@ -7,25 +7,23 @@ import DeleteConfirmationModal from '../../components/ui/DeleteConfirmationModal
 import EventWorkspaceSidebar from '../../components/set-event/EventWorkspaceSidebar';
 import SetEventList from './SetEventList';
 import EventFormPage, { type SaveAction } from './EventFormPage';
-import PromoManager from './promo/PromoManager';
-import { BANNER_PLACEMENT, COVER_PLACEMENT } from './promo/placements';
 import FormLibrary from './FormLibrary';
 import EventOverview from './workspace/EventOverview';
 import EventCollection from './workspace/EventCollection';
 import EventQrLinks from './workspace/EventQrLinks';
 import EventUsers from './workspace/EventUsers';
+import EventActivityLog from './workspace/EventActivityLog';
 import CloudManagement from '../CloudManagement';
 import Collections from '../Collections';
-import UserManagement from '../UserManagement';
-import RoleManagement, { RoleDetail } from '../RoleManagement';
 import ActivityLog from '../ActivityLog';
 import SystemSettings from '../SystemSettings';
-import type { Role } from '../../data/mock';
 import { setEventNavSections, type EventSectionId } from '../../data/navigation';
-import { formatEventDateTime, setEventsSeed, withDetails, type SetEvent } from '../../data/setEvents';
+import { CURRENT_AUTHOR, formatEventDateTime, setEventsSeed, withDetails, type SetEvent } from '../../data/setEvents';
 import { formTemplatesSeed, type FormTemplate } from '../../data/formTemplates';
+import { diffActivity, sampleActivity, type EventActivity } from '../../data/eventActivity';
+import { useT } from '@/i18n';
 
-type NavId = 'event-list' | 'regis-forms' | 'survey-forms' | 'app-banners' | 'app-cover-pages' | 'cloud' | 'collections' | 'users' | 'roles' | 'activity' | 'settings';
+type NavId = 'event-list' | 'regis-forms' | 'survey-forms' | 'cloud' | 'collections' | 'activity' | 'settings';
 
 // Inside Event List: the table, the Create Event page, or one saved event's workspace.
 type View =
@@ -39,16 +37,25 @@ interface SetEventAppProps {
 }
 
 export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppProps) {
+  const t = useT();
   const [events, setEvents] = useState<SetEvent[]>(setEventsSeed);
   // Master Regis / Survey templates (Regis Form and Survey Form menus).
   const [formTemplates, setFormTemplates] = useState<FormTemplate[]>(formTemplatesSeed);
+  // Changes made in this session (Activity logs); older history comes from sampleActivity.
+  const [activity, setActivity] = useState<EventActivity[]>([]);
+  const log = (before: SetEvent | undefined, after: SetEvent) => setActivity((list) => [...diffActivity(before, after), ...list]);
   const [activeNav, setActiveNav] = useState<NavId>('event-list');
   const [view, setView] = useState<View>({ kind: 'list' });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Just-duplicated event, highlighted in the list for a few seconds.
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  useEffect(() => {
+    if (highlightId == null) return;
+    const timer = setTimeout(() => setHighlightId(null), 4000);
+    return () => clearTimeout(timer);
+  }, [highlightId]);
   const [deleting, setDeleting] = useState<SetEvent | null>(null);
-  // Role opened from Role Management (its permission detail page).
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   // Navigation waiting on "Discard changes?" while the event form has unsaved edits.
   const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
   const formDirty = useRef(false);
@@ -87,30 +94,56 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
 
   const handleSave = (saved: SetEvent, action: SaveAction) => {
     formDirty.current = false;
+    log(events.find((e) => e.id === saved.id), saved);
     upsert(saved);
     // Submitting for review keeps the event open (now Pending) so it can be published next.
     setView(action === 'review' ? { kind: 'event', id: saved.id, section: 'detail', highlightPublish: true } : { kind: 'list' });
-    const name = saved.name || 'Untitled';
+    const name = saved.name || t('Untitled');
     const messages: Partial<Record<SetEvent['status'], string>> = {
-      Draft: `“${name}” saved as draft`,
-      Pending: `“${name}” submitted for review — publish when ready`,
-      Published: `“${name}” published`,
-      Private: `“${name}” published privately`,
-      Scheduled: `“${name}” scheduled for ${formatEventDateTime(saved.details?.scheduledAt ?? '')}`,
+      Draft: t('“{name}” saved as draft', { name }),
+      Pending: t('“{name}” submitted for review — publish when ready', { name }),
+      Published: t('“{name}” published', { name }),
+      Private: t('“{name}” published privately', { name }),
+      Scheduled: t('“{name}” scheduled for {date}', { name, date: formatEventDateTime(saved.details?.scheduledAt ?? '') }),
     };
-    setToast(action === 'save' && saved.status !== 'Draft' ? `“${name}” updated` : (messages[saved.status] ?? `“${name}” updated`));
+    setToast(action === 'save' && saved.status !== 'Draft' ? t('“{name}” updated', { name }) : (messages[saved.status] ?? t('“{name}” updated', { name })));
   };
 
   // Changes made directly in a workspace section (collection, QR links) apply immediately.
   const updateEvent = (id: number, patch: Parameters<typeof withDetails>[1], message: string) => {
+    const before = events.find((e) => e.id === id);
+    if (before) log(before, withDetails(before, patch));
     setEvents((list) => list.map((e) => (e.id === id ? withDetails(e, patch) : e)));
     setToast(message);
+  };
+
+  // Copies everything set up on the event as a new Draft.
+  // Registrants, QR links, scheduled publish and password belong to the original and are not copied.
+  const duplicateEvent = (source: SetEvent) => {
+    const copy: SetEvent = {
+      ...structuredClone(source),
+      id: nextId,
+      name: `${source.name || 'Untitled'} (Copy)`,
+      author: CURRENT_AUTHOR,
+      status: 'Draft',
+      registrants: 0,
+    };
+    if (copy.details) copy.details = { ...copy.details, qrLinks: [], scheduledAt: '', password: '' };
+    log(undefined, copy);
+    // Right below the original; the list highlights it and the user opens it when ready.
+    setEvents((list) => {
+      const index = list.findIndex((e) => e.id === source.id);
+      return [...list.slice(0, index + 1), copy, ...list.slice(index + 1)];
+    });
+    setHighlightId(copy.id);
+    setToast(t('“{name}” created as a draft', { name: copy.name }));
   };
 
   // Deleting from any tab moves the event to Trash; deleting from Trash is permanent.
   const handleConfirmDelete = () => {
     if (!deleting) return;
     const target = deleting;
+    if (target.status !== 'Trash') log(target, { ...target, status: 'Trash' });
     setEvents((list) =>
       target.status === 'Trash'
         ? list.filter((e) => e.id !== target.id)
@@ -123,7 +156,6 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
     guarded(() => {
       setActiveNav(id as NavId);
       setView({ kind: 'list' });
-      setSelectedRole(null);
     });
 
   const renderWorkspace = (event: SetEvent, section: EventSectionId, highlightPublish?: boolean) => {
@@ -145,6 +177,12 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
         );
       case 'users':
         return <EventUsers event={event} onBack={backToList} />;
+      case 'activity': {
+        const logged = activity.filter((a) => a.eventId === event.id);
+        // Events created in this session have their full history already; older ones get sample history.
+        const history = logged.some((a) => a.action === 'Created') ? logged : [...sampleActivity(event), ...logged];
+        return <EventActivityLog event={event} activity={history} onBack={backToList} />;
+      }
       case 'detail':
         return (
           <EventFormPage
@@ -206,6 +244,8 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
                   onCreate={() => setView({ kind: 'create' })}
                   onOpen={(ev, section) => setView({ kind: 'event', id: ev.id, section })}
                   onDelete={setDeleting}
+                  onDuplicate={duplicateEvent}
+                  highlightId={highlightId}
                 />
               </div>
               {view.kind === 'create' && (
@@ -231,32 +271,14 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
                 setFormTemplates(next);
                 setToast(message);
               }}
-              onUpdate={updateEvent}
               onOpenEvent={(ev) => {
                 setActiveNav('event-list');
                 setView({ kind: 'event', id: ev.id, section: 'detail' });
               }}
             />
           )}
-          {(activeNav === 'app-banners' || activeNav === 'app-cover-pages') && (
-            <PromoManager
-              // Key per menu, so switching between Banner and Cover Page starts fresh.
-              key={activeNav}
-              placement={activeNav === 'app-banners' ? BANNER_PLACEMENT : COVER_PLACEMENT}
-              events={events}
-              onToast={setToast}
-              onDirtyChange={handleDirtyChange}
-            />
-          )}
           {activeNav === 'cloud' && <CloudManagement />}
           {activeNav === 'collections' && <Collections />}
-          {activeNav === 'users' && <UserManagement />}
-          {activeNav === 'roles' &&
-            (selectedRole ? (
-              <RoleDetail role={selectedRole} onBack={() => setSelectedRole(null)} />
-            ) : (
-              <RoleManagement onSelectRole={setSelectedRole} />
-            ))}
           {activeNav === 'activity' && <ActivityLog />}
           {activeNav === 'settings' && <SystemSettings />}
           <BackToTop />
@@ -275,18 +297,18 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
 
       {deleting && (
         <DeleteConfirmationModal
-          title={deleting.status === 'Trash' ? 'Delete event permanently?' : 'Move event to Trash?'}
-          confirmLabel={deleting.status === 'Trash' ? 'Delete Permanently' : 'Move to Trash'}
+          title={deleting.status === 'Trash' ? t('Delete event permanently?') : t('Move event to Trash?')}
+          confirmLabel={deleting.status === 'Trash' ? t('Delete Permanently') : t('Move to Trash')}
           message={
             deleting.status === 'Trash' ? (
               <>
-                <span className="font-semibold text-[#1A1A1A]">{deleting.name}</span> ({deleting.id}) will be deleted
-                permanently. This cannot be undone.
+                <span className="font-semibold text-[#1A1A1A]">{deleting.name}</span> ({deleting.id}){' '}
+                {t('will be deleted permanently. This cannot be undone.')}
               </>
             ) : (
               <>
-                <span className="font-semibold text-[#1A1A1A]">{deleting.name}</span> ({deleting.id}) will be moved to
-                Trash. You can restore it later by editing it from the Trash tab.
+                <span className="font-semibold text-[#1A1A1A]">{deleting.name}</span> ({deleting.id}){' '}
+                {t('will be moved to Trash. You can restore it later by editing it from the Trash tab.')}
               </>
             )
           }
@@ -297,9 +319,9 @@ export default function SetEventApp({ onSwitchService, onLogout }: SetEventAppPr
 
       {pendingNav && (
         <DeleteConfirmationModal
-          title="Discard changes?"
-          confirmLabel="Discard"
-          message="Your unsaved changes to this event will be lost."
+          title={t('Discard changes?')}
+          confirmLabel={t('Discard')}
+          message={t('Your unsaved changes to this event will be lost.')}
           onConfirm={() => {
             formDirty.current = false;
             const go = pendingNav;

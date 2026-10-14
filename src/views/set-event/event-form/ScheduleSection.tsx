@@ -2,13 +2,15 @@ import EventFormSection from '../../../components/set-event/form/EventFormSectio
 import FormField from '../../../components/set-event/form/FormField';
 import DateTimeRange, { DateTimeInput } from '../../../components/set-event/form/DateTimeRange';
 import type { SectionProps } from './formModel';
+import { useT } from '@/i18n';
 
 export default function ScheduleSection({ form, patch, errors }: SectionProps) {
+  const t = useT();
   return (
-    <EventFormSection id="section-schedule" icon="solar:calendar-linear" title="Schedule" description="Set when registration opens and when your event takes place.">
+    <EventFormSection id="section-schedule" icon="solar:calendar-linear" title={t('Schedule')} description={t('Set when registration opens and when your event takes place.')}>
       <div className="divide-y divide-[#F0F0F0]">
         <div className="pb-6">
-          <FormField icon="solar:calendar-mark-linear" label="Event Date & Time" required error={errors.eventStart ?? errors.eventEnd} asGroup>
+          <FormField icon="solar:calendar-mark-linear" label={t('Event Date & Time')} required error={errors.eventStart ?? errors.eventEnd} asGroup>
             {() => (
               <DateTimeRange
                 start={{ date: form.eventStartDate, time: form.eventStartTime }}
@@ -30,7 +32,7 @@ export default function ScheduleSection({ form, patch, errors }: SectionProps) {
         </div>
 
         <div className="py-6">
-          <FormField icon="solar:clipboard-list-linear" label="Registration Period" error={errors.regPeriod} asGroup>
+          <FormField icon="solar:clipboard-list-linear" label={t('Registration Period')} error={errors.regPeriod} asGroup>
             {() => (
               <DateTimeRange
                 start={{ date: form.regOpenDate, time: form.regOpenTime }}
@@ -45,7 +47,7 @@ export default function ScheduleSection({ form, patch, errors }: SectionProps) {
         </div>
 
         <div className="pt-6">
-          <FormField icon="solar:qr-code-linear" label="QR Code Expiry" hint="Event QR codes stop working after this time." asGroup>
+          <FormField icon="solar:qr-code-linear" label={t('QR Code Expiry')} hint={t('Event QR codes stop working after this time.')} asGroup>
             {() => (
               <DateTimeInput
                 value={{ date: form.qrDate, time: form.qrTime }}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { events } from '../data/mock';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 type PhotoStatus = 'Uploading' | 'Processing' | 'Completed' | 'Failed';
 
@@ -12,6 +13,7 @@ const STATUS_COLORS: Record<PhotoStatus, string> = {
 };
 
 export default function PhotoManagement() {
+  const t = useT();
   const [selectedEventId, setSelectedEventId] = useState(1);
   const ev = events.find(e => e.id === selectedEventId) || events[0];
   const completed = Math.round(ev.photos * 0.99);
@@ -23,8 +25,8 @@ export default function PhotoManagement() {
     <div className="p-4 sm:p-5 lg:p-6 space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-[#1A1A1A]">Photo Management</h2>
-          <p className="text-sm text-[#6B7280] mt-0.5">Upload, sync, and manage event photos</p>
+          <h2 className="text-xl font-semibold text-[#1A1A1A]">{t('Photo Management')}</h2>
+          <p className="text-sm text-[#6B7280] mt-0.5">{t('Upload, sync, and manage event photos')}</p>
         </div>
         <select
           value={selectedEventId}
@@ -43,10 +45,10 @@ export default function PhotoManagement() {
             <p className="text-sm text-[#6B7280]">{ev.dates} · {ev.location}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] transition-colors">View Gallery</button>
+            <button className="px-3 py-1.5 text-xs border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F9FAFB] transition-colors">{t('View Gallery')}</button>
             {failed > 0 && (
               <button className="px-3 py-1.5 text-xs bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                Retry Failed ({failed})
+                {t('Retry Failed ({count})', { count: failed })}
               </button>
             )}
           </div>
@@ -63,10 +65,10 @@ export default function PhotoManagement() {
               <div className="text-xl font-bold text-[#1A1A1A]">{c.value}</div>
               <div className="flex items-center gap-1.5 mt-1">
                 {c.status && (
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_COLORS[c.status]}`}>{c.status}</span>
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_COLORS[c.status]}`}>{t(c.status)}</span>
                 )}
-                <span className="text-xs text-[#9CA3AF]">{c.status ? '' : c.label}</span>
-                {!c.status && <span className="text-xs text-[#9CA3AF]">photos</span>}
+                <span className="text-xs text-[#9CA3AF]">{c.status ? '' : t(c.label)}</span>
+                {!c.status && <span className="text-xs text-[#9CA3AF]">{t('photos')}</span>}
               </div>
             </div>
           ))}
@@ -75,7 +77,7 @@ export default function PhotoManagement() {
         {ev.photos > 0 && (
           <div>
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-[#6B7280]">Upload progress</span>
+              <span className="text-[#6B7280]">{t('Upload progress')}</span>
               <span className="font-medium text-[#1A1A1A]">{uploadProgress}%</span>
             </div>
             <div className="h-2 bg-[#F3F4F6] rounded-full overflow-hidden">
@@ -87,15 +89,15 @@ export default function PhotoManagement() {
 
       {/* Upload flow */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
-        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">Upload New Photos</h3>
+        <h3 className="text-sm font-semibold text-[#1A1A1A] mb-4">{t('Upload New Photos')}</h3>
         <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-8 text-center hover:border-[#FF6115]/50 transition-colors cursor-pointer">
           <div className="w-12 h-12 bg-[#FFF0E8] rounded-xl flex items-center justify-center mx-auto mb-3">
             <Icon icon="solar:gallery-linear" width={24} height={24} color="#FF6115" />
           </div>
-          <p className="text-sm font-medium text-[#1A1A1A]">Drop photos here or click to select folder</p>
-          <p className="text-xs text-[#9CA3AF] mt-1">Supports JPEG, PNG, RAW · Max 50GB per batch</p>
+          <p className="text-sm font-medium text-[#1A1A1A]">{t('Drop photos here or click to select folder')}</p>
+          <p className="text-xs text-[#9CA3AF] mt-1">{t('Supports JPEG, PNG, RAW · Max 50GB per batch')}</p>
           <button className="mt-4 px-4 py-2 bg-[#FF6115] hover:bg-[#E5540F] text-white text-sm font-medium rounded-lg transition-colors">
-            Select Folder
+            {t('Select Folder')}
           </button>
         </div>
 
@@ -115,7 +117,7 @@ export default function PhotoManagement() {
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${step.done ? 'bg-[#FF6115] text-white' : 'bg-[#F3F4F6] text-[#9CA3AF]'}`}>
                   {step.done ? <Icon icon="solar:check-linear" width={11} height={11} /> : i + 1}
                 </div>
-                <span className="text-xs font-medium whitespace-nowrap">{step.label}</span>
+                <span className="text-xs font-medium whitespace-nowrap">{t(step.label)}</span>
               </div>
               {i < arr.length - 1 && <div className="w-5 h-px bg-[#E5E7EB] flex-shrink-0" />}
             </div>
@@ -126,14 +128,14 @@ export default function PhotoManagement() {
       {/* Recent uploads table */}
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="px-5 py-4 border-b border-[#E5E7EB]">
-          <h3 className="text-sm font-semibold text-[#1A1A1A]">Recent Upload Sessions</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A]">{t('Recent Upload Sessions')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                 {['Photographer', 'Photos', 'Status', 'Time', 'Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide whitespace-nowrap">{t(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -146,16 +148,16 @@ export default function PhotoManagement() {
               ].map((r, i) => (
                 <tr key={i} className="hover:bg-[#FAFAFA] transition-colors">
                   <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A] whitespace-nowrap">{r.user}</td>
-                  <td className="px-4 py-3 text-sm text-[#4B5563] whitespace-nowrap">{r.count.toLocaleString()} photos</td>
+                  <td className="px-4 py-3 text-sm text-[#4B5563] whitespace-nowrap">{t('{count} photos', { count: r.count.toLocaleString() })}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[r.status]}`}>{r.status}</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[r.status]}`}>{t(r.status)}</span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#9CA3AF] whitespace-nowrap">Today, {r.time}</td>
+                  <td className="px-4 py-3 text-sm text-[#9CA3AF] whitespace-nowrap">{t('Today, {time}', { time: r.time })}</td>
                   <td className="px-4 py-3">
                     {r.status === 'Failed' ? (
-                      <button className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors">Retry</button>
+                      <button className="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors">{t('Retry')}</button>
                     ) : (
-                      <button className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">Details</button>
+                      <button className="px-2.5 py-1 text-xs text-[#6B7280] hover:text-[#FF6115] hover:bg-[#FFF0E8] rounded-lg transition-colors">{t('Details')}</button>
                     )}
                   </td>
                 </tr>

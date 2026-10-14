@@ -12,7 +12,7 @@ import BannerDropzone from '../../../components/set-event/BannerDropzone';
 import DeleteConfirmationModal from '../../../components/ui/DeleteConfirmationModal';
 import PromoPreview from './PromoPreview';
 import type { Placement } from './placements';
-import { contentApi, couponApi } from '../../../data/mock/promoApi';
+import { couponApi } from '../../../data/mock/promoApi';
 import {
   APP_PAGES,
   CLICK_ACTIONS,
@@ -29,8 +29,10 @@ import {
   type DisplayMode,
   type PromoItem,
   type ShowFrequency,
+  type Translate,
 } from '../../../data/appBanners';
 import type { SetEvent } from '../../../data/setEvents';
+import { useT } from '@/i18n';
 
 const CONTENT_WIDTH = 'max-w-[1200px]';
 
@@ -48,7 +50,8 @@ interface Draft {
   url: string;
   appPage: string;
   contentType: ContentType | '';
-  content: SearchSelectItem | null;
+  /** ID of the event / post / community to open. */
+  contentId: string;
   coupon: SearchSelectItem | null;
 }
 
@@ -69,18 +72,22 @@ function toDraft(b?: PromoItem): Draft {
     url: b?.clickAction === 'url' ? b.destinationUrl : '',
     appPage: b?.clickAction === 'app_page' ? b.destinationType : '',
     contentType: b?.clickAction === 'content' ? (b.destinationType as ContentType) : '',
-    content: b?.clickAction === 'content' ? linked(contentTypeLabel(b.destinationType)) : null,
+    contentId: b?.clickAction === 'content' ? b.destinationId : '',
     coupon: b?.clickAction === 'coupon' ? linked('Coupon') : null,
   };
 }
+
+/** Keeps the saved name while the ID is unchanged; a new ID is shown as "ID: …" until the backend resolves its name. */
+const contentLabel = (id: string, base: PromoItem | undefined) =>
+  base?.clickAction === 'content' && base.destinationId === id && base.destinationLabel ? base.destinationLabel : `ID: ${id}`;
 
 /** Only the destination fields for the chosen click action are kept. */
 function toItem(d: Draft, base: PromoItem | undefined, withFrequency: boolean): PromoItem {
   const schedule = d.displayMode === 'schedule';
   const destination = {
     destinationType: d.clickAction === 'app_page' ? d.appPage : d.clickAction === 'content' ? d.contentType : d.clickAction === 'coupon' ? 'coupon' : '',
-    destinationId: d.clickAction === 'content' ? (d.content?.id ?? '') : d.clickAction === 'coupon' ? (d.coupon?.id ?? '') : '',
-    destinationLabel: d.clickAction === 'content' ? (d.content?.title ?? '') : d.clickAction === 'coupon' ? (d.coupon?.title ?? '') : '',
+    destinationId: d.clickAction === 'content' ? d.contentId.trim() : d.clickAction === 'coupon' ? (d.coupon?.id ?? '') : '',
+    destinationLabel: d.clickAction === 'content' ? contentLabel(d.contentId.trim(), base) : d.clickAction === 'coupon' ? (d.coupon?.title ?? '') : '',
     destinationUrl: d.clickAction === 'url' ? d.url.trim() : '',
   };
   return {
@@ -102,32 +109,33 @@ function toItem(d: Draft, base: PromoItem | undefined, withFrequency: boolean): 
 
 type Errors = Partial<Record<'name' | 'image' | 'start' | 'end' | 'url' | 'appPage' | 'contentType' | 'content' | 'coupon', string>>;
 
-function validate(d: Draft, noun: string): Errors {
+/** `noun` is already translated; `t` turns each message into the current language. */
+function validate(d: Draft, noun: string, t: Translate): Errors {
   const e: Errors = {};
-  if (!d.name.trim()) e.name = `Enter a ${noun.toLowerCase()} name.`;
-  if (!d.image) e.image = `Upload a ${noun.toLowerCase()} image.`;
+  if (!d.name.trim()) e.name = t('Enter a {noun} name.', { noun: noun.toLowerCase() });
+  if (!d.image) e.image = t('Upload a {noun} image.', { noun: noun.toLowerCase() });
   if (d.displayMode === 'schedule') {
-    if (!d.startDate || !d.startTime) e.start = 'Set the start date and time.';
-    if (!d.endDate || !d.endTime) e.end = 'Set the end date and time.';
-    if (!e.start && !e.end && `${d.endDate}T${d.endTime}` < `${d.startDate}T${d.startTime}`) e.end = 'The end can’t be earlier than the start.';
+    if (!d.startDate || !d.startTime) e.start = t('Set the start date and time.');
+    if (!d.endDate || !d.endTime) e.end = t('Set the end date and time.');
+    if (!e.start && !e.end && `${d.endDate}T${d.endTime}` < `${d.startDate}T${d.startTime}`) e.end = t('The end can’t be earlier than the start.');
   }
   if (d.clickAction === 'url') {
-    if (!d.url.trim()) e.url = 'Enter the URL to open.';
+    if (!d.url.trim()) e.url = t('Enter the URL to open.');
     else {
       try {
         const u = new URL(d.url.trim());
         if (u.protocol !== 'https:' && u.protocol !== 'http:') throw new Error();
       } catch {
-        e.url = 'Enter a valid link, starting with https://';
+        e.url = t('Enter a valid link, starting with https://');
       }
     }
   }
-  if (d.clickAction === 'app_page' && !d.appPage) e.appPage = 'Choose the page to open.';
+  if (d.clickAction === 'app_page' && !d.appPage) e.appPage = t('Choose the page to open.');
   if (d.clickAction === 'content') {
-    if (!d.contentType) e.contentType = 'Choose a content type.';
-    else if (!d.content) e.content = 'Select the content to open.';
+    if (!d.contentType) e.contentType = t('Choose a content type.');
+    else if (!d.contentId.trim()) e.content = t('Enter the content ID.');
   }
-  if (d.clickAction === 'coupon' && !d.coupon) e.coupon = 'Select the coupon to open.';
+  if (d.clickAction === 'coupon' && !d.coupon) e.coupon = t('Select the coupon to open.');
   return Object.fromEntries(Object.entries(e).filter(([, v]) => v)) as Errors;
 }
 
@@ -145,8 +153,10 @@ interface PromoFormProps {
 
 // One form for Create and Edit, for Banner and Cover Page:
 // WHAT → WHEN → [FREQUENCY] → ACTION, with a live preview.
-export default function PromoForm({ placement, item: banner, events, allItems, onDirtyChange, onCancel, onSaved }: PromoFormProps) {
-  const { noun } = placement;
+export default function PromoForm({ placement, item: banner, allItems, onDirtyChange, onCancel, onSaved }: PromoFormProps) {
+  const t = useT();
+  const noun = t(placement.noun);
+  const lower = noun.toLowerCase();
   const isEdit = Boolean(banner);
   const initial = useMemo(() => toDraft(banner), [banner]);
   const [draft, setDraft] = useState<Draft>(initial);
@@ -164,7 +174,7 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch };
     setDraft(next);
-    if (submitted) setErrors(validate(next, noun));
+    if (submitted) setErrors(validate(next, noun, t));
   };
 
   const preview = toItem(draft, banner, placement.frequency);
@@ -180,7 +190,7 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
   };
 
   const save = async () => {
-    const next = validate(draft, noun);
+    const next = validate(draft, noun, t);
     setErrors(next);
     setSubmitted(true);
     setSaveError('');
@@ -194,7 +204,7 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
       onDirtyChange(false);
       onSaved(saved, !isEdit);
     } catch {
-      setSaveError(`Couldn’t save the ${noun.toLowerCase()}. Check your connection and try again.`);
+      setSaveError(t('Couldn’t save the {noun}. Check your connection and try again.', { noun: lower }));
       setSaving(false);
     }
   };
@@ -206,15 +216,15 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
     <div ref={rootRef} className="flex-1 flex flex-col">
       <div className="flex-1 px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6 lg:pt-8 pb-8 lg:pb-10">
         <div className={`${CONTENT_WIDTH} mx-auto`}>
-          <h1 className="text-2xl sm:text-[28px] font-semibold leading-tight text-[#1A1A1A]">{isEdit ? `Edit ${noun}` : `Create ${noun}`}</h1>
-          <p className="mt-1.5 text-sm text-[#6B7280]">{placement.formIntro}</p>
+          <h1 className="text-2xl sm:text-[28px] font-semibold leading-tight text-[#1A1A1A]">{isEdit ? t('Edit {noun}', { noun }) : t('Create {noun}', { noun })}</h1>
+          <p className="mt-1.5 text-sm text-[#6B7280]">{t(placement.formIntro)}</p>
           <button
             type="button"
             onClick={() => (dirty ? setConfirmDiscard(true) : onCancel())}
             className="mt-4 inline-flex items-center gap-1.5 h-8 -ml-1 px-1 text-sm text-[#6B7280] rounded-md hover:text-[#FF6115] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
           >
             <Icon icon="solar:arrow-left-linear" width={16} height={16} />
-            Back to {placement.menuTitle}
+            {t('Back to {page}', { page: t(placement.menuTitle) })}
           </button>
 
           {saveError && (
@@ -227,15 +237,15 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 sm:gap-6 items-start">
             <div className="space-y-4 sm:space-y-6 min-w-0">
               {/* 1. WHAT */}
-              <EventFormSection id={`${placement.key}-information`} icon={placement.icon} title={`${noun} Information`} description={`What the ${noun.toLowerCase()} shows.`}>
+              <EventFormSection id={`${placement.key}-information`} icon={placement.icon} title={t('{noun} Information', { noun })} description={t('What the {noun} shows.', { noun: lower })}>
                 <div className="space-y-5">
-                  <FormField label={`${noun} Name`} required hint={`Use a clear name to help administrators identify this ${noun.toLowerCase()}.`} error={errors.name}>
+                  <FormField label={t('{noun} Name', { noun })} required hint={t('Use a clear name to help administrators identify this {noun}.', { noun: lower })} error={errors.name}>
                     {(id) => (
                       <input
                         id={id}
                         value={draft.name}
                         onChange={(e) => update({ name: e.target.value })}
-                        placeholder={placement.key === 'banner' ? 'e.g. Zumba Fitness 2026' : 'e.g. MonoMax Watch Party 2026'}
+                        placeholder={t('e.g. {example}', { example: placement.key === 'banner' ? 'Zumba Fitness 2026' : 'MonoMax Watch Party 2026' })}
                         maxLength={80}
                         aria-invalid={Boolean(errors.name) || undefined}
                         className={inputClass(Boolean(errors.name))}
@@ -243,11 +253,11 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
                     )}
                   </FormField>
 
-                  <FormField label={`${noun} Image`} required hint={`Recommended size ${placement.imageSize}. JPEG or PNG.`} error={errors.image} asGroup>
+                  <FormField label={t('{noun} Image', { noun })} required hint={t('Recommended size {size}. JPEG or PNG.', { size: placement.imageSize })} error={errors.image} asGroup>
                     {() => (
                       <div aria-invalid={Boolean(errors.image) || undefined} tabIndex={errors.image ? -1 : undefined} className="focus:outline-none">
                         <BannerDropzone
-                          title={`${noun} image`}
+                          title={t('{noun} image', { noun })}
                           suggestedSize={placement.imageSize}
                           aspect={placement.shape === 'banner' ? 'banner' : 'portrait'}
                           value={draft.image}
@@ -259,15 +269,15 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
                     )}
                   </FormField>
 
-                  <FormField label="Status" hint={statusHint(draft.status, shownAs, preview.startAt)} asGroup>
+                  <FormField label={t('Status')} hint={statusHint(draft.status, shownAs, preview.startAt, t)} asGroup>
                     {() => (
                       <SegmentedControl
-                        label="Status"
+                        label={t('Status')}
                         value={draft.status}
                         options={[
-                          { value: 'active', label: 'Active' },
-                          { value: 'inactive', label: 'Inactive' },
-                          { value: 'draft', label: 'Draft' },
+                          { value: 'active', label: t('Active') },
+                          { value: 'inactive', label: t('Inactive') },
+                          { value: 'draft', label: t('Draft') },
                         ]}
                         onChange={(status) => update({ status })}
                       />
@@ -277,16 +287,16 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
               </EventFormSection>
 
               {/* 2. WHEN */}
-              <EventFormSection id={`${placement.key}-display`} icon="solar:calendar-linear" title="Display Settings" description={`When the ${noun.toLowerCase()} appears in the app.`}>
+              <EventFormSection id={`${placement.key}-display`} icon="solar:calendar-linear" title={t('Display Settings')} description={t('When the {noun} appears in the app.', { noun: lower })}>
                 <div className="space-y-5">
-                  <FormField label="Display Period" asGroup>
+                  <FormField label={t('Display Period')} asGroup>
                     {() => (
                       <SegmentedControl
-                        label="Display Period"
+                        label={t('Display Period')}
                         value={draft.displayMode}
                         options={[
-                          { value: 'always', label: 'Always' },
-                          { value: 'schedule', label: 'Schedule' },
+                          { value: 'always', label: t('Always') },
+                          { value: 'schedule', label: t('[verb] Schedule') },
                         ]}
                         onChange={(displayMode) => update({ displayMode })}
                       />
@@ -295,10 +305,10 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
                   {draft.displayMode === 'always' ? (
                     <p className="flex items-center gap-2 text-sm text-[#6B7280]">
                       <Icon icon="solar:infinity-linear" width={18} height={18} className="flex-shrink-0" />
-                      Shown whenever the {noun.toLowerCase()} is active, with no end date.
+                      {t('Shown whenever the {noun} is active, with no end date.', { noun: lower })}
                     </p>
                   ) : (
-                    <FormField label="Start → End" required hint="Both dates and times are required." error={errors.start ?? errors.end} asGroup>
+                    <FormField label={t('Start → End')} required hint={t('Both dates and times are required.')} error={errors.start ?? errors.end} asGroup>
                       {() => (
                         <DateTimeRange
                           start={{ date: draft.startDate, time: draft.startTime }}
@@ -316,11 +326,11 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
 
               {/* 3. FREQUENCY — Cover Page only */}
               {placement.frequency && (
-                <EventFormSection id={`${placement.key}-frequency`} icon="solar:restart-linear" title="Show Frequency" description="How often the same user sees this popup.">
+                <EventFormSection id={`${placement.key}-frequency`} icon="solar:restart-linear" title={t('Show Frequency')} description={t('How often the same user sees this popup.')}>
                   <ChoiceCards
-                    label="Show Frequency"
+                    label={t('Show Frequency')}
                     value={draft.showFrequency}
-                    options={SHOW_FREQUENCIES}
+                    options={SHOW_FREQUENCIES.map((f) => ({ ...f, label: t(f.label), description: t(f.description) }))}
                     onChange={(showFrequency) => update({ showFrequency })}
                     columns="sm:grid-cols-3"
                   />
@@ -328,14 +338,14 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
               )}
 
               {/* 4. WHERE / ACTION */}
-              <EventFormSection id={`${placement.key}-click`} icon="solar:cursor-linear" title="Click Action" description={`What happens when users tap the ${noun.toLowerCase()}.`}>
+              <EventFormSection id={`${placement.key}-click`} icon="solar:cursor-linear" title={t('Click Action')} description={t('What happens when users tap the {noun}.', { noun: lower })}>
                 <div className="space-y-5">
-                  <ChoiceCards label="Click Action" value={draft.clickAction} options={CLICK_ACTIONS} onChange={(clickAction) => update({ clickAction })} columns="sm:grid-cols-2 xl:grid-cols-3" />
+                  <ChoiceCards label={t('Click Action')} value={draft.clickAction} options={CLICK_ACTIONS.map((c) => ({ ...c, label: t(c.label), description: t(c.description) }))} onChange={(clickAction) => update({ clickAction })} columns="sm:grid-cols-2 xl:grid-cols-3" />
 
                   {draft.clickAction !== 'none' && (
                     <div className="pt-5 border-t border-[#F0F0F0] space-y-5">
                       {draft.clickAction === 'url' && (
-                        <FormField label="URL" required hint="Users will be redirected to this URL when they tap the banner." error={errors.url}>
+                        <FormField label={t('URL')} required hint={t('Users will be redirected to this URL when they tap the banner.')} error={errors.url}>
                           {(id) => (
                             <input
                               id={id}
@@ -352,14 +362,14 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
                       )}
 
                       {draft.clickAction === 'app_page' && (
-                        <FormField label="Destination" required hint="The page inside Peep Share that opens." error={errors.appPage}>
+                        <FormField label={t('Destination')} required hint={t('The page inside Peep Share that opens.')} error={errors.appPage}>
                           {(id) => (
                             <SelectField
                               id={id}
                               value={draft.appPage}
-                              options={APP_PAGES}
+                              options={APP_PAGES.map((p) => ({ ...p, label: t(p.label) }))}
                               onChange={(appPage) => update({ appPage })}
-                              placeholder="Select app page"
+                              placeholder={t('Select app page')}
                               icon="solar:smartphone-linear"
                               invalid={Boolean(errors.appPage)}
                             />
@@ -369,33 +379,46 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
 
                       {draft.clickAction === 'content' && (
                         <>
-                          <FormField label="Content Type" required error={errors.contentType}>
+                          <FormField label={t('Content Type')} required error={errors.contentType}>
                             {(id) => (
                               <SelectField
                                 id={id}
                                 value={draft.contentType}
-                                options={CONTENT_TYPES}
+                                options={CONTENT_TYPES.map((c) => ({ ...c, label: t(c.label) }))}
                                 // A new type needs a new item.
-                                onChange={(contentType) => update({ contentType, content: contentType === draft.contentType ? draft.content : null })}
-                                placeholder="Select content type"
+                                onChange={(contentType) => update({ contentType })}
+                                placeholder={t('Select content type')}
                                 icon="solar:document-text-linear"
                                 invalid={Boolean(errors.contentType)}
                               />
                             )}
                           </FormField>
                           {draft.contentType && (
-                            <FormField label="Select Content" required error={errors.content}>
+                            <FormField
+                              label={t('ID Content')}
+                              required
+                              hint={t('The ID of the {type} to open.', { type: t(contentTypeLabel(draft.contentType)).toLowerCase() })}
+                              error={errors.content}
+                            >
                               {(id) => (
-                                <SearchSelect
-                                  key={draft.contentType}
-                                  id={id}
-                                  value={draft.content}
-                                  onChange={(content) => update({ content })}
-                                  search={(q) => contentApi.search(draft.contentType as ContentType, q, events)}
-                                  placeholder={`Search ${contentTypeLabel(draft.contentType).toLowerCase()}...`}
-                                  icon={CONTENT_TYPES.find((c) => c.value === draft.contentType)!.icon}
-                                  invalid={Boolean(errors.content)}
-                                />
+                                <div className="relative">
+                                  <Icon
+                                    icon={CONTENT_TYPES.find((c) => c.value === draft.contentType)!.icon}
+                                    width={18}
+                                    height={18}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none"
+                                  />
+                                  <input
+                                    id={id}
+                                    value={draft.contentId}
+                                    onChange={(e) => update({ contentId: e.target.value })}
+                                    placeholder={t('Enter {type} ID', { type: t(contentTypeLabel(draft.contentType)).toLowerCase() })}
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    aria-invalid={Boolean(errors.content) || undefined}
+                                    className={`${inputClass(Boolean(errors.content))} pl-10`}
+                                  />
+                                </div>
                               )}
                             </FormField>
                           )}
@@ -403,14 +426,14 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
                       )}
 
                       {draft.clickAction === 'coupon' && (
-                        <FormField label="Select Coupon" required error={errors.coupon}>
+                        <FormField label={t('Select Coupon')} required error={errors.coupon}>
                           {(id) => (
                             <SearchSelect
                               id={id}
                               value={draft.coupon}
                               onChange={(coupon) => update({ coupon })}
                               search={couponApi.search}
-                              placeholder="Search coupon..."
+                              placeholder={t('Search coupon...')}
                               icon="solar:sale-linear"
                               invalid={Boolean(errors.coupon)}
                             />
@@ -425,7 +448,7 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
 
             {/* Preview */}
             <div className="lg:sticky lg:top-6 min-w-0">
-              <EventFormSection id={`${placement.key}-preview`} icon="solar:eye-linear" title="Preview" description={placement.previewDescription}>
+              <EventFormSection id={`${placement.key}-preview`} icon="solar:eye-linear" title={t('Preview')} description={t(placement.previewDescription)}>
                 <PromoPreview placement={placement} item={preview} position={position} shownAs={shownAs} />
               </EventFormSection>
             </div>
@@ -439,23 +462,23 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
           errorCount > 0 ? (
             <button type="button" onClick={scrollToFirstError} className="inline-flex items-center gap-1.5 text-[#DC2626] font-medium hover:underline underline-offset-2">
               <Icon icon="solar:danger-circle-linear" width={16} height={16} className="flex-shrink-0" />
-              {errorCount === 1 ? '1 field needs attention' : `${errorCount} fields need attention`}
+              {errorCount === 1 ? t('1 field needs attention') : t('{count} fields need attention', { count: errorCount })}
             </button>
           ) : (
             <span>
-              Required fields are marked with an asterisk (<span className="text-[#DC2626]">*</span>).
+              {t('Required fields are marked with an asterisk')} (<span className="text-[#DC2626]">*</span>).
             </span>
           )
         }
-        tertiary={{ label: 'Cancel', onClick: () => (dirty ? setConfirmDiscard(true) : onCancel()), disabled: saving }}
-        primary={{ label: saving ? 'Saving…' : isEdit ? 'Save Changes' : `Save ${noun}`, onClick: save, disabled: saving }}
+        tertiary={{ label: t('Cancel'), onClick: () => (dirty ? setConfirmDiscard(true) : onCancel()), disabled: saving }}
+        primary={{ label: saving ? t('Saving…') : isEdit ? t('Save Changes') : t('Save {noun}', { noun }), onClick: save, disabled: saving }}
       />
 
       {confirmDiscard && (
         <DeleteConfirmationModal
-          title="Discard changes?"
-          confirmLabel="Discard"
-          message={`Your unsaved changes to this ${noun.toLowerCase()} will be lost.`}
+          title={t('Discard changes?')}
+          confirmLabel={t('Discard')}
+          message={t('Your unsaved changes to this {noun} will be lost.', { noun: lower })}
           onConfirm={() => {
             onDirtyChange(false);
             onCancel();
@@ -467,10 +490,10 @@ export default function PromoForm({ placement, item: banner, events, allItems, o
   );
 }
 
-function statusHint(status: BannerStatus, shownAs: string, startAt: string) {
-  if (status === 'draft') return 'Drafts are saved but never shown in the app.';
-  if (status === 'inactive') return 'Hidden from the app until you activate it.';
-  if (shownAs === 'Scheduled') return `Shows as Scheduled until ${formatDay(startAt)} ${startAt.slice(11, 16)}.`;
-  if (shownAs === 'Expired') return 'The display period has already ended, so it will show as Expired.';
-  return 'Shown in the app now.';
+function statusHint(status: BannerStatus, shownAs: string, startAt: string, t: Translate) {
+  if (status === 'draft') return t('Drafts are saved but never shown in the app.');
+  if (status === 'inactive') return t('Hidden from the app until you activate it.');
+  if (shownAs === 'Scheduled') return t('Shows as Scheduled until {date}.', { date: `${formatDay(startAt, t)} ${startAt.slice(11, 16)}` });
+  if (shownAs === 'Expired') return t('The display period has already ended, so it will show as Expired.');
+  return t('Shown in the app now.');
 }

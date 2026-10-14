@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import type { Automation, TriggerType } from '../../../data/automations';
+import { useT } from '@/i18n';
 
 // The attendee's path through the event, with where each automation fires along it.
 const STAGES: { label: string; icon: string; trigger?: TriggerType }[] = [
@@ -11,12 +12,13 @@ const STAGES: { label: string; icon: string; trigger?: TriggerType }[] = [
 ];
 
 export default function AutomationJourney({ automations }: { automations: Automation[] }) {
+  const t = useT();
   const count = (type: TriggerType) => automations.filter((a) => a.enabled && a.trigger.type === type).length;
   const scheduled = count('specific_datetime');
 
   return (
     <div className="rounded-xl border border-[#F0F0F0] bg-[#FAFAFB] px-4 py-4">
-      <p className="text-xs font-semibold text-[#6B7280]">Attendee journey</p>
+      <p className="text-xs font-semibold text-[#6B7280]">{t('Attendee journey')}</p>
       <div className="mt-3 overflow-x-auto -mx-4 px-4">
         <ol className="flex min-w-[560px]">
           {STAGES.map((stage, i) => {
@@ -31,13 +33,13 @@ export default function AutomationJourney({ automations }: { automations: Automa
                 >
                   <Icon icon={stage.icon} width={18} height={18} />
                 </span>
-                <span className="mt-2 text-xs font-medium text-[#374151]">{stage.label}</span>
+                <span className="mt-2 text-xs font-medium text-[#374151]">{t(stage.label)}</span>
                 {stage.trigger ? (
                   <span className={`mt-1 text-[11px] ${n > 0 ? 'text-[#E5540F] font-medium' : 'text-[#9CA3AF]'}`}>
-                    {n > 0 ? `${n} ${n === 1 ? 'message' : 'messages'}` : 'No message'}
+                    {n > 0 ? t(n === 1 ? '{count} message' : '{count} messages', { count: n }) : t('No message')}
                   </span>
                 ) : (
-                  <span className="mt-1 text-[11px] text-[#9CA3AF]">Sent by PEEP SHARE</span>
+                  <span className="mt-1 text-[11px] text-[#9CA3AF]">{t('Sent by PEEP SHARE')}</span>
                 )}
               </li>
             );
@@ -47,7 +49,7 @@ export default function AutomationJourney({ automations }: { automations: Automa
       {scheduled > 0 && (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-[#6B7280]">
           <Icon icon="solar:calendar-mark-linear" width={14} height={14} />
-          Plus {scheduled} {scheduled === 1 ? 'message' : 'messages'} at a specific date & time
+          {t(scheduled === 1 ? 'Plus {count} message at a specific date & time' : 'Plus {count} messages at a specific date & time', { count: scheduled })}
         </p>
       )}
     </div>

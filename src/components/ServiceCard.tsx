@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import type { ServiceConfig } from '../data/mock';
+import { useT } from '@/i18n';
 
 interface ServiceCardProps {
   service: ServiceConfig;
@@ -7,6 +8,7 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service, onOpen }: ServiceCardProps) {
+  const t = useT();
   const isStaging = service.environment === 'Staging';
 
   return (
@@ -22,14 +24,14 @@ export default function ServiceCard({ service, onOpen }: ServiceCardProps) {
         {isStaging && (
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wide flex-shrink-0">
             <Icon icon="solar:test-tube-linear" width={11} height={11} />
-            Staging
+            {t('Staging')}
           </span>
         )}
       </div>
 
-      <div className="flex-1">
-        <h3 className="text-base font-semibold text-[#1A1A1A]">{service.name}</h3>
-        <p className="text-sm text-[#6B7280] mt-1 leading-relaxed">{service.description}</p>
+      <div className="flex-grow">
+        <h3 className="text-base font-semibold text-[#1A1A1A]">{t(service.name)}</h3>
+        <p className="text-sm text-[#6B7280] mt-1 leading-relaxed">{t(service.description)}</p>
       </div>
 
       <button
@@ -38,7 +40,7 @@ export default function ServiceCard({ service, onOpen }: ServiceCardProps) {
           isStaging ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-[#FF6115] hover:bg-[#E5540F] text-white'
         }`}
       >
-        Open Service
+        {t('Open Service')}
       </button>
     </div>
   );

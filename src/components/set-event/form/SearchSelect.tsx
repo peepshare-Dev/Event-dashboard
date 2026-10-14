@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import Button from '../../ui/Button';
 import { inputClass } from './FormField';
+import { useT } from '@/i18n';
 
 export interface SearchSelectItem {
   id: string;
@@ -23,6 +24,7 @@ interface SearchSelectProps {
 
 // Searchable picker: type to search, pick a result, then see it as a compact card with Change / Clear.
 export default function SearchSelect({ id, value, onChange, search, placeholder, icon, invalid }: SearchSelectProps) {
+  const t = useT();
   const [editing, setEditing] = useState(!value);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -79,13 +81,13 @@ export default function SearchSelect({ id, value, onChange, search, placeholder,
             }}
             className="h-9"
           >
-            Change
+            {t('Change')}
           </Button>
           <button
             type="button"
             onClick={() => onChange(null)}
-            aria-label={`Clear ${value.title}`}
-            title="Clear"
+            aria-label={t('Clear {name}', { name: value.title })}
+            title={t('Clear')}
             className="w-9 h-9 flex items-center justify-center rounded-lg text-[#9CA3AF] hover:text-[#DC2626] hover:bg-[#FEF2F2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
           >
             <Icon icon="solar:close-circle-linear" width={20} height={20} />
@@ -134,7 +136,7 @@ export default function SearchSelect({ id, value, onChange, search, placeholder,
             }}
             className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-2.5 text-xs text-[#6B7280] rounded-md hover:bg-[#F3F4F6]"
           >
-            Keep current
+            {t('Keep current')}
           </button>
         )}
       </div>
@@ -145,11 +147,11 @@ export default function SearchSelect({ id, value, onChange, search, placeholder,
             {state === 'loading' && (
               <p className="flex items-center gap-2 px-4 py-3 text-sm text-[#6B7280]">
                 <Icon icon="solar:refresh-linear" width={16} height={16} className="animate-spin" />
-                Searching…
+                {t('Searching…')}
               </p>
             )}
-            {state === 'error' && <p className="px-4 py-3 text-sm text-[#DC2626]">Couldn’t load results. Try again.</p>}
-            {state === 'idle' && results.length === 0 && <p className="px-4 py-3 text-sm text-[#9CA3AF]">No results{query ? ` for “${query}”` : ''}.</p>}
+            {state === 'error' && <p className="px-4 py-3 text-sm text-[#DC2626]">{t('Couldn’t load results. Try again.')}</p>}
+            {state === 'idle' && results.length === 0 && <p className="px-4 py-3 text-sm text-[#9CA3AF]">{query ? t('No results for “{query}”.', { query }) : t('No results.')}</p>}
             {state === 'idle' &&
               results.map((item) => (
                 <button

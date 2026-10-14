@@ -5,6 +5,7 @@ import PromoSort from './PromoSort';
 import type { Placement } from './placements';
 import { nowLocal, type PromoItem } from '../../../data/appBanners';
 import type { SetEvent } from '../../../data/setEvents';
+import { useT } from '@/i18n';
 
 type Screen = { kind: 'list' } | { kind: 'form'; id: string | null } | { kind: 'sort'; focusId?: string };
 
@@ -20,8 +21,10 @@ interface PromoManagerProps {
 
 // "Set Banner in App" / "Set Cover Page in App": list ⇄ create / edit form ⇄ sort, all on one menu.
 export default function PromoManager({ placement, events, onToast, onDirtyChange }: PromoManagerProps) {
+  const t = useT();
   const api = placement.api;
-  const noun = placement.noun;
+  const noun = t(placement.noun);
+  const lower = noun.toLowerCase();
   const [screen, setScreen] = useState<Screen>({ kind: 'list' });
   const [banners, setBanners] = useState<PromoItem[]>([]);
   const [loadState, setLoadState] = useState<'loading' | 'error' | 'ready'>('loading');
@@ -87,19 +90,19 @@ export default function PromoManager({ placement, events, onToast, onDirtyChange
                 setBanners(await api.list());
                 go({ kind: 'form', id: copy.id });
               },
-              `${noun} duplicated. It’s saved as a draft.`,
-              `Couldn’t duplicate the ${noun.toLowerCase()}. Try again.`,
+              t('{noun} duplicated. It’s saved as a draft.', { noun }),
+              t('Couldn’t duplicate the {noun}. Try again.', { noun: lower }),
             )
           }
           onSetStatus={(b, status) =>
             run(
               b.id,
               () => api.save({ ...b, status, updatedAt: nowLocal() }),
-              status === 'active' ? `${noun} activated.` : `${noun} deactivated.`,
-              `Couldn’t change the ${noun.toLowerCase()} status. Try again.`,
+              status === 'active' ? t('{noun} activated.', { noun }) : t('{noun} deactivated.', { noun }),
+              t('Couldn’t change the {noun} status. Try again.', { noun: lower }),
             )
           }
-          onDelete={(b) => run(b.id, () => api.remove(b.id), `${noun} deleted.`, `Couldn’t delete the ${noun.toLowerCase()}. Try again.`)}
+          onDelete={(b) => run(b.id, () => api.remove(b.id), t('{noun} deleted.', { noun }), t('Couldn’t delete the {noun}. Try again.', { noun: lower }))}
         />
       )}
 
@@ -114,7 +117,7 @@ export default function PromoManager({ placement, events, onToast, onDirtyChange
           onCancel={() => go({ kind: 'list' })}
           onSaved={(saved, created) => {
             setBanners((list) => (created ? [...list, saved] : list.map((b) => (b.id === saved.id ? saved : b))));
-            onToast(created ? `${noun} created successfully.` : `${noun} updated successfully.`);
+            onToast(created ? t('{noun} created successfully.', { noun }) : t('{noun} updated successfully.', { noun }));
             go({ kind: 'list' });
           }}
         />
@@ -128,7 +131,7 @@ export default function PromoManager({ placement, events, onToast, onDirtyChange
           onCancel={() => go({ kind: 'list' })}
           onSaved={(list) => {
             setBanners(list);
-            onToast(`${noun} order saved.`);
+            onToast(t('{noun} order saved.', { noun }));
             go({ kind: 'list' });
           }}
         />

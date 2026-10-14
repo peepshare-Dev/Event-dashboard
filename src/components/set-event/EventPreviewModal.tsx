@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
 import { formatEventDateTime, type SetEventStatus } from '../../data/setEvents';
+import { translate, useT, type Lang } from '@/i18n';
 
 interface EventPreviewModalProps {
   name: string;
@@ -25,8 +26,9 @@ export default function EventPreviewModal({
   endTime,
   onClose,
 }: EventPreviewModalProps) {
+  const t = useT();
   return (
-    <Modal title="Preview" onClose={onClose} maxWidth="sm:max-w-2xl">
+    <Modal title={t('Preview')} onClose={onClose} maxWidth="sm:max-w-2xl">
       <div className="space-y-4">
         {bannerUrl ? (
           <img src={bannerUrl} alt="" className="w-full max-h-72 object-cover rounded-xl" />
@@ -37,18 +39,18 @@ export default function EventPreviewModal({
         )}
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={status} shape="pill" />
-          {category && <span className="text-xs text-[#6B7280] bg-[#F3F4F6] rounded-full px-2.5 py-1">{category}</span>}
+          {category && <span className="text-xs text-[#6B7280] bg-[#F3F4F6] rounded-full px-2.5 py-1">{t(category)}</span>}
         </div>
-        <h2 className="text-xl font-semibold text-[#1A1A1A]">{name || 'Untitled'}</h2>
+        <h2 className="text-xl font-semibold text-[#1A1A1A]">{name || t('Untitled')}</h2>
         <p className="flex items-center gap-2 text-sm text-[#4B5563]">
           <Icon icon="solar:calendar-linear" width={16} height={16} className="text-[#9CA3AF]" />
-          {startTime ? `${formatEventDateTime(startTime)} – ${formatEventDateTime(endTime)}` : 'Date not set'}
+          {startTime ? `${formatEventDateTime(startTime)} – ${formatEventDateTime(endTime)}` : t('Date not set')}
         </p>
         {descriptionHtml ? (
           // Content comes from this admin's own editor session.
           <div className="rich-text text-sm text-[#1A1A1A]" dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
         ) : (
-          <p className="text-sm text-[#9CA3AF]">No description yet.</p>
+          <p className="text-sm text-[#9CA3AF]">{t('No description yet.')}</p>
         )}
       </div>
     </Modal>
@@ -63,12 +65,13 @@ type PreviewData = Omit<EventPreviewModalProps, 'onClose'>;
 
 // Opens a standalone preview page in a new tab (a blob URL, so it shares this origin and the
 // banner's object URL keeps working).
-export function openEventPreviewTab({ name, category, status, bannerUrl, descriptionHtml, startTime, endTime }: PreviewData) {
-  const title = escapeHtml(name || 'Untitled');
-  const when = startTime ? `${formatEventDateTime(startTime)} – ${formatEventDateTime(endTime)}` : 'Date not set';
+export function openEventPreviewTab({ name, category, status, bannerUrl, descriptionHtml, startTime, endTime }: PreviewData, lang: Lang = 'en') {
+  const t = (text: string) => translate(lang, text);
+  const title = escapeHtml(name || t('Untitled'));
+  const when = startTime ? `${formatEventDateTime(startTime)} – ${formatEventDateTime(endTime)}` : t('Date not set');
   const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} · Preview</title>
+<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title} · ${escapeHtml(t('Preview'))}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
 <style>
   body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #F5F7FA; color: #1A1A1A; }
@@ -87,14 +90,14 @@ export function openEventPreviewTab({ name, category, status, bannerUrl, descrip
   @media (max-width: 640px) { main { margin: 0; border-radius: 0; border: 0; } .body { padding: 20px 16px; } }
 </style></head>
 <body>
-  <div class="bar">Preview — this is how the event page will look. Not visible to attendees yet.</div>
+  <div class="bar">${escapeHtml(t('Preview — this is how the event page will look. Not visible to attendees yet.'))}</div>
   <main>
     ${bannerUrl ? `<img class="banner" src="${escapeHtml(bannerUrl)}" alt="">` : '<div class="placeholder"></div>'}
     <div class="body">
-      <div class="chips"><span>${escapeHtml(status)}</span>${category ? `<span>${escapeHtml(category)}</span>` : ''}</div>
+      <div class="chips"><span>${escapeHtml(t(status))}</span>${category ? `<span>${escapeHtml(t(category))}</span>` : ''}</div>
       <h1>${title}</h1>
       <div class="when">${escapeHtml(when)}</div>
-      <div class="desc">${descriptionHtml || '<p style="color:#9CA3AF">No description yet.</p>'}</div>
+      <div class="desc">${descriptionHtml || `<p style="color:#9CA3AF">${escapeHtml(t('No description yet.'))}</p>`}</div>
     </div>
   </main>
 </body></html>`;

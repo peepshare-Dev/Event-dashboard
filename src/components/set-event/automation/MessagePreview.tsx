@@ -1,23 +1,28 @@
 import { Icon } from '@iconify/react';
-import { fillVariables, type MessageImage, type MessageType, type RichMessage } from '../../../data/automations';
+import { fillVariables, type ClaimMessage, type MessageImage, type MessageType } from '../../../data/automations';
+import { useT } from '@/i18n';
 
 export interface PreviewContent {
   type: MessageType;
   text: string;
   image: MessageImage | null;
-  rich: RichMessage;
+  claim: ClaimMessage;
 }
 
 interface MessagePreviewProps {
-  content: PreviewContent;
+  /** Shown as consecutive bubbles, in order. */
+  messages: PreviewContent[];
   /** Variable values to show in place of `{{key}}`. */
   values: Record<string, string>;
   /** e.g. "Sent immediately after check-in" */
   caption?: string;
+  /** Sender's PEEP OA ID; falls back to "Official Account". */
+  accountId?: string;
 }
 
 // How the message looks to the attendee in the PEEP OA chat.
-export default function MessagePreview({ content, values, caption }: MessagePreviewProps) {
+export default function MessagePreview({ messages, values, caption, accountId }: MessagePreviewProps) {
+  const t = useT();
   return (
     <div className="mx-auto w-full max-w-[320px] rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_8px_24px_rgba(16,24,40,0.08)] overflow-hidden">
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#F0F0F0]">
@@ -25,9 +30,9 @@ export default function MessagePreview({ content, values, caption }: MessagePrev
         <div className="min-w-0">
           <p className="flex items-center gap-1 text-sm font-semibold text-[#1A1A1A]">
             PEEP OA
-            <Icon icon="solar:verified-check-bold" width={14} height={14} className="text-[#22C55E]" aria-label="Official account" />
+            <Icon icon="solar:verified-check-bold" width={14} height={14} className="text-[#22C55E]" aria-label={t('Official account')} />
           </p>
-          <p className="text-[11px] text-[#9CA3AF]">Official Account</p>
+          <p className="text-[11px] text-[#9CA3AF] truncate">{accountId || t('Official Account')}</p>
         </div>
       </div>
 
@@ -35,9 +40,18 @@ export default function MessagePreview({ content, values, caption }: MessagePrev
         {caption && (
           <p className="mx-auto w-fit max-w-full px-2.5 py-1 rounded-full bg-black/5 text-[11px] text-[#6B7280] text-center">{caption}</p>
         )}
-        <div className="flex items-start gap-2">
-          <span className="w-7 h-7 rounded-full bg-[#FF6115] text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">PS</span>
-          <Bubble content={content} values={values} />
+        <div className="space-y-1.5">
+          {messages.map((content, i) => (
+            <div key={i} className="flex items-start gap-2">
+              {/* Avatar on the first bubble only, like a chat thread. */}
+              {i === 0 ? (
+                <span className="w-7 h-7 rounded-full bg-[#FF6115] text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">PS</span>
+              ) : (
+                <span className="w-7 flex-shrink-0" aria-hidden="true" />
+              )}
+              <Bubble content={content} values={values} />
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -45,26 +59,42 @@ export default function MessagePreview({ content, values, caption }: MessagePrev
 }
 
 function Bubble({ content, values }: { content: PreviewContent; values: Record<string, string> }) {
+  const t = useT();
   if (content.type === 'image') {
     return content.image ? (
       <img src={content.image.url} alt="" className="max-w-[210px] rounded-2xl rounded-tl-md object-cover" />
     ) : (
-      <Placeholder icon="solar:gallery-wide-linear" text="Your image will appear here." />
+      <Placeholder icon="solar:gallery-wide-linear" text={t('Your image will appear here.')} />
     );
   }
 
-  if (content.type === 'rich') {
-    const { title, description, image, button } = content.rich;
-    if (!title && !description && !image && !button.label) return <Placeholder icon="solar:widget-linear" text="Your rich message will appear here." />;
+  if (content.type === 'claim') {
+    const { image, url, claimedImage, claimedText } = content.claim;
+    if (!image && !claimedImage && !claimedText.trim()) return <Placeholder icon="solar:gift-linear" text={t('Your claim gift message will appear here.')} />;
     return (
-      <div className="w-[230px] bg-white rounded-2xl rounded-tl-md overflow-hidden shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
-        {image && <img src={image.url} alt="" className="w-full aspect-[2/1] object-cover" />}
-        <div className="px-3.5 py-3">
-          {title && <p className="text-sm font-semibold text-[#1A1A1A] whitespace-pre-wrap break-words">{fillVariables(title, values)}</p>}
-          {description && <p className="mt-1 text-[13px] text-[#4B5563] whitespace-pre-wrap break-words">{fillVariables(description, values)}</p>}
-        </div>
-        {button.label && (
-          <div className="border-t border-[#F0F0F0] h-10 flex items-center justify-center text-sm font-medium text-[#FF6115]">{button.label}</div>
+      <div className="space-y-2">
+        {image ? (
+          <div className="relative w-[210px]">
+            <img src={image.url} alt="" className="w-full aspect-square rounded-2xl rounded-tl-md object-cover" />
+            <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 h-6 px-2 rounded-full bg-black/60 text-white text-[10px] font-medium">
+              <Icon icon="solar:gift-linear" width={12} height={12} />
+              {t('Tap to claim')}
+            </span>
+          </div>
+        ) : (
+          <Placeholder icon="solar:gift-linear" text={t('Giveaway image')} />
+        )}
+        {url.trim() && <p className="max-w-[210px] text-[10px] text-[#9CA3AF] truncate">{t('Opens {url}', { url: url.trim() })}</p>}
+        <p className="w-[210px] flex items-center gap-2 text-[10px] text-[#9CA3AF]">
+          <span className="flex-1 h-px bg-[#D1D5DB]" />
+          {t('After closing the webview')}
+          <span className="flex-1 h-px bg-[#D1D5DB]" />
+        </p>
+        {claimedImage && <img src={claimedImage.url} alt="" className="w-[210px] aspect-square rounded-2xl object-cover" />}
+        {claimedText.trim() && (
+          <div className="max-w-[230px] w-fit px-3.5 py-2.5 bg-white rounded-2xl text-sm text-[#1A1A1A] whitespace-pre-wrap break-words shadow-[0_1px_2px_rgba(16,24,40,0.06)]">
+            {fillVariables(claimedText, values)}
+          </div>
         )}
       </div>
     );
@@ -75,7 +105,7 @@ function Bubble({ content, values }: { content: PreviewContent; values: Record<s
       {fillVariables(content.text, values)}
     </div>
   ) : (
-    <Placeholder icon="solar:chat-round-dots-linear" text="Your message will appear here." />
+    <Placeholder icon="solar:chat-round-dots-linear" text={t('Your message will appear here.')} />
   );
 }
 

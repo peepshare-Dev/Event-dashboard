@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import SearchInput from '../ui/SearchInput';
+import { useT } from '@/i18n';
 
 export interface PickerOption<T> {
   value: T;
@@ -31,6 +32,7 @@ export default function OptionPickerModal<T extends string | number>({
   onConfirm,
   onClose,
 }: OptionPickerModalProps<T>) {
+  const t = useT();
   const [selected, setSelected] = useState<T | null>(initialValue);
   const [search, setSearch] = useState('');
   const term = search.trim().toLowerCase();
@@ -43,7 +45,7 @@ export default function OptionPickerModal<T extends string | number>({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button disabled={selected === null} onClick={() => selected !== null && onConfirm(selected)}>
             {confirmLabel}
@@ -52,9 +54,9 @@ export default function OptionPickerModal<T extends string | number>({
       }
     >
       <div className="space-y-3">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search" />
+        <SearchInput value={search} onChange={setSearch} placeholder={t('Search')} />
         <div role="radiogroup" aria-label={title} className="space-y-2 max-h-80 overflow-y-auto -mx-1 px-1">
-          {visible.length === 0 && <p className="text-sm text-[#9CA3AF] text-center py-6">No results</p>}
+          {visible.length === 0 && <p className="text-sm text-[#9CA3AF] text-center py-6">{t('No results')}</p>}
           {visible.map((option) => {
             const isSelected = option.value === selected;
             return (

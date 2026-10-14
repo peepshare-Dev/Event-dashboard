@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Icon } from '@iconify/react';
+import { useT } from '@/i18n';
 
 export const inputClass = (invalid?: boolean) =>
   `w-full h-12 px-3 text-sm text-[#1A1A1A] placeholder:text-[#9CA3AF] bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] ${
@@ -27,6 +28,7 @@ interface FormFieldProps {
 
 // Label (with * for required), control, then the inline error.
 export default function FormField({ label, required, hint, error, className = '', asGroup, icon, children }: FormFieldProps) {
+  const t = useT();
   const id = useId();
   const labelText = (
     <>
@@ -35,7 +37,7 @@ export default function FormField({ label, required, hint, error, className = ''
       {required && (
         <>
           <span className="text-[#DC2626] ml-0.5" aria-hidden="true">*</span>
-          <span className="sr-only"> (required)</span>
+          <span className="sr-only"> ({t('required')})</span>
         </>
       )}
     </>
@@ -47,7 +49,7 @@ export default function FormField({ label, required, hint, error, className = ''
       {children(id)}
       {error && (
         <p className="mt-2 flex items-start gap-1 text-xs text-[#DC2626]">
-          {error}
+          {t(error)}
         </p>
       )}
     </>

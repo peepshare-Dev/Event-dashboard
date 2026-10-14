@@ -1,4 +1,5 @@
 import type { BannerDisplayStatus } from '../../../data/appBanners';
+import { useT } from '@/i18n';
 
 const STYLES: Record<BannerDisplayStatus, { badge: string; dot: string }> = {
   Active: { badge: 'bg-[#F0FDF4] text-[#15803D]', dot: 'bg-[#22C55E]' },
@@ -12,11 +13,12 @@ export const PROMO_STATUSES = Object.keys(STYLES) as BannerDisplayStatus[];
 
 // Dot + label, so status never relies on colour alone.
 export default function PromoStatusBadge({ status }: { status: BannerDisplayStatus }) {
+  const t = useT();
   const s = STYLES[status];
   return (
     <span className={`inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-xs font-medium whitespace-nowrap ${s.badge}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} aria-hidden="true" />
-      {status}
+      {t(status)}
     </span>
   );
 }

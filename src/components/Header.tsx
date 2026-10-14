@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { LANGUAGES, useLanguage, useT } from '@/i18n';
 
 export interface RoleSwitcherOption {
   value: string;
@@ -11,6 +12,7 @@ interface HeaderProps {
   showLogo?: boolean;
   onProfileClick?: () => void;
   onSwitchService?: () => void;
+  onUserManagement?: () => void;
   onLogout?: () => void;
   userName?: string;
   userRoleLabel?: string;
@@ -26,6 +28,7 @@ export default function Header({
   showLogo,
   onProfileClick,
   onSwitchService,
+  onUserManagement,
   onLogout,
   userName = '@suchada.t',
   userRoleLabel = 'Super Admin',
@@ -33,9 +36,13 @@ export default function Header({
 }: HeaderProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const { lang, setLang } = useLanguage();
+  const t = useT();
 
   const menuItems = [
     { label: 'User Profile', icon: 'solar:user-linear', onClick: onProfileClick },
+    ...(onUserManagement ? [{ label: 'User management', icon: 'solar:users-group-rounded-linear', onClick: onUserManagement }] : []),
     { label: 'Switch Service', icon: 'solar:refresh-circle-linear', onClick: onSwitchService },
     { label: 'Log Out', icon: 'solar:logout-2-linear', onClick: onLogout },
   ];
@@ -56,7 +63,7 @@ export default function Header({
         <button
           onClick={onMenuClick}
           className="lg:hidden w-8 h-8 -ml-1 rounded-lg hover:bg-[#F9FAFB] flex items-center justify-center transition-colors text-[#6B7280] hover:text-[#1A1A1A] flex-shrink-0"
-          aria-label="Open menu"
+          aria-label={t('Open menu')}
         >
           <Icon icon="solar:hamburger-menu-linear" width={18} height={18} />
         </button>
@@ -72,7 +79,7 @@ export default function Header({
             >
               <Icon icon="solar:users-group-rounded-linear" width={14} height={14} />
               <span className="hidden sm:inline">
-                {roleSwitcher.options.find((o) => o.value === roleSwitcher.role)?.label ?? roleSwitcher.role}
+                {t(roleSwitcher.options.find((o) => o.value === roleSwitcher.role)?.label ?? roleSwitcher.role)}
               </span>
               <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} />
             </button>
@@ -82,7 +89,7 @@ export default function Header({
                 <div className="fixed inset-0 z-10" onClick={() => setShowRoleDropdown(false)} />
                 <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1.5 overflow-hidden">
                   <div className="px-4 py-1.5 text-[10px] font-semibold tracking-widest text-[#9CA3AF] uppercase">
-                    Preview as
+                    {t('Preview as')}
                   </div>
                   {roleSwitcher.options.map((option) => (
                     <button
@@ -97,7 +104,7 @@ export default function Header({
                           : 'text-[#4B5563] hover:bg-[#F9FAFB]'
                       }`}
                     >
-                      {option.label}
+                      {t(option.label)}
                     </button>
                   ))}
                 </div>
@@ -107,17 +114,46 @@ export default function Header({
         )}
 
         {/* Language */}
-        <button className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-[#1A1A1A] transition-colors border border-[#E5E7EB] rounded-md px-2.5 py-1.5">
-          <Icon icon="solar:globe-linear" width={14} height={14} />
-          <span className="hidden sm:inline">EN</span>
-          <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} className="hidden sm:block" />
-        </button>
-
-        {/* Notifications */}
-        <button className="relative w-8 h-8 rounded-lg hover:bg-[#F9FAFB] flex items-center justify-center transition-colors text-[#6B7280] hover:text-[#1A1A1A]">
-          <Icon icon="solar:bell-linear" width={17} height={17} />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#FF6115] rounded-full"></span>
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowLangDropdown(!showLangDropdown)}
+            aria-haspopup="listbox"
+            aria-expanded={showLangDropdown}
+            aria-label={t('Language')}
+            className="flex items-center gap-1.5 text-xs text-[#6B7280] hover:text-[#1A1A1A] transition-colors border border-[#E5E7EB] rounded-md px-2.5 py-1.5"
+          >
+            <Icon icon="solar:globe-linear" width={14} height={14} />
+            <span>{LANGUAGES.find((l) => l.value === lang)?.short}</span>
+            <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} className="hidden sm:block" />
+          </button>
+          {showLangDropdown && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowLangDropdown(false)} />
+              <ul role="listbox" aria-label={t('Language')} className="absolute right-0 top-full mt-1 w-40 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1.5">
+                {LANGUAGES.map((l) => (
+                  <li key={l.value}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={l.value === lang}
+                      onClick={() => {
+                        setLang(l.value);
+                        setShowLangDropdown(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-sm text-left transition-colors ${
+                        l.value === lang ? 'text-[#FF6115] bg-[#FFF0E8] font-medium' : 'text-[#4B5563] hover:bg-[#F9FAFB]'
+                      }`}
+                    >
+                      {l.label}
+                      <span className="text-xs text-[#9CA3AF]">{l.short}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
 
         {/* User */}
         <div className="relative">
@@ -130,7 +166,7 @@ export default function Header({
             </div>
             <div className="text-left hidden sm:block">
               <div className="text-xs font-semibold text-[#1A1A1A] leading-tight">{userName}</div>
-              <div className="text-[10px] text-[#6B7280]">{userRoleLabel}</div>
+              <div className="text-[10px] text-[#6B7280]">{t(userRoleLabel)}</div>
             </div>
             <Icon icon="solar:alt-arrow-down-linear" width={12} height={12} className="text-[#9CA3AF]" />
           </button>
@@ -138,7 +174,7 @@ export default function Header({
           {showDropdown && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-              <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1.5 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1.5 overflow-hidden">
                 {menuItems.map((item) => (
                   <button
                     key={item.label}
@@ -149,7 +185,7 @@ export default function Header({
                     className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-[#4B5563] hover:bg-[#F9FAFB] transition-colors text-left"
                   >
                     <Icon icon={item.icon} width={15} height={15} className="text-[#9CA3AF]" />
-                    {item.label}
+                    {t(item.label)}
                   </button>
                 ))}
               </div>

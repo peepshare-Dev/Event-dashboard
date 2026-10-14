@@ -5,6 +5,7 @@ import PromoStatusBadge from './PromoStatusBadge';
 import { PromoThumbnail } from './PromoPreview';
 import type { Placement } from './placements';
 import { describeClick, displayStatus, showFrequencyLabel, type PromoItem } from '../../../data/appBanners';
+import { useT } from '@/i18n';
 
 const CONTENT_WIDTH = 'max-w-[960px]';
 
@@ -19,6 +20,8 @@ interface PromoSortProps {
 
 // Display priority: drag rows (or use the arrows on touch / keyboard), then Save Order.
 export default function PromoSort({ placement, items: banners, focusId, onCancel, onSaved }: PromoSortProps) {
+  const t = useT();
+  const noun = t(placement.noun);
   const [order, setOrder] = useState(banners);
   const [dragId, setDragId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -47,7 +50,7 @@ export default function PromoSort({ placement, items: banners, focusId, onCancel
     try {
       onSaved(await placement.api.reorder(order.map((b) => b.id)));
     } catch {
-      setError('Couldn’t save the order. Check your connection and try again.');
+      setError(t('Couldn’t save the order. Check your connection and try again.'));
       setSaving(false);
     }
   };
@@ -56,15 +59,15 @@ export default function PromoSort({ placement, items: banners, focusId, onCancel
     <div className="flex-1 flex flex-col">
       <div className="flex-1 px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6 lg:pt-8 pb-8 lg:pb-10">
         <div className={`${CONTENT_WIDTH} mx-auto`}>
-          <h1 className="text-2xl sm:text-[28px] font-semibold leading-tight text-[#1A1A1A]">Sort {placement.noun}</h1>
-          <p className="mt-1.5 text-sm text-[#6B7280]">{placement.sortSubtitle}</p>
+          <h1 className="text-2xl sm:text-[28px] font-semibold leading-tight text-[#1A1A1A]">{t('Sort {noun}', { noun })}</h1>
+          <p className="mt-1.5 text-sm text-[#6B7280]">{t(placement.sortSubtitle)}</p>
           <button
             type="button"
             onClick={onCancel}
             className="mt-4 inline-flex items-center gap-1.5 h-8 -ml-1 px-1 text-sm text-[#6B7280] rounded-md hover:text-[#FF6115] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
           >
             <Icon icon="solar:arrow-left-linear" width={16} height={16} />
-            Back to {placement.noun === 'Banner' ? 'banners' : 'cover pages'}
+            {t(placement.noun === 'Banner' ? 'Back to banners' : 'Back to cover pages')}
           </button>
 
           {error && (
@@ -74,7 +77,7 @@ export default function PromoSort({ placement, items: banners, focusId, onCancel
             </p>
           )}
 
-          <ol ref={listRef} aria-label={`${placement.noun} display order`} className="mt-5 space-y-2">
+          <ol ref={listRef} aria-label={t('{noun} display order', { noun })} className="mt-5 space-y-2">
             {order.map((b, i) => {
               const status = displayStatus(b);
               return (
@@ -95,7 +98,7 @@ export default function PromoSort({ placement, items: banners, focusId, onCancel
                     dragId === b.id ? 'border-[#FF6115] shadow-lg opacity-80' : b.id === focusId ? 'border-[#FFB38F] ring-2 ring-[#FF6115]/20' : 'border-[#E5E7EB]'
                   }`}
                 >
-                  <span className="cursor-grab active:cursor-grabbing text-[#9CA3AF] flex-shrink-0" title="Drag to reorder" aria-hidden="true">
+                  <span className="cursor-grab active:cursor-grabbing text-[#9CA3AF] flex-shrink-0" title={t('Drag to reorder')} aria-hidden="true">
                     <Icon icon="solar:hamburger-menu-linear" width={20} height={20} />
                   </span>
                   <span className="w-7 h-7 rounded-full bg-[#F3F4F6] text-xs font-semibold text-[#374151] flex items-center justify-center flex-shrink-0">{i + 1}</span>
@@ -103,30 +106,30 @@ export default function PromoSort({ placement, items: banners, focusId, onCancel
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[#1A1A1A] truncate">{b.name}</p>
                     <p className="text-xs text-[#6B7280] truncate">
-                      {describeClick(b)}
-                      {placement.frequency && ` · ${showFrequencyLabel(b.showFrequency)}`}
+                      {describeClick(b, t)}
+                      {placement.frequency && ` · ${t(showFrequencyLabel(b.showFrequency))}`}
                     </p>
                   </div>
                   <span className="hidden sm:block">
                     <PromoStatusBadge status={status} />
                   </span>
                   <div className="flex flex-col sm:flex-row gap-0.5 flex-shrink-0">
-                    <MoveButton icon="solar:alt-arrow-up-linear" label={`Move ${b.name} up`} disabled={i === 0} onClick={() => move(i, i - 1)} />
-                    <MoveButton icon="solar:alt-arrow-down-linear" label={`Move ${b.name} down`} disabled={i === order.length - 1} onClick={() => move(i, i + 1)} />
+                    <MoveButton icon="solar:alt-arrow-up-linear" label={t('Move {name} up', { name: b.name })} disabled={i === 0} onClick={() => move(i, i - 1)} />
+                    <MoveButton icon="solar:alt-arrow-down-linear" label={t('Move {name} down', { name: b.name })} disabled={i === order.length - 1} onClick={() => move(i, i + 1)} />
                   </div>
                 </li>
               );
             })}
           </ol>
-          <p className="mt-3 text-xs text-[#9CA3AF]">Inactive, draft and expired items keep their place and take it back when they show again.</p>
+          <p className="mt-3 text-xs text-[#9CA3AF]">{t('Inactive, draft and expired items keep their place and take it back when they show again.')}</p>
         </div>
       </div>
 
       <StickyActionBar
         maxWidth={CONTENT_WIDTH}
-        note={changed ? <span className="text-[#E5540F] font-medium">Order changed — save to apply it in the app.</span> : 'Drag rows or use the arrows to reorder.'}
-        tertiary={{ label: 'Cancel', onClick: onCancel, disabled: saving }}
-        primary={{ label: saving ? 'Saving…' : 'Save Order', onClick: save, disabled: saving || !changed }}
+        note={changed ? <span className="text-[#E5540F] font-medium">{t('Order changed — save to apply it in the app.')}</span> : t('Drag rows or use the arrows to reorder.')}
+        tertiary={{ label: t('Cancel'), onClick: onCancel, disabled: saving }}
+        primary={{ label: saving ? t('Saving…') : t('Save Order'), onClick: save, disabled: saving || !changed }}
       />
     </div>
   );

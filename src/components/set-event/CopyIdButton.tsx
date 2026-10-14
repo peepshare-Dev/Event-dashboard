@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useT } from '@/i18n';
 
 // "#1234" in orange: shows the event ID and copies it on click.
 export default function CopyIdButton({ id }: { id: number }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -23,8 +25,8 @@ export default function CopyIdButton({ id }: { id: number }) {
       <button
         type="button"
         onClick={copy}
-        title="Copy event ID"
-        aria-label={`Copy event ID ${id}`}
+        title={t('Copy event ID')}
+        aria-label={t('Copy event ID {id}', { id })}
         className="text-[#FF6115] underline underline-offset-4 decoration-1 hover:text-[#E5540F] rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
       >
         #{id}
@@ -35,7 +37,7 @@ export default function CopyIdButton({ id }: { id: number }) {
           copied ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        {copied ? 'Copied!' : ''}
+        {copied ? t('Copied!') : ''}
       </span>
     </span>
   );
