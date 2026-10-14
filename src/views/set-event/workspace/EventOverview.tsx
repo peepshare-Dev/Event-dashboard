@@ -66,11 +66,13 @@ export default function EventOverview({ event, onBack, onEdit, onOpenQr }: Event
           {stats.map((s) => {
             const body = (
               <>
-                <span className="w-9 h-9 rounded-lg bg-[#FFF0E8] text-[#FF6115] flex items-center justify-center">
-                  <Icon icon={s.icon} width={18} height={18} />
+                <span className="w-12 h-12 shrink-0 rounded-xl bg-[#FFF0E8] text-[#FF6115] flex items-center justify-center">
+                  <Icon icon={s.icon} width={24} height={24} />
                 </span>
-                <span className="block mt-3 text-2xl font-semibold text-[#1A1A1A] tabular-nums">{s.value}</span>
-                <span className="block text-sm text-[#6B7280]">{s.label}</span>
+                <span className="min-w-0 text-right">
+                  <span className="block text-sm text-[#6B7280] truncate">{s.label}</span>
+                  <span className="block mt-0.5 text-2xl font-semibold text-[#1A1A1A] tabular-nums">{s.value}</span>
+                </span>
               </>
             );
             return s.onClick ? (
@@ -78,12 +80,12 @@ export default function EventOverview({ event, onBack, onEdit, onOpenQr }: Event
                 key={s.label}
                 type="button"
                 onClick={s.onClick}
-                className="text-left p-4 rounded-xl border border-[#E5E7EB] hover:border-[#FFB38F] hover:bg-[#FFFBF8] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
+                className="flex items-center justify-between gap-3 text-left p-4 rounded-xl border border-[#E5E7EB] hover:border-[#FFB38F] hover:bg-[#FFFBF8] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6115]/40"
               >
                 {body}
               </button>
             ) : (
-              <div key={s.label} className="p-4 rounded-xl border border-[#E5E7EB]">
+              <div key={s.label} className="flex items-center justify-between gap-3 p-4 rounded-xl border border-[#E5E7EB]">
                 {body}
               </div>
             );
