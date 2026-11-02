@@ -69,6 +69,8 @@ export interface SetEventDetails {
   accessInstructions?: string;
   /** How attendees join — decides which registration settings apply. */
   registrationType?: RegistrationType | '';
+  /** Who attendees register as. */
+  participantType?: ParticipantType | '';
   /** null = unlimited */
   maxParticipants?: number | null;
   /** THB; Paid registration only */
@@ -98,6 +100,7 @@ export type EventType =
   | 'Other';
 export type EventFormat = 'Offline' | 'Online' | 'Hybrid';
 export type RegistrationType = 'Free' | 'Paid';
+export type ParticipantType = 'Competitor' | 'Member';
 export type PaymentMethod = 'PromptPay' | 'Credit / Debit Card' | 'Bank Transfer';
 export type FormFieldType =
   | 'short-text'
@@ -188,6 +191,11 @@ export const EVENT_TYPES: EventType[] = [
 export const REGISTRATION_TYPE_LABELS: Record<RegistrationType, string> = {
   Free: 'Free Registration',
   Paid: 'Paid Registration',
+};
+
+export const PARTICIPANT_TYPE_LABELS: Record<ParticipantType, string> = {
+  Competitor: 'Competitor',
+  Member: 'Member',
 };
 
 export const PAYMENT_METHODS: PaymentMethod[] = ['PromptPay', 'Credit / Debit Card', 'Bank Transfer'];

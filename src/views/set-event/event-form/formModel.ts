@@ -10,6 +10,7 @@ import {
   type EventFormat,
   type EventType,
   type PaymentMethod,
+  type ParticipantType,
   type RegistrationType,
   type SetEvent,
   type SetEventStatus,
@@ -46,6 +47,7 @@ export interface FormState {
   accessInstructions: string;
   // Registration
   registrationType: RegistrationType | '';
+  participantType: ParticipantType | '';
   allowJoin: boolean;
   capacityLimited: boolean;
   maxParticipants: string;
@@ -135,6 +137,7 @@ export function toForm(event?: SetEvent): FormState {
     accessInstructions: d?.accessInstructions ?? '',
     // Existing events only knew Free / Paid tickets.
     registrationType: d?.registrationType ?? (event ? event.ticketType : ''),
+    participantType: d?.participantType ?? '',
     allowJoin: d?.allowJoin ?? true,
     capacityLimited: d?.maxParticipants != null,
     maxParticipants: numberText(d?.maxParticipants),
@@ -210,6 +213,7 @@ export function fromForm(form: FormState, base: SetEvent | undefined, id: number
       onlineUrl: online ? form.onlineUrl.trim() : '',
       accessInstructions: online ? form.accessInstructions.trim() : '',
       registrationType: type,
+      participantType: form.participantType,
       allowJoin: form.allowJoin,
       maxParticipants: type && form.capacityLimited ? toNumber(form.maxParticipants) : null,
       ticketPrice: type === 'Paid' ? toNumber(form.ticketPrice) : null,
@@ -351,6 +355,7 @@ export function validate(form: FormState, complete: boolean): Errors {
     if (online && !form.onlineUrl.trim()) errors.onlineUrl ??= 'Enter the link attendees use to join.';
 
     if (!type) errors.registrationType = 'Select how attendees register.';
+    if (!form.participantType) errors.participantType = 'Select who attendees register as.';
     if (type && form.capacityLimited && !form.maxParticipants.trim()) errors.maxParticipants = 'Enter the maximum number of participants.';
     if (type === 'Paid') {
       if (!form.ticketPrice.trim()) errors.ticketPrice = 'Enter the registration fee.';
@@ -406,6 +411,7 @@ const ERROR_SECTION: Record<string, SectionId> = {
   mapLink: 'location',
   onlineUrl: 'location',
   registrationType: 'registration',
+  participantType: 'registration',
   maxParticipants: 'registration',
   ticketPrice: 'registration',
   paymentMethods: 'registration',

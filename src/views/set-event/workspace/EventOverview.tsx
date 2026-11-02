@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react';
 import Button from '../../../components/ui/Button';
 import SectionShell from './SectionShell';
 import { mockCollections } from '../../Collections';
-import { REGISTRATION_TYPE_LABELS, formatEventDateTime, type SetEvent } from '../../../data/setEvents';
+import { REGISTRATION_TYPE_LABELS, PARTICIPANT_TYPE_LABELS, formatEventDateTime, type SetEvent } from '../../../data/setEvents';
 import { useT } from '@/i18n';
 
 interface EventOverviewProps {
@@ -35,6 +35,7 @@ export default function EventOverview({ event, onBack, onEdit, onOpenQr }: Event
     [t('Event type'), d?.eventType ? t(d.eventType) : '—'],
     [t('Organizer'), event.category || '—'],
     [t('Registration'), d?.registrationType ? t(REGISTRATION_TYPE_LABELS[d.registrationType]) : t(event.ticketType)],
+    [t('Register as'), d?.participantType ? t(PARTICIPANT_TYPE_LABELS[d.participantType]) : '—'],
     [t('Capacity'), d?.maxParticipants != null ? t('{count} people', { count: d.maxParticipants.toLocaleString() }) : d?.registrationType ? t('Unlimited') : '—'],
     [t('Author'), event.author],
     [t('Allow join'), d ? (d.allowJoin ? t('Active') : t('Closed')) : '—'],

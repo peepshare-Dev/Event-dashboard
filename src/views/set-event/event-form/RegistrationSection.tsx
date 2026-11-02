@@ -3,13 +3,18 @@ import FormField from '../../../components/set-event/form/FormField';
 import ChoiceCards from '../../../components/set-event/form/ChoiceCards';
 import SegmentedControl from '../../../components/set-event/form/SegmentedControl';
 import Toggle from '../../../components/ui/Toggle';
-import { PAYMENT_METHODS, REGISTRATION_TYPE_LABELS, type RegistrationType } from '../../../data/setEvents';
+import { PARTICIPANT_TYPE_LABELS, PAYMENT_METHODS, REGISTRATION_TYPE_LABELS, type ParticipantType, type RegistrationType } from '../../../data/setEvents';
 import type { SectionProps } from './formModel';
 import { useT } from '@/i18n';
 
 const TYPE_OPTIONS: { value: RegistrationType; label: string; description: string; icon: string }[] = [
   { value: 'Free', label: REGISTRATION_TYPE_LABELS.Free, description: 'Anyone can register at no cost.', icon: 'solar:ticket-linear' },
   { value: 'Paid', label: REGISTRATION_TYPE_LABELS.Paid, description: 'Attendees pay a fee to register.', icon: 'solar:wallet-money-linear' },
+];
+
+const PARTICIPANT_OPTIONS: { value: ParticipantType; label: string; description: string; icon: string }[] = [
+  { value: 'Competitor', label: PARTICIPANT_TYPE_LABELS.Competitor, description: 'Attendees register to compete in the event.', icon: 'solar:cup-star-linear' },
+  { value: 'Member', label: PARTICIPANT_TYPE_LABELS.Member, description: 'Attendees register as members to join the event.', icon: 'solar:user-id-linear' },
 ];
 
 export default function RegistrationSection({ form, patch, errors }: SectionProps) {
@@ -29,6 +34,20 @@ export default function RegistrationSection({ form, patch, errors }: SectionProp
             />
           )}
         </FormField>
+
+        <div className="pt-6 border-t border-[#F0F0F0]">
+          <FormField label={t('Register As')} required hint={t('Who attendees register as.')} error={errors.participantType} asGroup>
+            {() => (
+              <ChoiceCards
+                label={t('Register As')}
+                value={form.participantType}
+                options={PARTICIPANT_OPTIONS}
+                onChange={(participantType) => patch({ participantType })}
+                invalid={Boolean(errors.participantType)}
+              />
+            )}
+          </FormField>
+        </div>
 
         {type && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5 pt-6 border-t border-[#F0F0F0]">

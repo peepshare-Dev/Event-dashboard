@@ -63,6 +63,7 @@ const TRACKED: TrackedField[] = [
   { section: 'Location', field: 'Online platform', value: (e) => e.details?.onlinePlatform ?? '' },
   { section: 'Location', field: 'Online link', value: (e) => e.details?.onlineUrl ?? '' },
   { section: 'Registration', field: 'Registration type', value: (e) => e.details?.registrationType ?? '' },
+  { section: 'Registration', field: 'Register as', value: (e) => e.details?.participantType ?? '' },
   { section: 'Registration', field: 'Allow join', value: (e) => onOff(e.details?.allowJoin) },
   { section: 'Registration', field: 'Max participants', value: (e) => (e.details?.maxParticipants ? String(e.details.maxParticipants) : '') },
   { section: 'Registration', field: 'Registration fee', value: (e) => (e.details?.ticketPrice ? `฿${e.details.ticketPrice.toLocaleString()}` : '') },

@@ -97,6 +97,7 @@ export const mediaAdsNavSections: NavSection[] = [
         ],
       },
       { id: 'app-cover-pages', label: 'Set Cover Page in App', icon: <Icon icon="solar:smartphone-2-linear" width={22} height={22} /> },
+      { id: 'slug', label: 'Slug', icon: <Icon icon="solar:hashtag-linear" width={22} height={22} /> },
     ],
   },
 ];

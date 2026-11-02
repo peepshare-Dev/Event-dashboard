@@ -5,12 +5,13 @@ import Header from '../components/Header';
 import BackToTop from '../components/ui/BackToTop';
 import DeleteConfirmationModal from '../components/ui/DeleteConfirmationModal';
 import PromoManager from './set-event/promo/PromoManager';
+import SlugManager from './slug/SlugManager';
 import { BANNER_PLACEMENT, COMMUNITY_BANNER_PLACEMENT, COVER_PLACEMENT } from './set-event/promo/placements';
 import { mediaAdsNavSections } from '../data/navigation';
 import { setEventsSeed } from '../data/setEvents';
 import { useT } from '@/i18n';
 
-type NavId = 'banner-home' | 'banner-community' | 'app-cover-pages';
+type NavId = 'banner-home' | 'banner-community' | 'app-cover-pages' | 'slug';
 
 const PLACEMENTS = {
   'banner-home': BANNER_PLACEMENT,
@@ -65,14 +66,18 @@ export default function MediaAdsApp({ onSwitchService, onLogout }: MediaAdsAppPr
         <Header onMenuClick={() => setMobileNavOpen(true)} onSwitchService={onSwitchService} onLogout={onLogout} />
 
         <main className="relative flex-1 overflow-y-auto overflow-x-hidden">
-          <PromoManager
-            // Key per menu, so switching screens starts fresh.
-            key={activeNav}
-            placement={PLACEMENTS[activeNav]}
-            events={setEventsSeed}
-            onToast={setToast}
-            onDirtyChange={handleDirtyChange}
-          />
+          {activeNav === 'slug' ? (
+            <SlugManager onToast={setToast} onDirtyChange={handleDirtyChange} />
+          ) : (
+            <PromoManager
+              // Key per menu, so switching screens starts fresh.
+              key={activeNav}
+              placement={PLACEMENTS[activeNav]}
+              events={setEventsSeed}
+              onToast={setToast}
+              onDirtyChange={handleDirtyChange}
+            />
+          )}
           <BackToTop />
         </main>
       </div>
