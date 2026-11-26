@@ -41,7 +41,7 @@ export default function PickerInput({
 
   return (
     <label
-      className={`relative flex items-center gap-2 bg-white border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-[#FF6115]/30 focus-within:border-[#FF6115] ${
+      className={`relative flex items-center gap-2 bg-white border rounded-lg cursor-pointer has-[:disabled]:bg-[#F9FAFB] has-[:disabled]:cursor-not-allowed focus-within:ring-2 focus-within:ring-[#FF6115]/30 focus-within:border-[#FF6115] ${
         invalid ? 'border-[#DC2626]' : 'border-[#E5E7EB]'
       } ${size === 'md' ? 'h-12 px-3' : 'h-10 px-3'} ${className}`}
     >

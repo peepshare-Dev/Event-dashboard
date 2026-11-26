@@ -12,9 +12,13 @@
   "dependencies": {
     "@iconify-json/solar": "^1.2.12",
     "@iconify/react": "^6.0.2",
+    "dompurify": "^3.2.6",
+    "jsbarcode": "^3.12.1",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-is": "^19.0.0",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

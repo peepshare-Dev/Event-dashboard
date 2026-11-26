@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useT } from '@/i18n';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
 interface RichTextEditorProps {
   /** Initial HTML. The editor is uncontrolled after mount. */
@@ -8,6 +9,10 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   ariaLabel?: string;
+  /** 'basic': bold, lists and links only, written as plain tags (no inline styles). */
+  variant?: 'full' | 'basic';
+  /** Shows the content without the toolbar and can't be edited. */
+  readOnly?: boolean;
 }
 
 type Popover = 'color' | 'highlight' | 'emoji' | 'block' | 'align' | 'link' | null;
@@ -43,7 +48,8 @@ function normalizeUrl(raw: string): string | null {
 
 // Lightweight contentEditable editor built on document.execCommand — enough for event
 // descriptions without pulling in an editor dependency.
-export default function RichTextEditor({ defaultValue = '', onChange, placeholder = 'Write a description…', ariaLabel }: RichTextEditorProps) {
+export default function RichTextEditor({ defaultValue = '', onChange, placeholder = 'Write a description…', ariaLabel, variant = 'full', readOnly }: RichTextEditorProps) {
+  const full = variant === 'full';
   const t = useT();
   const editorRef = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
@@ -94,7 +100,7 @@ export default function RichTextEditor({ defaultValue = '', onChange, placeholde
 
   const exec = (command: string, value?: string) => {
     restoreSelection();
-    document.execCommand('styleWithCSS', false, 'true');
+    document.execCommand('styleWithCSS', false, full ? 'true' : 'false');
     document.execCommand(command, false, value);
     setPopover(null);
     emitChange();
@@ -126,151 +132,182 @@ export default function RichTextEditor({ defaultValue = '', onChange, placeholde
   return (
     <div className="border border-[#E5E7EB] rounded-2xl overflow-visible focus-within:border-[#FF6115] focus-within:ring-2 focus-within:ring-[#FF6115]/20">
       {/* Toolbar */}
-      <div
-        role="toolbar"
-        aria-label={t('Formatting')}
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 sm:px-5 py-2.5 bg-[#F9FAFB] rounded-t-2xl border-b border-[#F0F0F0]"
-      >
-        <ToolGroup>
-          <ToolButton label="Bold" active={active.bold} onClick={() => exec('bold')}>
-            <Icon icon="solar:text-bold-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Italic" active={active.italic} onClick={() => exec('italic')}>
-            <Icon icon="solar:text-italic-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Underline" active={active.underline} onClick={() => exec('underline')}>
-            <Icon icon="solar:text-underline-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Strikethrough" active={active.strikeThrough} onClick={() => exec('strikeThrough')}>
-            <Icon icon="solar:text-cross-linear" width={20} height={20} />
-          </ToolButton>
-          <PopoverAnchor open={popover === 'color'} onClose={() => setPopover(null)} panel={<Swatches colors={TEXT_COLORS} onPick={(c) => exec('foreColor', c)} />}>
-            <ToolButton label="Text color" active={popover === 'color'} onClick={() => togglePopover('color')}>
-              <TextColorIcon />
+      {!readOnly && (
+        <div
+          role="toolbar"
+          aria-label={t('Formatting')}
+          className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 sm:px-5 py-2.5 bg-[#F9FAFB] rounded-t-2xl border-b border-[#F0F0F0]"
+        >
+          <ToolGroup>
+            <ToolButton label="Bold" active={active.bold} onClick={() => exec('bold')}>
+              <Icon icon="solar:text-bold-linear" width={20} height={20} />
             </ToolButton>
-          </PopoverAnchor>
-          <PopoverAnchor open={popover === 'highlight'} onClose={() => setPopover(null)} panel={<Swatches colors={HIGHLIGHT_COLORS} onPick={(c) => exec('hiliteColor', c)} />}>
-            <ToolButton label="Highlight" active={popover === 'highlight'} onClick={() => togglePopover('highlight')}>
-              <Icon icon="solar:pen-linear" width={20} height={20} />
+            {full && (
+              <>
+                <ToolButton label="Italic" active={active.italic} onClick={() => exec('italic')}>
+                  <Icon icon="solar:text-italic-linear" width={20} height={20} />
+                </ToolButton>
+                <ToolButton label="Underline" active={active.underline} onClick={() => exec('underline')}>
+                  <Icon icon="solar:text-underline-linear" width={20} height={20} />
+                </ToolButton>
+                <ToolButton label="Strikethrough" active={active.strikeThrough} onClick={() => exec('strikeThrough')}>
+                  <Icon icon="solar:text-cross-linear" width={20} height={20} />
+                </ToolButton>
+                <PopoverAnchor open={popover === 'color'} onClose={() => setPopover(null)} panel={<Swatches colors={TEXT_COLORS} onPick={(c) => exec('foreColor', c)} />}>
+                  <ToolButton label="Text color" active={popover === 'color'} onClick={() => togglePopover('color')}>
+                    <TextColorIcon />
+                  </ToolButton>
+                </PopoverAnchor>
+                <PopoverAnchor open={popover === 'highlight'} onClose={() => setPopover(null)} panel={<Swatches colors={HIGHLIGHT_COLORS} onPick={(c) => exec('hiliteColor', c)} />}>
+                  <ToolButton label="Highlight" active={popover === 'highlight'} onClick={() => togglePopover('highlight')}>
+                    <Icon icon="solar:pen-linear" width={20} height={20} />
+                  </ToolButton>
+                </PopoverAnchor>
+                <PopoverAnchor
+                  open={popover === 'emoji'}
+                  onClose={() => setPopover(null)}
+                  panel={
+                    <div className="grid grid-cols-5 gap-1 w-52">
+                      {EMOJIS.map((emoji) => (
+                        <button key={emoji} type="button" onClick={() => exec('insertText', emoji)} className="h-9 rounded-lg text-lg hover:bg-[#F9FAFB]">
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  }
+                >
+                  <ToolButton label="Emoji" active={popover === 'emoji'} onClick={() => togglePopover('emoji')}>
+                    <Icon icon="solar:smile-circle-linear" width={21} height={21} />
+                  </ToolButton>
+                </PopoverAnchor>
+              </>
+            )}
+          </ToolGroup>
+
+          <ToolGroup>
+            {full && (
+              <>
+                <PopoverAnchor
+                  open={popover === 'block'}
+                  onClose={() => setPopover(null)}
+                  panel={<MenuList items={BLOCK_FORMATS.map((b) => ({ label: b.label, onClick: () => exec('formatBlock', `<${b.tag}>`) }))} />}
+                >
+                  <ToolButton label="Text style" caret active={popover === 'block'} onClick={() => togglePopover('block')}>
+                    <span className="text-lg font-semibold leading-none">¶</span>
+                  </ToolButton>
+                </PopoverAnchor>
+                <PopoverAnchor
+                  open={popover === 'align'}
+                  onClose={() => setPopover(null)}
+                  panel={<MenuList items={ALIGNMENTS.map((a) => ({ label: a.label, onClick: () => exec(a.command) }))} />}
+                >
+                  <ToolButton label="Alignment" caret active={popover === 'align'} onClick={() => togglePopover('align')}>
+                    <Icon icon="solar:align-left-linear" width={20} height={20} />
+                  </ToolButton>
+                </PopoverAnchor>
+              </>
+            )}
+            <ToolButton label="Numbered list" active={active.insertOrderedList} onClick={() => exec('insertOrderedList')}>
+              <OrderedListIcon />
             </ToolButton>
-          </PopoverAnchor>
-          <PopoverAnchor
-            open={popover === 'emoji'}
-            onClose={() => setPopover(null)}
-            panel={
-              <div className="grid grid-cols-5 gap-1 w-52">
-                {EMOJIS.map((emoji) => (
-                  <button key={emoji} type="button" onClick={() => exec('insertText', emoji)} className="h-9 rounded-lg text-lg hover:bg-[#F9FAFB]">
-                    {emoji}
+            <ToolButton label="Bulleted list" active={active.insertUnorderedList} onClick={() => exec('insertUnorderedList')}>
+              <Icon icon="solar:list-linear" width={20} height={20} />
+            </ToolButton>
+            {full && (
+              <>
+                <ToolButton label="Increase indent" onClick={() => exec('indent')}>
+                  <IndentIcon />
+                </ToolButton>
+                <ToolButton label="Decrease indent" onClick={() => exec('outdent')}>
+                  <IndentIcon outdent />
+                </ToolButton>
+              </>
+            )}
+          </ToolGroup>
+
+          <ToolGroup className="sm:ml-auto">
+            {full && (
+              <ToolButton label="Insert image" onClick={() => imageInput.current?.click()}>
+                <Icon icon="solar:gallery-linear" width={20} height={20} />
+              </ToolButton>
+            )}
+            <PopoverAnchor
+              open={popover === 'link'}
+              onClose={() => setPopover(null)}
+              align="right"
+              panel={
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    applyLink();
+                  }}
+                  className="flex items-center gap-2 w-72"
+                >
+                  <input
+                    autoFocus
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://"
+                    aria-label={t('Link URL')}
+                    className="flex-1 min-w-0 h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
+                  />
+                  <button type="submit" disabled={!normalizeUrl(linkUrl)} className="h-9 px-3 text-sm font-medium text-white bg-[#FF6115] hover:bg-[#E5540F] rounded-lg disabled:opacity-40">
+                    {t('Apply')}
                   </button>
-                ))}
-              </div>
-            }
-          >
-            <ToolButton label="Emoji" active={popover === 'emoji'} onClick={() => togglePopover('emoji')}>
-              <Icon icon="solar:smile-circle-linear" width={21} height={21} />
+                </form>
+              }
+            >
+              <ToolButton label="Insert link" active={popover === 'link'} onClick={() => togglePopover('link')}>
+                <Icon icon="solar:link-linear" width={20} height={20} />
+              </ToolButton>
+            </PopoverAnchor>
+            {full && (
+              <>
+                <ToolButton label="Attach file" onClick={() => fileInput.current?.click()}>
+                  <Icon icon="solar:file-linear" width={20} height={20} />
+                </ToolButton>
+                <ToolButton label="Insert video" onClick={() => videoInput.current?.click()}>
+                  <Icon icon="solar:videocamera-linear" width={20} height={20} />
+                </ToolButton>
+              </>
+            )}
+            <ToolButton label="Undo" onClick={() => exec('undo')}>
+              <Icon icon="solar:undo-left-linear" width={20} height={20} />
             </ToolButton>
-          </PopoverAnchor>
-        </ToolGroup>
+            <ToolButton label="Redo" onClick={() => exec('redo')}>
+              <Icon icon="solar:undo-right-linear" width={20} height={20} />
+            </ToolButton>
+          </ToolGroup>
 
-        <ToolGroup>
-          <PopoverAnchor
-            open={popover === 'block'}
-            onClose={() => setPopover(null)}
-            panel={<MenuList items={BLOCK_FORMATS.map((b) => ({ label: b.label, onClick: () => exec('formatBlock', `<${b.tag}>`) }))} />}
-          >
-            <ToolButton label="Text style" caret active={popover === 'block'} onClick={() => togglePopover('block')}>
-              <span className="text-lg font-semibold leading-none">¶</span>
-            </ToolButton>
-          </PopoverAnchor>
-          <PopoverAnchor
-            open={popover === 'align'}
-            onClose={() => setPopover(null)}
-            panel={<MenuList items={ALIGNMENTS.map((a) => ({ label: a.label, onClick: () => exec(a.command) }))} />}
-          >
-            <ToolButton label="Alignment" caret active={popover === 'align'} onClick={() => togglePopover('align')}>
-              <Icon icon="solar:align-left-linear" width={20} height={20} />
-            </ToolButton>
-          </PopoverAnchor>
-          <ToolButton label="Numbered list" active={active.insertOrderedList} onClick={() => exec('insertOrderedList')}>
-            <OrderedListIcon />
-          </ToolButton>
-          <ToolButton label="Bulleted list" active={active.insertUnorderedList} onClick={() => exec('insertUnorderedList')}>
-            <Icon icon="solar:list-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Increase indent" onClick={() => exec('indent')}>
-            <IndentIcon />
-          </ToolButton>
-          <ToolButton label="Decrease indent" onClick={() => exec('outdent')}>
-            <IndentIcon outdent />
-          </ToolButton>
-        </ToolGroup>
-
-        <ToolGroup className="sm:ml-auto">
-          <ToolButton label="Insert image" onClick={() => imageInput.current?.click()}>
-            <Icon icon="solar:gallery-linear" width={20} height={20} />
-          </ToolButton>
-          <PopoverAnchor
-            open={popover === 'link'}
-            onClose={() => setPopover(null)}
-            align="right"
-            panel={
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  applyLink();
-                }}
-                className="flex items-center gap-2 w-72"
-              >
-                <input
-                  autoFocus
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  placeholder="https://"
-                  aria-label={t('Link URL')}
-                  className="flex-1 min-w-0 h-9 px-3 text-sm border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115]"
-                />
-                <button type="submit" disabled={!normalizeUrl(linkUrl)} className="h-9 px-3 text-sm font-medium text-white bg-[#FF6115] hover:bg-[#E5540F] rounded-lg disabled:opacity-40">
-                  {t('Apply')}
-                </button>
-              </form>
-            }
-          >
-            <ToolButton label="Insert link" active={popover === 'link'} onClick={() => togglePopover('link')}>
-              <Icon icon="solar:link-linear" width={20} height={20} />
-            </ToolButton>
-          </PopoverAnchor>
-          <ToolButton label="Attach file" onClick={() => fileInput.current?.click()}>
-            <Icon icon="solar:file-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Insert video" onClick={() => videoInput.current?.click()}>
-            <Icon icon="solar:videocamera-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Undo" onClick={() => exec('undo')}>
-            <Icon icon="solar:undo-left-linear" width={20} height={20} />
-          </ToolButton>
-          <ToolButton label="Redo" onClick={() => exec('redo')}>
-            <Icon icon="solar:undo-right-linear" width={20} height={20} />
-          </ToolButton>
-        </ToolGroup>
-
-        <input ref={imageInput} type="file" accept="image/*" hidden onChange={handleFile('image')} />
-        <input ref={fileInput} type="file" hidden onChange={handleFile('file')} />
-        <input ref={videoInput} type="file" accept="video/*" hidden onChange={handleFile('video')} />
-      </div>
+          <input ref={imageInput} type="file" accept="image/*" hidden onChange={handleFile('image')} />
+          <input ref={fileInput} type="file" hidden onChange={handleFile('file')} />
+          <input ref={videoInput} type="file" accept="video/*" hidden onChange={handleFile('video')} />
+        </div>
+      )}
 
       {/* Editing surface */}
       <div className="relative">
         {isEmpty && <div className="absolute left-5 top-4 text-sm text-[#9CA3AF] pointer-events-none">{t(placeholder)}</div>}
         <div
           ref={editorRef}
-          contentEditable
+          contentEditable={!readOnly}
           suppressContentEditableWarning
           role="textbox"
           aria-multiline="true"
           aria-label={ariaLabel ?? t(placeholder)}
+          aria-readonly={readOnly || undefined}
           onInput={emitChange}
-          className="rich-text min-h-40 max-h-[480px] overflow-y-auto px-5 py-4 text-sm text-[#1A1A1A] focus:outline-none"
+          // Basic: keep pasted formatting only if the allowlist accepts it.
+          onPaste={
+            full
+              ? undefined
+              : (e) => {
+                  e.preventDefault();
+                  const html = e.clipboardData.getData('text/html');
+                  insertHtml(html ? sanitizeHtml(html) : escapeHtml(e.clipboardData.getData('text/plain')).replace(/\n/g, '<br>'));
+                }
+          }
+          className={`rich-text ${readOnly ? 'bg-[#F9FAFB] rounded-2xl' : ''} min-h-40 max-h-[480px] overflow-y-auto px-5 py-4 text-sm text-[#1A1A1A] focus:outline-none`}
         />
       </div>
     </div>

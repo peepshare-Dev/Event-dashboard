@@ -20,10 +20,12 @@ interface SearchSelectProps {
   placeholder: string;
   icon: string;
   invalid?: boolean;
+  /** Extra row at the bottom of the results, e.g. "Add new store", given what was typed. */
+  action?: { label: (query: string) => string; icon?: string; onClick: (query: string) => void };
 }
 
 // Searchable picker: type to search, pick a result, then see it as a compact card with Change / Clear.
-export default function SearchSelect({ id, value, onChange, search, placeholder, icon, invalid }: SearchSelectProps) {
+export default function SearchSelect({ id, value, onChange, search, placeholder, icon, invalid, action }: SearchSelectProps) {
   const t = useT();
   const [editing, setEditing] = useState(!value);
   const [query, setQuery] = useState('');
@@ -169,6 +171,20 @@ export default function SearchSelect({ id, value, onChange, search, placeholder,
                   </span>
                 </button>
               ))}
+            {action && state !== 'loading' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  action.onClick(query.trim());
+                  setQuery('');
+                }}
+                className="w-full flex items-center gap-2 mt-1 px-4 py-2.5 border-t border-[#F0F0F0] text-left text-sm font-medium text-[#FF6115] hover:bg-[#FFF5EF] focus:outline-none focus-visible:bg-[#FFF5EF]"
+              >
+                <Icon icon={action.icon ?? 'solar:add-linear'} width={16} height={16} className="flex-shrink-0" />
+                <span className="truncate">{action.label(query.trim())}</span>
+              </button>
+            )}
           </div>
         </>
       )}

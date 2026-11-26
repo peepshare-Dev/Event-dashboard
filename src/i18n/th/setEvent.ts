@@ -297,11 +297,11 @@ const dict: Record<string, string> = {
   // --- Banner upload ---
   'Choose a file or drag & drop it here': 'เลือกไฟล์หรือลากแล้ววางที่นี่',
   'Only JPEG and PNG images are supported.': 'รองรับเฉพาะรูปภาพ JPEG และ PNG',
-  'The file is larger than 50MB.': 'ไฟล์มีขนาดใหญ่กว่า 50MB',
+  'The file is larger than {size}MB.': 'ไฟล์มีขนาดใหญ่กว่า {size}MB',
   'Upload failed. Check your connection and try again.': 'อัปโหลดไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง',
   'Uploading image…': 'กำลังอัปโหลดรูปภาพ…',
   '{title} preview': 'ตัวอย่าง{title}',
-  'JPEG, PNG formats, up to 50MB,': 'รูปแบบ JPEG, PNG ขนาดไม่เกิน 50MB',
+  'JPEG, PNG formats, up to {size}MB,': 'รูปแบบ JPEG, PNG ขนาดไม่เกิน {size}MB',
   'Suggested: {size}': 'ขนาดแนะนำ: {size}',
   'Browse File': 'เลือกไฟล์',
 

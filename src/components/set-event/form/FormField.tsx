@@ -3,7 +3,7 @@ import { Icon } from '@iconify/react';
 import { useT } from '@/i18n';
 
 export const inputClass = (invalid?: boolean) =>
-  `w-full h-12 px-3 text-sm text-[#1A1A1A] placeholder:text-[#9CA3AF] bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] ${
+  `w-full h-12 px-3 text-sm text-[#1A1A1A] placeholder:text-[#9CA3AF] bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6115]/30 focus:border-[#FF6115] disabled:bg-[#F9FAFB] disabled:text-[#6B7280] disabled:cursor-not-allowed ${
     invalid ? 'border-[#DC2626]' : 'border-[#E5E7EB]'
   }`;
 
