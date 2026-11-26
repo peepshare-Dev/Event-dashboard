@@ -7,6 +7,7 @@ import EventDashboardApp from './views/EventDashboardApp';
 import PeepSyncApp from './views/PeepSyncApp';
 import SetEventApp from './views/set-event/SetEventApp';
 import MediaAdsApp from './views/MediaAdsApp';
+import CouponApp from './views/coupon/CouponApp';
 import AccountAdminPage from './views/AccountAdminPage';
 import { services } from './data/mock';
 
@@ -74,6 +75,9 @@ export default function App() {
       }
       if (service.id === 'media-ads') {
         return <MediaAdsApp onSwitchService={handleSwitchService} onLogout={handleLogout} />;
+      }
+      if (service.id === 'coupon') {
+        return <CouponApp onSwitchService={handleSwitchService} onLogout={handleLogout} />;
       }
       return (
         <ServicePlaceholder service={service} onSwitchService={handleSwitchService} onLogout={handleLogout} />

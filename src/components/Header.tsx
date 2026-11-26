@@ -16,6 +16,7 @@ interface HeaderProps {
   onLogout?: () => void;
   userName?: string;
   userRoleLabel?: string;
+  userInitials?: string;
   roleSwitcher?: {
     role: string;
     options: RoleSwitcherOption[];
@@ -32,6 +33,7 @@ export default function Header({
   onLogout,
   userName = '@suchada.t',
   userRoleLabel = 'Super Admin',
+  userInitials = 'ST',
   roleSwitcher,
 }: HeaderProps) {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -162,7 +164,7 @@ export default function Header({
             className="flex items-center gap-2.5 hover:bg-[#F9FAFB] rounded-lg px-2 py-1.5 transition-colors"
           >
             <div className="w-7 h-7 rounded-full bg-[#FF6115] flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] font-bold text-white">ST</span>
+              <span className="text-[10px] font-bold text-white">{userInitials}</span>
             </div>
             <div className="text-left hidden sm:block">
               <div className="text-xs font-semibold text-[#1A1A1A] leading-tight">{userName}</div>

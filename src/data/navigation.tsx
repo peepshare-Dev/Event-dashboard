@@ -102,6 +102,27 @@ export const mediaAdsNavSections: NavSection[] = [
   },
 ];
 
+// Coupon — partner restaurant coupon campaign.
+export const couponNavSections: NavSection[] = [
+  {
+    title: 'CAMPAIGN',
+    items: [
+      {
+        id: 'coupon',
+        label: 'Coupon',
+        icon: <Icon icon="solar:ticket-sale-linear" width={22} height={22} />,
+        children: [
+          { id: 'coupon-dashboard', label: 'Dashboard' },
+          { id: 'coupon-brands', label: 'Partners' },
+          { id: 'coupon-list', label: 'Coupon list' },
+          { id: 'coupon-phases', label: 'Campaigns' },
+          { id: 'coupon-display', label: 'Display' },
+        ],
+      },
+    ],
+  },
+];
+
 // User management — account level, opened from the profile menu.
 export const accountAdminNavSections: NavSection[] = [
   {

@@ -19,10 +19,11 @@ interface BannerDropzoneProps {
   /** Uploads the file (shows progress and upload errors). Without it the file is used locally. */
   onUpload?: (file: File) => Promise<BannerFile>;
   invalid?: boolean;
+  /** Largest accepted file, in MB. */
+  maxMb?: number;
 }
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
-const MAX_BYTES = 50 * 1024 * 1024;
 
 export default function BannerDropzone({
   value,
@@ -32,6 +33,7 @@ export default function BannerDropzone({
   aspect = 'square',
   onUpload,
   invalid,
+  maxMb = 50,
 }: BannerDropzoneProps) {
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +44,7 @@ export default function BannerDropzone({
   const accept = (file: File | undefined) => {
     if (!file) return;
     if (!ACCEPTED_TYPES.includes(file.type)) return setError('Only JPEG and PNG images are supported.');
-    if (file.size > MAX_BYTES) return setError('The file is larger than 50MB.');
+    if (file.size > maxMb * 1024 * 1024) return setError(t('The file is larger than {size}MB.', { size: maxMb }));
     setError('');
     if (!onUpload) return onChange({ url: URL.createObjectURL(file), name: file.name });
     setUploading(true);
@@ -117,7 +119,7 @@ export default function BannerDropzone({
           <Icon icon="solar:gallery-wide-linear" width={48} height={48} className="text-[#374151]" />
           <p className="mt-4 text-[15px] text-[#1A1A1A]">{t(title)}</p>
           <p className="mt-2 text-sm text-[#9CA3AF]">
-            {t('JPEG, PNG formats, up to 50MB,')}
+            {t('JPEG, PNG formats, up to {size}MB,', { size: maxMb })}
             <br />
             {t('Suggested: {size}', { size: suggestedSize })}
           </p>
